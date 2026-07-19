@@ -11,11 +11,10 @@ import { createAudioPlayer } from "expo-audio";
 import type { AudioPlayer } from "expo-audio";
 import type { Toast, ToastContextValue, ToastOptions } from "../types";
 
-const DEFAULT_TOAST_OPTIONS: Required<ToastOptions> = {
+const DEFAULT_TOAST_OPTIONS: Omit<Required<ToastOptions>, "backgroundColor"> = {
   duration: 3000,
   type: "default",
   position: "bottom",
-  backgroundColor: "#5ea502",
   onClose: () => {},
   action: null,
   expandedContent: null,

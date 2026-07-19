@@ -14,14 +14,13 @@ interface ToastOptions {
     onPress: () => void;
   } | null;
   expandedContent?: ReactNode | ((props: { dismiss: () => void }) => ReactNode) | null;
-  backgroundColor?: string;
   style?: StyleProp<ViewStyle>;
 }
 
 interface Toast {
   id: string;
   content: ReactNode | string;
-  options: Required<ToastOptions>;
+  options: Omit<Required<ToastOptions>, "backgroundColor">;
 }
 
 interface ToastContextValue {

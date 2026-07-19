@@ -37,7 +37,7 @@ const getBackgroundColor = (type: ToastVariant) => {
     case "info":
       return "#3B82F6";
     default:
-      return "#262626";
+      return "#5ea502";
   }
 };
 
@@ -235,8 +235,7 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index }) => {
     }
   };
 
-  const backgroundColor =
-    toast.options.backgroundColor ?? getBackgroundColor(toast.options.type);
+  const backgroundColor = getBackgroundColor(toast.options.type);
   const _styles = toast.options?.style || {};
   const icon = getIconForType(toast.options.type);
 
