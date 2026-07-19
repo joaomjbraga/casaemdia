@@ -1,5 +1,6 @@
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
+import { useCelebration } from "@/hooks/useCelebration";
 import ShoppingItemCard from "@/components/shopping/ShoppingItemCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -62,6 +63,8 @@ export default function ShoppingList() {
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
   const [editQty, setEditQty] = useState("");
   const familyRef = useRef(familyId ?? null);
+
+  const { celebrate, CelebrationOverlay } = useCelebration();
 
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(30)).current;
@@ -214,6 +217,8 @@ export default function ShoppingList() {
     if (!item || !currentFamilyId) return;
 
     const newDone = !item.done;
+    const willCompleteAll =
+      newDone && totalCount > 1 && completedCount === totalCount - 1;
     let snapshot: ShoppingItem[] = [];
     setItems((prev) => {
       snapshot = prev;
@@ -229,6 +234,8 @@ export default function ShoppingList() {
         id,
       );
       await updateDoc(itemRef, { done: newDone });
+
+      if (willCompleteAll) celebrate();
 
       if (user) {
         const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
@@ -611,6 +618,8 @@ export default function ShoppingList() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      <CelebrationOverlay />
     </SafeAreaView>
   );
 }

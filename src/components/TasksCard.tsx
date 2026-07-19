@@ -1,4 +1,5 @@
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
+import { useCelebration } from "@/hooks/useCelebration";
 import { toast } from "@/lib/toast";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -37,6 +38,7 @@ export default function TasksList({
 }: TasksListProps) {
   const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
   const { showDialog } = useConfirmDialog();
+  const { celebrate, CelebrationOverlay } = useCelebration();
 
   const completedCount = propCompleted ?? tasks.filter((t) => t.done).length;
   const totalCount = propTotal ?? tasks.length;
@@ -75,9 +77,13 @@ export default function TasksList({
 
   const handleToggle = async (taskId: string) => {
     if (loadingTaskId === taskId) return;
+    const task = tasks.find((t) => t.id === taskId);
+    const willCompleteAll =
+      !!task && !task.done && totalCount > 1 && completedCount === totalCount - 1;
     setLoadingTaskId(taskId);
     try {
       await toggleTask(taskId);
+      if (willCompleteAll) celebrate();
     } catch {
       toast.error("Não foi possível alterar a tarefa.");
     } finally {
@@ -137,7 +143,8 @@ export default function TasksList({
   }
 
   return (
-    <View style={styles.card}>
+    <View style={styles.wrapper}>
+      <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
           <Text style={styles.title}>Tarefas</Text>
@@ -186,11 +193,17 @@ export default function TasksList({
           </View>
         )}
       </View>
+      </View>
+
+      <CelebrationOverlay />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    position: "relative",
+  },
   card: {
     backgroundColor: Colors.light.cardBackground,
     borderRadius: 24,
