@@ -1,9 +1,9 @@
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
+import Colors from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { useFamilyMembers } from "@/contexts/FamilyMembersContext";
 import { useInvitations } from "@/contexts/InvitationContext";
-import Colors from "@/constants/Colors";
 import { db } from "@/lib/firebase";
 import { sendNotificationToFamily } from "@/lib/onesignal";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -18,23 +18,19 @@ import {
   query,
   updateDoc,
 } from "firebase/firestore";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header";
 import RankingCard from "../../components/RankingCard";
 import TasksCard from "../../components/TasksCard";
-import LoadingContainer from "../../components/common/LoadingContainer";
-import EmptyState from "../../components/common/EmptyState";
 import IconCircleButton from "../../components/common/IconCircleButton";
-import SectionTitle from "../../components/common/SectionTitle";
 
 interface Task {
   id: string;
@@ -162,7 +158,8 @@ export default function Dashboard() {
 
       const newDone = !task.done;
       if (user) {
-        const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
+        const userName =
+          user.displayName || user.email?.split("@")[0] || "Alguem";
         sendNotificationToFamily({
           familyId,
           excludeUserId: user.uid,
@@ -241,10 +238,7 @@ export default function Dashboard() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <Header
-          totalTasks={totalTasks}
-          completedTasks={completedTasks}
-        />
+        <Header totalTasks={totalTasks} completedTasks={completedTasks} />
 
         {pendingInvitations.map((inv) => (
           <View key={inv.id} style={styles.inviteBanner}>
@@ -282,15 +276,7 @@ export default function Dashboard() {
           </View>
         ))}
 
-        <ScrollView
-          horizontal={true}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScrollContainer}
-        >
-          <View style={styles.cardContainer}>
-            <RankingCard coupleStats={coupleStats} />
-          </View>
-        </ScrollView>
+        <RankingCard coupleStats={coupleStats} />
         <TasksCard
           tasks={tasks}
           progressPercentage={progressPercentage}
@@ -322,18 +308,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingBottom: 140,
-  },
-  horizontalScrollContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    flexDirection: "row",
-    gap: 16,
-    alignItems: "center",
-  },
-  cardContainer: {
-    width: 320,
-    height: 380,
-    justifyContent: "flex-start",
   },
   inviteBanner: {
     flexDirection: "row",

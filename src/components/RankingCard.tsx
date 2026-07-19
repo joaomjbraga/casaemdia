@@ -340,8 +340,8 @@ function RankingFooter() {
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 10,
-    marginBottom: 10,
+    marginHorizontal: 16,
+    marginBottom: 12,
     borderRadius: 16,
     shadowColor: Colors.light.border,
     shadowOffset: { width: 0, height: 4 },
