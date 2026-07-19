@@ -1,0 +1,145 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Colors from "../../constants/Colors";
+
+interface TaskCardProps {
+  title: string;
+  done: boolean;
+  assignee: string;
+  points: number;
+  onToggle: () => void;
+  onDelete: () => void;
+  isLoading?: boolean;
+}
+
+export default function TaskCard({
+  title,
+  done,
+  assignee,
+  points,
+  onToggle,
+  onDelete,
+  isLoading,
+}: TaskCardProps) {
+  return (
+    <View style={[styles.card, done && styles.cardDone]}>
+      <TouchableOpacity
+        style={[styles.checkbox, done && styles.checkboxDone]}
+        onPress={onToggle}
+        disabled={isLoading}
+      >
+        {done && <MaterialCommunityIcons name="check" size={14} color="#fff" />}
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Text
+          style={[styles.title, done && styles.titleDone]}
+          numberOfLines={2}
+        >
+          {title}
+        </Text>
+
+        <View style={styles.meta}>
+          <View style={styles.metaItem}>
+            <MaterialCommunityIcons
+              name="account-outline"
+              size={14}
+              color={Colors.light.mutedText}
+            />
+            <Text style={styles.metaText}>{assignee}</Text>
+          </View>
+
+          <View style={styles.metaItem}>
+            <MaterialCommunityIcons
+              name="star"
+              size={14}
+              color={Colors.light.primary}
+            />
+            <Text style={[styles.metaText, { color: Colors.light.primary }]}>
+              {points}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={styles.deleteBtn}
+        onPress={onDelete}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <MaterialCommunityIcons
+          name="close"
+          size={16}
+          color={Colors.light.mutedText}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: 16,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.light.primary,
+  },
+  cardDone: {
+    borderLeftColor: Colors.light.success,
+    opacity: 0.6,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.light.borderLight,
+    marginRight: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxDone: {
+    backgroundColor: Colors.light.success,
+    borderColor: Colors.light.success,
+  },
+  content: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.light.text,
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  titleDone: {
+    textDecorationLine: "line-through",
+    color: Colors.light.mutedText,
+  },
+  meta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 12,
+    color: Colors.light.mutedText,
+    fontWeight: "500",
+  },
+  deleteBtn: {
+    padding: 4,
+    marginLeft: 4,
+    opacity: 0.7,
+  },
+});

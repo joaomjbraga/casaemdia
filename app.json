@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Casa em Dia",
+    "slug": "CasaemDia",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/icon.png",
+    "scheme": "casaemdia",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.joaomjbraga.CasaemDia"
+    },
+    "plugins": [
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development",
+          "disableLocation": true
+        }
+      ],
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/images/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "style": "light"
+        }
+      ],
+      [
+        "@react-native-google-signin/google-signin/app.plugin.js"
+      ],
+      "expo-audio"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {}
+    },
+    "owner": "joaomjbraga"
+  }
+}

@@ -1,0 +1,91 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMember(familyId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid));
+    }
+
+    function isAdmin(familyId) {
+      return isMember(familyId)
+        && get(/databases/$(database)/documents/families/$(familyId)/members/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // A criação inicial da família ocorre em um batch. getAfter garante que o
+    // usuário só possa tornar-se admin da família que ele próprio acabou de criar.
+    function isInitialAdmin(familyId, memberId) {
+      return signedIn()
+        && memberId == request.auth.uid
+        && request.resource.data.role == 'admin'
+        && getAfter(/databases/$(database)/documents/families/$(familyId)).data.createdBy == request.auth.uid;
+    }
+
+    function hasPendingInvitation(familyId, memberId) {
+      return signedIn()
+        && memberId == request.auth.uid
+        && request.resource.data.role == 'member'
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.invitationId is string
+        && exists(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId))
+        && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.status == 'pending'
+        && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.familyId == familyId
+        && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.toEmail == request.auth.token.email;
+    }
+
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /families/{familyId} {
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow read: if isMember(familyId);
+      allow update, delete: if isAdmin(familyId);
+
+      match /members/{memberId} {
+        allow read: if isMember(familyId);
+        allow create: if isInitialAdmin(familyId, memberId)
+          || hasPendingInvitation(familyId, memberId)
+          || (isAdmin(familyId) && request.resource.data.role == 'member');
+        allow update: if isAdmin(familyId)
+          || (isMember(familyId) && memberId == request.auth.uid
+              && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['name', 'photoURL', 'email']));
+        allow delete: if isAdmin(familyId) || (isMember(familyId) && memberId == request.auth.uid);
+      }
+
+      match /tasks/{taskId} {
+        allow read, write: if isMember(familyId);
+      }
+
+      match /shopping_list/{itemId} {
+        allow read, write: if isMember(familyId);
+      }
+    }
+
+    match /invitations/{invitationId} {
+      allow read: if signedIn()
+        && (resource.data.toEmail == request.auth.token.email || resource.data.fromUserId == request.auth.uid);
+      allow create: if signedIn()
+        && isAdmin(request.resource.data.familyId)
+        && request.resource.data.fromUserId == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if signedIn()
+        && resource.data.toEmail == request.auth.token.email
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && (request.resource.data.status == 'accepted'
+            || request.resource.data.status == 'declined'
+            || request.resource.data.status == 'expired');
+      allow delete: if signedIn()
+        && isMember(resource.data.familyId)
+        && (resource.data.status == 'expired'
+            || resource.data.status == 'declined'
+            || resource.data.fromUserId == request.auth.uid);
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "cSpell.words": [
+    "Alguem",
+    "atribuida",
+    "Casaem",
+    "casaemdia",
+    "clgjlmm",
+    "concluida",
+    "datetimepicker",
+    "firestore",
+    "Firestore",
+    "googleusercontent",
+    "joaomjbraga",
+    "jqua",
+    "netinfo",
+    "nums",
+    "onesignal",
+    "shopify",
+    "skia",
+    "worklets"
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
