@@ -79,7 +79,7 @@ export default function TasksList({
     if (loadingTaskId === taskId) return;
     const task = tasks.find((t) => t.id === taskId);
     const willCompleteAll =
-      !!task && !task.done && totalCount > 1 && completedCount === totalCount - 1;
+      !!task && !task.done && totalCount >= 1 && completedCount === totalCount - 1;
     setLoadingTaskId(taskId);
     try {
       await toggleTask(taskId);

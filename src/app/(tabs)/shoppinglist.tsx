@@ -218,7 +218,7 @@ export default function ShoppingList() {
 
     const newDone = !item.done;
     const willCompleteAll =
-      newDone && totalCount > 1 && completedCount === totalCount - 1;
+      newDone && totalCount >= 1 && completedCount === totalCount - 1;
     let snapshot: ShoppingItem[] = [];
     setItems((prev) => {
       snapshot = prev;

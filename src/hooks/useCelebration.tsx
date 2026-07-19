@@ -7,10 +7,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View,
 } from "react-native";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SCREEN = Dimensions.get("window");
 
 const CELEBRATION_SOUND = require("@/assets/audio/celebration.wav");
 
@@ -26,14 +25,16 @@ interface CelebrationPiece {
 const EMOJIS = ["🎉", "✨", "🎊", "⭐", "💫", "🏆"];
 
 const buildPieces = (): CelebrationPiece[] =>
-  Array.from({ length: 24 }, (_, id) => ({
+  Array.from({ length: 28 }, (_, id) => ({
     id,
-    left: Math.random() * (SCREEN_WIDTH - 40) + 20,
+    left: Math.random() * (SCREEN.width - 40) + 20,
     emoji: EMOJIS[id % EMOJIS.length],
-    delay: Math.random() * 300,
-    duration: 1400 + Math.random() * 800,
+    delay: Math.random() * 350,
+    duration: 1500 + Math.random() * 900,
     size: 18 + Math.random() * 18,
   }));
+
+const OVERLAY_DURATION = 2400;
 
 /**
  * Hook de comemoração: toca um áudio e exibe uma animação de confete quando
@@ -47,6 +48,7 @@ export function useCelebration() {
   const playerRef = useRef<AudioPlayer | null>(null);
   const [visible, setVisible] = useState(false);
   const [pieces, setPieces] = useState<CelebrationPiece[]>([]);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     try {
@@ -55,6 +57,7 @@ export function useCelebration() {
       console.warn("[Celebration] Erro ao carregar som:", error);
     }
     return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
       playerRef.current?.remove();
     };
   }, []);
@@ -64,62 +67,61 @@ export function useCelebration() {
       if (playerRef.current) {
         playerRef.current.seekTo(0);
         playerRef.current.play();
+      } else {
+        console.warn("[Celebration] Player de audio indisponível");
       }
-    } catch {
-      // non-blocking
+    } catch (error) {
+      console.warn("[Celebration] Erro ao tocar som:", error);
     }
   }, []);
 
+  const dismiss = useCallback(() => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    setVisible(false);
+  }, []);
+
   const celebrate = useCallback(() => {
+    console.log("[Celebration] Disparando comemoração");
     playSound();
     setPieces(buildPieces());
     setVisible(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setVisible(false), OVERLAY_DURATION);
   }, [playSound]);
 
-  const dismiss = useCallback(() => setVisible(false), []);
-
   const CelebrationOverlay = useCallback(
-    () => (
-      <Pressable
-        style={styles.overlay}
-        onPress={dismiss}
-        pointerEvents={visible ? "auto" : "none"}
-      >
-        {visible &&
-          pieces.map((piece) => (
-            <FallingPiece key={piece.id} piece={piece} onDone={dismiss} />
+    () =>
+      visible ? (
+        <Pressable
+          style={styles.overlay}
+          onPress={dismiss}
+          pointerEvents="auto"
+        >
+          {pieces.map((piece) => (
+            <FallingPiece key={piece.id} piece={piece} />
           ))}
 
-        {visible && (
           <Animated.View style={styles.badge}>
             <Text style={styles.badgeEmoji}>🏆</Text>
             <Text style={styles.badgeText}>Tudo concluído!</Text>
           </Animated.View>
-        )}
-      </Pressable>
-    ),
+        </Pressable>
+      ) : null,
     [visible, pieces, dismiss],
   );
 
   return { celebrate, CelebrationOverlay };
 }
 
-function FallingPiece({
-  piece,
-  onDone,
-}: {
-  piece: CelebrationPiece;
-  onDone: () => void;
-}) {
+function FallingPiece({ piece }: { piece: CelebrationPiece }) {
   const translateY = useRef(new Animated.Value(-40)).current;
   const opacity = useRef(new Animated.Value(1)).current;
   const rotate = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const finish = setTimeout(onDone, piece.delay + piece.duration + 200);
     Animated.parallel([
       Animated.timing(translateY, {
-        toValue: Dimensions.get("window").height + 40,
+        toValue: SCREEN.height + 40,
         duration: piece.duration,
         delay: piece.delay,
         useNativeDriver: true,
@@ -137,8 +139,7 @@ function FallingPiece({
         useNativeDriver: true,
       }),
     ]).start();
-    return () => clearTimeout(finish);
-  }, [piece, translateY, opacity, rotate, onDone]);
+  }, [piece, translateY, opacity, rotate]);
 
   return (
     <Animated.Text
