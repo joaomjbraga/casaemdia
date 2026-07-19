@@ -242,7 +242,6 @@ export default function Dashboard() {
         showsVerticalScrollIndicator={false}
       >
         <Header
-          user={user}
           totalTasks={totalTasks}
           completedTasks={completedTasks}
         />

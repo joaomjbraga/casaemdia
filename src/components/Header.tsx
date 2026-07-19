@@ -6,13 +6,11 @@ import { useFamily } from "@/contexts/FamilyContext";
 import { useNotificationStatus } from "@/hooks/useNotificationStatus";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import type { User } from "firebase/auth";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import IconCircleButton from "./common/IconCircleButton";
 
 interface HeaderProps {
-  user: User | null;
   /** Total de tarefas cadastradas na família. */
   totalTasks?: number;
   /** Total de tarefas concluídas. */
@@ -20,7 +18,6 @@ interface HeaderProps {
 }
 
 export default function Header({
-  user,
   totalTasks = 0,
   completedTasks = 0,
 }: HeaderProps) {
@@ -63,9 +60,11 @@ export default function Header({
   }, [startAnimations]);
 
   useEffect(() => {
+    // Atualiza periodicamente para a saudação (manhã/tarde/noite) e a data
+    // acompanharem a passagem do tempo. Não há relógio, então 5 min basta.
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000);
+    }, 300000);
 
     return () => clearInterval(timer);
   }, []);
@@ -170,27 +169,19 @@ export default function Header({
       return {
         greeting: "Bom dia",
         icon: "weather-sunny" as const,
-        period: "manhã",
       };
     } else if (hour >= 12 && hour < 18) {
       return {
         greeting: "Boa tarde",
         icon: "weather-partly-cloudy" as const,
-        period: "tarde",
       };
     } else {
       return {
         greeting: "Boa noite",
         icon: "weather-night" as const,
-        period: "noite",
       };
     }
   }, [currentTime]);
-
-  const firstName = useMemo(() => {
-    const name = user?.displayName || user?.email?.split("@")[0] || "Família";
-    return name.split(" ")[0];
-  }, [user?.displayName, user?.email]);
 
   const getFullDate = useCallback((): string => {
     const formatted = currentTime.toLocaleDateString("pt-BR", {
@@ -199,13 +190,6 @@ export default function Header({
       month: "long",
     });
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-  }, [currentTime]);
-
-  const getCurrentTime = useCallback((): string => {
-    return currentTime.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   }, [currentTime]);
 
   const timeInfo = useMemo(() => getTimeOfDay(), [getTimeOfDay]);
@@ -396,16 +380,12 @@ export default function Header({
             </View>
             <View style={styles.greetingText}>
               <Text style={styles.greeting} numberOfLines={1}>
-                {timeInfo.greeting}, {firstName}
+                {timeInfo.greeting}
               </Text>
               <Text style={styles.period} numberOfLines={1}>
                 {getFullDate()}
               </Text>
             </View>
-          </View>
-
-          <View style={styles.timeDisplay}>
-            <Text style={styles.currentTime}>{getCurrentTime()}</Text>
           </View>
         </View>
 
@@ -583,7 +563,6 @@ const styles = StyleSheet.create({
   greetingContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     marginBottom: 18,
     minHeight: 48,
   },
@@ -623,23 +602,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: "rgba(96, 239, 255, 0.65)",
-  },
-  timeDisplay: {
-    alignItems: "flex-end",
-    flexShrink: 0,
-    backgroundColor: "rgba(162, 89, 255, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(162, 89, 255, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  currentTime: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    letterSpacing: -0.2,
-    fontVariant: ["tabular-nums"],
   },
   statsContainer: {
     flexDirection: "row",
