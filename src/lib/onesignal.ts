@@ -19,7 +19,7 @@ export function initializeOneSignal(): void {
 
 export async function checkPushPermission(): Promise<boolean> {
   try {
-    const permission = await OneSignal.Notifications.hasPermission();
+    const permission = await OneSignal.Notifications.getPermissionAsync();
     if (!permission) {
       console.warn("[OneSignal] Push permission denied - usuario sem chip ou permissao negada");
     }

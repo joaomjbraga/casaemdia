@@ -1,7 +1,7 @@
+import IconCircleButton from "@/components/common/IconCircleButton";
+import SectionTitle from "@/components/common/SectionTitle";
 import Aurora from "@/components/shared/ui/aurora";
-import {
-  useConfirmDialog,
-} from "@/components/shared/ui/dialog/ConfirmDialog";
+import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
 import { Glow } from "@/components/shared/ui/glow";
 import { Toast } from "@/components/shared/ui/toast";
 import Colors from "@/constants/Colors";
@@ -13,7 +13,15 @@ import { db } from "@/lib/firebase";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,15 +35,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import IconCircleButton from "@/components/common/IconCircleButton";
-import SectionTitle from "@/components/common/SectionTitle";
 
 const colors = Colors.light;
 
 export default function SettingsScreen() {
-  return (
-    <SettingsInner />
-  );
+  return <SettingsInner />;
 }
 
 function SettingsInner() {
@@ -181,9 +185,7 @@ function SettingsInner() {
                 );
               }
             }
-            await deleteDoc(
-              doc(db, "families", familyId, "members", user.uid),
-            );
+            await deleteDoc(doc(db, "families", familyId, "members", user.uid));
           }
 
           await deleteDoc(doc(db, "users", user.uid));
@@ -312,7 +314,10 @@ function SettingsInner() {
           </View>
 
           <View style={styles.section}>
-            <SectionTitle label={"FAMÍLIA — " + familyName} color="rgba(96, 239, 255, 0.7)" />
+            <SectionTitle
+              label={"FAMÍLIA — " + familyName}
+              color="rgba(96, 239, 255, 0.7)"
+            />
 
             {isAdmin && (
               <LinearGradient
@@ -364,7 +369,8 @@ function SettingsInner() {
                     />
                   </View>
                   <Text style={styles.inviteHint}>
-                    O convidado precisa ter o app instalado e estar logado com este email
+                    O convidado precisa ter o app instalado e estar logado com
+                    este email
                   </Text>
                   <Glow color="#A259FF" intensity={0.5} size={4}>
                     <TouchableOpacity
@@ -596,12 +602,6 @@ function SettingsInner() {
                 </LinearGradient>
               </TouchableOpacity>
             </Glow>
-          </View>
-
-          <View style={styles.footer}>
-            <View style={styles.footerDivider} />
-            <Text style={styles.footerText}>Casa em Dia v1.0.0</Text>
-            <Text style={styles.footerSubtext}>{familyName}</Text>
           </View>
         </Animated.View>
       </ScrollView>
