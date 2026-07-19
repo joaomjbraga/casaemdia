@@ -31,7 +31,7 @@ const getBackgroundColor = (type: ToastVariant) => {
     case "success":
       return "#10B981";
     case "error":
-      return "#EF4444";
+      return "#DC2626";
     case "warning":
       return "#F59E0B";
     case "info":
