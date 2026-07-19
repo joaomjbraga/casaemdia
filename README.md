@@ -115,8 +115,11 @@ O app envia notificações push para todos os membros da família (exceto o auto
 | Item excluído | `Item removido` | "João removeu "Leite" da lista de compras" |
 | Item editado | `Item atualizado` | "João atualizou "Leite" na lista de compras" |
 | Itens comprados limpos (lote) | `Lista limpa` | "João removeu 3 itens comprados da lista" |
+| Membro removido | `Você saiu da família` | "Você foi removido da família "Casa dos Braga"" |
 
 As notificações usam filtering por tag `familyId` + `userId` (exclusão do autor) e som personalizado (`notification.wav` em `android/app/src/main/res/raw/`).
+
+Ao ser removido de uma família, o app do membro detecta a mudança em tempo real (via `onSnapshot` no próprio documento de membro), remove as tags do OneSignal e cria automaticamente uma nova família própria para o usuário, exibindo um aviso.
 
 ---
 

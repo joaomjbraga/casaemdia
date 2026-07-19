@@ -16,6 +16,7 @@ import React, {
   useState,
 } from "react";
 import { db, auth } from "../lib/firebase";
+import { sendNotificationToEmail } from "../lib/onesignal";
 import { useFamily } from "./FamilyContext";
 
 export interface FamilyMember {
@@ -43,7 +44,7 @@ export const FamilyMembersProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(false);
-  const { familyId } = useFamily();
+  const { familyId, familyName } = useFamily();
 
   const fetchFamilyMembers = useCallback(async () => {
     if (!familyId || !auth.currentUser) return;
@@ -126,6 +127,17 @@ export const FamilyMembersProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         await deleteDoc(doc(db, "families", familyId, "members", id));
+
+        // Notifica o membro removido (best-effort, não bloqueia a remoção).
+        if (member.email) {
+          sendNotificationToEmail({
+            email: member.email,
+            title: "Você saiu da família",
+            body: `Você foi removido da família "${familyName}".`,
+            data: { type: "member_removed" },
+          }).catch(() => {});
+        }
+
         await fetchFamilyMembers();
       } catch (error: any) {
         throw error;
@@ -133,7 +145,7 @@ export const FamilyMembersProvider: React.FC<{ children: React.ReactNode }> = ({
         setLoading(false);
       }
     },
-    [familyId, familyMembers, fetchFamilyMembers],
+    [familyId, familyName, familyMembers, fetchFamilyMembers],
   );
 
   useEffect(() => {

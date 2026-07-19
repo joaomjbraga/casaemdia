@@ -55,7 +55,8 @@ function SettingsInner() {
     deleteFamilyMember,
     fetchFamilyMembers,
   } = useFamilyMembers();
-  const { familyId, familyName, members } = useFamily();
+  const { familyId, familyName, members, beginIntentionalExit, cancelIntentionalExit } =
+    useFamily();
   const { sendInvitation } = useInvitations();
   const router = useRouter();
   const { user, signOut } = useAuth();
@@ -127,8 +128,11 @@ function SettingsInner() {
 
           await deleteFamilyMember(memberId);
           Toast.show(`${memberName} foi removido.`, { type: "success" });
-        } catch {
-          Toast.show("Não foi possível remover o membro.", { type: "error" });
+        } catch (error: any) {
+          console.error("Erro ao remover membro:", error);
+          Toast.show(error?.message || "Não foi possível remover o membro.", {
+            type: "error",
+          });
         } finally {
           setDeletingMember(null);
         }
@@ -147,6 +151,8 @@ function SettingsInner() {
       onConfirm: async () => {
         try {
           setDeletingAccount(true);
+          // Impede que a remoção do próprio membro dispare a auto-recuperação.
+          beginIntentionalExit();
 
           const membersSnap = await getDocs(
             collection(db, "families", familyId, "members"),
@@ -191,7 +197,11 @@ function SettingsInner() {
           await deleteDoc(doc(db, "users", user.uid));
           await signOut();
           router.replace("/(auth)/login");
-        } catch {
+        } catch (error) {
+          // A exclusão falhou e o usuário continua logado: reabilita a
+          // auto-recuperação para não deixá-lo em estado inconsistente.
+          cancelIntentionalExit();
+          console.error("Erro ao excluir conta:", error);
           Toast.show("Falha ao excluir conta.", { type: "error" });
         } finally {
           setDeletingAccount(false);

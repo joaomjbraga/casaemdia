@@ -98,7 +98,7 @@ function useProtectedRoute() {
 
 function RootLayoutNav() {
   const { user, loading, initialized } = useAuth();
-  const { familyId } = useFamily();
+  const { familyId, wasRemoved, acknowledgeRemoval } = useFamily();
   const { showAlert } = useAlertDialog();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const pushWarningShown = useRef(false);
@@ -136,6 +136,19 @@ function RootLayoutNav() {
 
     return () => clearTimeout(timer);
   }, [initialized, loading, showAlert]);
+
+  useEffect(() => {
+    if (!wasRemoved) return;
+    showAlert({
+      title: "Você saiu da família",
+      message:
+        "Você foi removido da família. Criamos uma nova família para você " +
+        "para que possa continuar usando o app normalmente.",
+      type: "info",
+      buttonText: "Entendi",
+    });
+    acknowledgeRemoval();
+  }, [wasRemoved, showAlert, acknowledgeRemoval]);
 
   useEffect(() => {
     addNotificationClickListener((data) => {

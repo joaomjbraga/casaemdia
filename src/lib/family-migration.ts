@@ -13,17 +13,13 @@ export interface FamilyData {
   familyName: string;
 }
 
-export async function migrateOrCreateFamily(user: User): Promise<FamilyData> {
+/**
+ * Cria uma nova família com o usuário como admin e aponta `users/{uid}` para
+ * ela. Sempre cria uma família nova (sobrescrevendo o familyId anterior).
+ */
+async function createFamilyForUser(user: User): Promise<FamilyData> {
   const uid = user.uid;
   const userDocRef = doc(db, 'users', uid);
-  const userSnap = await getDoc(userDocRef);
-
-  if (userSnap.exists() && userSnap.data()?.familyId) {
-    return {
-      familyId: userSnap.data().familyId,
-      familyName: userSnap.data().familyName || 'Minha Família',
-    };
-  }
 
   const familyName = user.displayName || user.email?.split('@')[0] || 'Minha Família';
   const familyRef = doc(collection(db, 'families'));
@@ -51,4 +47,27 @@ export async function migrateOrCreateFamily(user: User): Promise<FamilyData> {
   await setupBatch.commit();
 
   return { familyId, familyName };
+}
+
+export async function migrateOrCreateFamily(user: User): Promise<FamilyData> {
+  const uid = user.uid;
+  const userDocRef = doc(db, 'users', uid);
+  const userSnap = await getDoc(userDocRef);
+
+  if (userSnap.exists() && userSnap.data()?.familyId) {
+    return {
+      familyId: userSnap.data().familyId,
+      familyName: userSnap.data().familyName || 'Minha Família',
+    };
+  }
+
+  return createFamilyForUser(user);
+}
+
+/**
+ * Força a criação de uma nova família para o usuário, mesmo que ele já possua um
+ * `familyId`. Usado na recuperação após o usuário ser removido de uma família.
+ */
+export async function createNewFamily(user: User): Promise<FamilyData> {
+  return createFamilyForUser(user);
 }
