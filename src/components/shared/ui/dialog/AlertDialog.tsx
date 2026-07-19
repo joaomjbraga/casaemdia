@@ -103,6 +103,8 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     paddingHorizontal: 24,
     alignItems: "center",
+    width: "88%",
+    maxWidth: 360,
   },
   iconCircle: {
     width: 64,

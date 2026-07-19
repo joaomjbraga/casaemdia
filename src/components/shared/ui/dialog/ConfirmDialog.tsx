@@ -96,7 +96,12 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
               <Text style={styles.message}>{config.message}</Text>
             )}
 
-            <View style={styles.actions}>
+            <View
+              style={[
+                styles.actions,
+                config.showCancel === false && styles.actionsSingle,
+              ]}
+            >
               {config.showCancel !== false && (
                 <Pressable
                   style={({ pressed }) => [
@@ -115,6 +120,7 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
               <Pressable
                 style={({ pressed }) => [
                   styles.btn,
+                  config.showCancel === false && styles.btnSingle,
                   config.type === "danger" || config.type === "error"
                     ? styles.dangerBtn
                     : config.type === "success"
@@ -145,6 +151,8 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     paddingHorizontal: 24,
     alignItems: "center",
+    width: "88%",
+    maxWidth: 360,
   },
   iconCircle: {
     width: 64,
@@ -172,6 +180,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     width: "100%",
+    marginTop: 4,
+  },
+  actionsSingle: {
+    justifyContent: "center",
   },
   btn: {
     flex: 1,
@@ -179,6 +191,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
+  },
+  btnSingle: {
+    width: "100%",
+    flex: undefined,
   },
   btnDisabled: {
     opacity: 0.6,
