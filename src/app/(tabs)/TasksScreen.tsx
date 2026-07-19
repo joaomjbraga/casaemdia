@@ -35,6 +35,7 @@ import PrimaryIconButton from "../../components/common/PrimaryIconButton";
 import Colors from "../../constants/Colors";
 import { db } from "../../lib/firebase";
 import { sendNotificationToFamily } from "../../lib/onesignal";
+import { creditCompletion, revertCompletion } from "../../lib/gamification";
 
 interface Task {
   id: string;
@@ -108,6 +109,23 @@ export default function TasksScreen() {
     try {
       const ref = doc(db, "families", familyId, "tasks", id);
       await updateDoc(ref, { done: newDone });
+
+      // Gamificação: credita/estorna pontos no membro responsável.
+      try {
+        if (newDone) {
+          await creditCompletion(familyId, task.assignee, {
+            points: task.points,
+            task: true,
+          });
+        } else {
+          await revertCompletion(familyId, task.assignee, {
+            points: task.points,
+            task: true,
+          });
+        }
+      } catch (gamificationError) {
+        console.error("Erro ao atualizar gamificação (tarefa):", gamificationError);
+      }
 
       const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
       await sendNotificationToFamily({

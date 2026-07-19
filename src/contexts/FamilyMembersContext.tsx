@@ -25,6 +25,10 @@ export interface FamilyMember {
   email: string;
   photoURL: string | null;
   role: "admin" | "member";
+  points: number;
+  tasksCompleted: number;
+  shoppingCompleted: number;
+  contributions: number;
 }
 
 interface FamilyMembersContextType {
@@ -55,14 +59,18 @@ export const FamilyMembersProvider: React.FC<{ children: React.ReactNode }> = ({
         orderBy("name", "asc"),
       );
       const snapshot = await getDocs(q);
-      const members: FamilyMember[] = snapshot.docs
-        .map((d) => ({
-          id: d.id,
-          name: d.data().name,
-          email: d.data().email ?? "",
-          photoURL: d.data().photoURL ?? null,
-          role: (d.data().role ?? "member") as "admin" | "member",
-        }));
+       const members: FamilyMember[] = snapshot.docs
+         .map((d) => ({
+           id: d.id,
+           name: d.data().name,
+           email: d.data().email ?? "",
+           photoURL: d.data().photoURL ?? null,
+           role: (d.data().role ?? "member") as "admin" | "member",
+           points: d.data().points ?? 0,
+           tasksCompleted: d.data().tasksCompleted ?? 0,
+           shoppingCompleted: d.data().shoppingCompleted ?? 0,
+           contributions: d.data().contributions ?? 0,
+         }));
       setFamilyMembers(members);
     } catch (error: any) {
       console.error("Error fetching family members:", error);

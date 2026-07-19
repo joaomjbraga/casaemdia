@@ -6,6 +6,7 @@ import { useFamilyMembers } from "@/contexts/FamilyMembersContext";
 import { useInvitations } from "@/contexts/InvitationContext";
 import { db } from "@/lib/firebase";
 import { sendNotificationToFamily } from "@/lib/onesignal";
+import { creditCompletion, revertCompletion } from "@/lib/gamification";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -41,6 +42,7 @@ interface Task {
 }
 
 interface CoupleStat {
+  id: string;
   name: string;
   points: number;
   avatar: "person" | "person-outline" | "trophy";
@@ -73,21 +75,17 @@ export default function Dashboard() {
   const coupleStats = useMemo(() => {
     const stats: { [key: string]: CoupleStat } = {};
     familyMembers.forEach((member, index) => {
-      const memberTasks = tasks.filter((t) => t.assignee === member.name);
-      const points = memberTasks
-        .filter((t) => t.done)
-        .reduce((sum, t) => sum + t.points, 0);
-      const tasksCompleted = memberTasks.filter((t) => t.done).length;
-      stats[member.name] = {
+      stats[member.id] = {
+        id: member.id,
         name: member.name,
-        points,
+        points: member.points,
         avatar: index % 2 === 0 ? "person" : "person-outline",
-        tasksCompleted,
+        tasksCompleted: member.tasksCompleted + member.shoppingCompleted,
         photoURL: member.photoURL,
       };
     });
     return stats;
-  }, [tasks, familyMembers]);
+  }, [familyMembers]);
 
   const fetchTasks = useCallback(async () => {
     if (!familyId) {
@@ -157,6 +155,24 @@ export default function Dashboard() {
       await updateDoc(taskRef, { done: !task.done });
 
       const newDone = !task.done;
+
+      // Gamificação: credita/estorna pontos no membro responsável.
+      try {
+        if (newDone) {
+          await creditCompletion(familyId, task.assignee, {
+            points: task.points,
+            task: true,
+          });
+        } else {
+          await revertCompletion(familyId, task.assignee, {
+            points: task.points,
+            task: true,
+          });
+        }
+      } catch (gamificationError) {
+        console.error("Erro ao atualizar gamificação (tarefa):", gamificationError);
+      }
+
       if (user) {
         const userName =
           user.displayName || user.email?.split("@")[0] || "Alguem";

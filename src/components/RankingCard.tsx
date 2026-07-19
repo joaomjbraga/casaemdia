@@ -17,6 +17,7 @@ import EmptyState from "./common/EmptyState";
 const { width } = Dimensions.get("window");
 
 interface CoupleStat {
+  id: string;
   name: string;
   points: number;
   avatar: "person" | "person-outline" | "trophy";
@@ -117,12 +118,12 @@ export default function RankingCard({ coupleStats }: RankingCardProps) {
               .slice(0, 5)
               .map((stat, index) => (
                 <RankingItem
-                  key={stat.name}
+                  key={stat.id}
                   stat={stat}
                   index={index}
                   maxPoints={maxPoints}
-                  scaleAnim={getScaleAnim(stat.name)}
-                  progressAnim={getProgressAnim(stat.name)}
+                  scaleAnim={getScaleAnim(stat.id)}
+                  progressAnim={getProgressAnim(stat.id)}
                 />
               ))
           )}

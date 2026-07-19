@@ -7,7 +7,7 @@ import { useNotificationStatus } from "@/hooks/useNotificationStatus";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
 import IconCircleButton from "./common/IconCircleButton";
 
 interface HeaderProps {
@@ -21,7 +21,7 @@ export default function Header({
   totalTasks = 0,
   completedTasks = 0,
 }: HeaderProps) {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { familyName, members } = useFamily();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
@@ -277,12 +277,19 @@ export default function Header({
         ]}
       >
         <View style={styles.brandSection}>
-          <View style={styles.logoContainer}>
-            <MaterialCommunityIcons
-              name="home-variant"
-              size={22}
-              color="#00FF87"
-            />
+          <View style={styles.avatarContainer}>
+            {user?.photoURL ? (
+              <Image
+                source={{ uri: user.photoURL }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <MaterialCommunityIcons
+                name="account"
+                size={22}
+                color="#00FF87"
+              />
+            )}
           </View>
           <View style={styles.appTitleContainer}>
             <Text style={styles.appName} numberOfLines={1}>
@@ -466,7 +473,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  logoContainer: {
+  avatarContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -477,6 +484,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
     flexShrink: 0,
+    overflow: "hidden",
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   appTitleContainer: {
     flex: 1,

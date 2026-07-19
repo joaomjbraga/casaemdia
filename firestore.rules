@@ -58,7 +58,8 @@ service cloud.firestore {
         allow update: if isAdmin(familyId)
           || (isMember(familyId) && memberId == request.auth.uid
               && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['name', 'photoURL', 'email']));
+                 .hasOnly(['name', 'photoURL', 'email',
+                           'points', 'tasksCompleted', 'shoppingCompleted', 'contributions']));
         allow delete: if isAdmin(familyId) || (isMember(familyId) && memberId == request.auth.uid);
       }
 

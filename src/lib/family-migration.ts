@@ -38,6 +38,10 @@ async function createFamilyForUser(user: User): Promise<FamilyData> {
     photoURL: user.photoURL || null,
     role: 'admin',
     joinedAt: serverTimestamp(),
+    points: 0,
+    tasksCompleted: 0,
+    shoppingCompleted: 0,
+    contributions: 0,
   });
   setupBatch.set(userDocRef, {
     familyId,

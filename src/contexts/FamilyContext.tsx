@@ -26,6 +26,10 @@ export interface FamilyMember {
   email: string;
   photoURL: string | null;
   role: "admin" | "member";
+  points: number;
+  tasksCompleted: number;
+  shoppingCompleted: number;
+  contributions: number;
 }
 
 interface FamilyContextType {
@@ -90,6 +94,10 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
         email: d.data().email,
         photoURL: d.data().photoURL,
         role: d.data().role,
+        points: d.data().points ?? 0,
+        tasksCompleted: d.data().tasksCompleted ?? 0,
+        shoppingCompleted: d.data().shoppingCompleted ?? 0,
+        contributions: d.data().contributions ?? 0,
       }));
       setMembers(membersList);
     } catch (error) {

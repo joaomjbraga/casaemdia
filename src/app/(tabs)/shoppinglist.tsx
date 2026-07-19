@@ -1,6 +1,7 @@
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
 import { useCelebration } from "@/hooks/useCelebration";
+import { creditCompletion, revertCompletion, SHOPPING_ITEM_POINTS } from "@/lib/gamification";
 import ShoppingItemCard from "@/components/shopping/ShoppingItemCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -48,6 +49,7 @@ interface ShoppingItem {
   name: string;
   done: boolean;
   quantity?: string;
+  points?: number;
 }
 
 export default function ShoppingList() {
@@ -106,6 +108,7 @@ export default function ShoppingList() {
         name: d.data().title,
         done: d.data().done,
         quantity: d.data().quantity ?? "",
+        points: d.data().points ?? SHOPPING_ITEM_POINTS,
       }));
 
       setItems(mappedItems);
@@ -146,6 +149,7 @@ export default function ShoppingList() {
           title: newItemName.trim(),
           done: false,
           quantity: qty,
+          points: SHOPPING_ITEM_POINTS,
         },
       );
       setItems((prev) =>
@@ -234,6 +238,27 @@ export default function ShoppingList() {
         id,
       );
       await updateDoc(itemRef, { done: newDone });
+
+      // Gamificação: credita/estorna pontos em quem comprou o item.
+      if (user) {
+        const buyerName = user.displayName || user.email?.split("@")[0] || "Alguem";
+        const itemPoints = item.points ?? SHOPPING_ITEM_POINTS;
+        try {
+          if (newDone) {
+            await creditCompletion(currentFamilyId!, buyerName, {
+              points: itemPoints,
+              shopping: true,
+            });
+          } else {
+            await revertCompletion(currentFamilyId!, buyerName, {
+              points: itemPoints,
+              shopping: true,
+            });
+          }
+        } catch (gamificationError) {
+          console.error("Erro ao atualizar gamificação (compra):", gamificationError);
+        }
+      }
 
       if (willCompleteAll) celebrate();
 
