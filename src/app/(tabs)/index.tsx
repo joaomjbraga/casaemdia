@@ -241,7 +241,11 @@ export default function Dashboard() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <Header user={user} />
+        <Header
+          user={user}
+          totalTasks={totalTasks}
+          completedTasks={completedTasks}
+        />
 
         {pendingInvitations.map((inv) => (
           <View key={inv.id} style={styles.inviteBanner}>

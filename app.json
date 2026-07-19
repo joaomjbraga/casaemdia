@@ -12,7 +12,10 @@
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.joaomjbraga.CasaemDia"
+      "package": "com.joaomjbraga.CasaemDia",
+      "permissions": [
+        "android.permission.READ_PHONE_STATE"
+      ]
     },
     "plugins": [
       [
