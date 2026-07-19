@@ -25,16 +25,16 @@ interface CelebrationPiece {
 const EMOJIS = ["🎉", "✨", "🎊", "⭐", "💫", "🏆"];
 
 const buildPieces = (): CelebrationPiece[] =>
-  Array.from({ length: 28 }, (_, id) => ({
+  Array.from({ length: 36 }, (_, id) => ({
     id,
     left: Math.random() * (SCREEN.width - 40) + 20,
     emoji: EMOJIS[id % EMOJIS.length],
-    delay: Math.random() * 350,
-    duration: 1500 + Math.random() * 900,
+    delay: Math.random() * 600,
+    duration: 2600 + Math.random() * 1200,
     size: 18 + Math.random() * 18,
   }));
 
-const OVERLAY_DURATION = 2400;
+const OVERLAY_DURATION = 4200;
 
 /**
  * Hook de comemoração: toca um áudio e exibe uma animação de confete quando
