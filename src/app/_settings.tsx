@@ -58,7 +58,7 @@ function SettingsInner() {
     useFamily();
   const { sendInvitation } = useInvitations();
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
   const { showDialog } = useConfirmDialog();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -153,14 +153,21 @@ function SettingsInner() {
           // Impede que a remoção do próprio membro dispare a auto-recuperação.
           beginIntentionalExit();
 
-          const membersSnap = await getDocs(
-            collection(db, "families", familyId, "members"),
-          );
-          const accountMembers = membersSnap.docs.map((d) => ({
-            id: d.id,
-            role: (d.data().role as string) || "member",
-          }));
-          const otherMembers = accountMembers.filter((m) => m.id !== user.uid);
+          // Lê os membros da família de forma tolerante: se a leitura for
+          // negada, assume que o usuário é o único membro e segue apagando.
+          let otherMembers: { id: string; role: string }[] = [];
+          try {
+            const membersSnap = await getDocs(
+              collection(db, "families", familyId, "members"),
+            );
+            const accountMembers = membersSnap.docs.map((d) => ({
+              id: d.id,
+              role: (d.data().role as string) || "member",
+            }));
+            otherMembers = accountMembers.filter((m) => m.id !== user.uid);
+          } catch (readError) {
+            console.warn("Leitura de membros negada, seguindo mesmo assim:", readError);
+          }
 
           const batch = writeBatch(db);
 
@@ -168,30 +175,38 @@ function SettingsInner() {
             // Único membro: apaga a família e todo o seu conteúdo.
             const subcollections = ["tasks", "shopping_list"];
             for (const sub of subcollections) {
-              const snap = await getDocs(
-                collection(db, "families", familyId, sub),
-              );
-              for (const d of snap.docs) batch.delete(d.ref);
+              try {
+                const snap = await getDocs(
+                  collection(db, "families", familyId, sub),
+                );
+                for (const d of snap.docs) batch.delete(d.ref);
+              } catch (subError) {
+                console.warn(`Leitura de ${sub} negada:`, subError);
+              }
             }
             // Só remove convites que o próprio usuário criou: a regra de leitura
             // de invitations exige toEmail == email OU fromUserId == uid, então a
             // query precisa filtrar por fromUserId para não ser negada.
-            const invSnap = await getDocs(
-              query(
-                collection(db, "invitations"),
-                where("familyId", "==", familyId),
-                where("fromUserId", "==", user.uid),
-              ),
-            );
-            for (const d of invSnap.docs) batch.delete(d.ref);
+            try {
+              const invSnap = await getDocs(
+                query(
+                  collection(db, "invitations"),
+                  where("familyId", "==", familyId),
+                  where("fromUserId", "==", user.uid),
+                ),
+              );
+              for (const d of invSnap.docs) batch.delete(d.ref);
+            } catch (invError) {
+              console.warn("Leitura de convites negada:", invError);
+            }
             batch.delete(doc(db, "families", familyId));
           } else {
             // Há outros membros: a família continua. Se o usuário saindo é o
             // único admin, transfere o cargo para outro membro (priorizando
             // alguém que já seja admin, senão o primeiro da lista).
             const isOnlyAdmin =
-              accountMembers.find((m) => m.id === user.uid)?.role === "admin" &&
-              !otherMembers.some((m) => m.role === "admin");
+              (otherMembers.length > 0 &&
+                !otherMembers.some((m) => m.role === "admin"));
             if (isOnlyAdmin) {
               const nextAdmin =
                 otherMembers.find((m) => m.role === "admin") ?? otherMembers[0];
@@ -209,7 +224,10 @@ function SettingsInner() {
           batch.delete(doc(db, "users", user.uid));
           await batch.commit();
 
-          await signOut();
+          // Remove a conta de Authentication (isso apaga o email do Auth).
+          // Feito por último, pois invalida o token e impediria as escritas.
+          await deleteAccount();
+
           router.replace("/(auth)/login");
         } catch (error) {
           // A exclusão falhou e o usuário continua logado: reabilita a

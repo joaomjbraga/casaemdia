@@ -4,7 +4,7 @@ import {
   signInWithGoogle as googleSignIn,
 } from "@/lib/google-auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { User, onAuthStateChanged } from "firebase/auth";
+import { User, deleteUser, onAuthStateChanged } from "firebase/auth";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
@@ -27,6 +27,7 @@ interface AuthContextType {
   initialized: boolean;
   signInWithGoogle: () => Promise<AuthResult>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,6 +121,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const deleteAccount = async (): Promise<void> => {
+    const current = auth.currentUser;
+    if (!current) return;
+    try {
+      await GoogleSignin.signOut().catch(() => {});
+    } catch {
+      // non-blocking
+    }
+    await deleteUser(current);
+    await clearUserData();
+    setUser(null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -128,6 +142,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         initialized,
         signInWithGoogle,
         signOut,
+        deleteAccount,
       }}
     >
       {children}
