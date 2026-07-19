@@ -14,7 +14,9 @@
 - **Login com Google Sign-In** (via Firebase Auth)
 - **Família compartilhada** — convite por email, dados sincronizados entre membros
 - **Tarefas** com pontos, responsáveis e ranking de gamificação
-- **Lista de compras** colaborativa com categorias inteligentes
+- **Lista de compras** colaborativa — itens comprados também rendem pontos
+- **Gamificação persistida** — pontos, tarefas/conquistas concluídas e contribuições são creditados por membro no Firestore ao concluir tarefas (pontos da tarefa) ou comprar itens (pontos fixos), com estorno ao reabrir
+- **Comemoração** — animação de confete + som (`celebration.wav`) quando todas as tarefas ou compras são concluídas
 - **Notificações push** via OneSignal com som personalizado (9 tipos de notificação)
 - **Tema escuro único** com visual glassmorphism (Aurora, MeshGradient, Glow)
 - **Dock tab bar** estilo macOS com magnificação
@@ -44,7 +46,11 @@ families/{familyId}
   │     ├── email: string
   │     ├── photoURL: string | null
   │     ├── role: 'admin' | 'member'
-  │     └── joinedAt: Timestamp
+  │     ├── joinedAt: Timestamp
+  │     ├── points: number                  ← gamificação (total de pontos)
+  │     ├── tasksCompleted: number          ← gamificação (tarefas concluídas)
+  │     ├── shoppingCompleted: number        ← gamificação (compras concluídas)
+  │     └── contributions: number           ← gamificação (total de conclusões)
   │
   ├── tasks/{docId}
   │     ├── title: string
@@ -56,7 +62,8 @@ families/{familyId}
   ├── shopping_list/{docId}
   │     ├── title: string
   │     ├── done: boolean
-  │     └── quantity: string (opcional)
+  │     ├── quantity: string (opcional)
+  │     └── points: number (fixo: 3 por item)
   │
   ├── inventory/{docId}          ← planejado
   ├── expenses/{docId}           ← planejado
@@ -84,6 +91,7 @@ As regras versionadas estão em [`firestore.rules`](./firestore.rules). Elas gar
 - Somente **membros** da família leiam ou alterem os dados
 - Somente **admins** enviem convites e promovam/removam membros
 - Um membro **não possa se auto-promover** a admin (proteção contra privilege escalation)
+- Um membro possa atualizar seus próprios campos de gamificação (`points`, `tasksCompleted`, `shoppingCompleted`, `contributions`) ao concluir/reabrir atividades
 - O destinatário possa aceitar ou recusar apenas o **próprio convite**
 - Convites com status `expired` sejam tratados corretamente
 - Convites possam ser **excluídos** pelo destinatário
@@ -120,6 +128,21 @@ O app envia notificações push para todos os membros da família (exceto o auto
 As notificações usam filtering por tag `familyId` + `userId` (exclusão do autor) e som personalizado (`notification.wav` em `android/app/src/main/res/raw/`).
 
 Ao ser removido de uma família, o app do membro detecta a mudança em tempo real (via `onSnapshot` no próprio documento de membro), remove as tags do OneSignal e cria automaticamente uma nova família própria para o usuário, exibindo um aviso.
+
+### Gamificação
+
+Os pontos são ganhos com base nas **atividades e contribuições** do usuário: ao concluir uma tarefa que lhe foi atribuída, ou ao comprar um item da lista de compras.
+
+- **Tarefas:** o responsável (`assignee`) recebe os `points` definidos na criação da tarefa.
+- **Compras:** quem marca o item como comprado recebe `3` pontos fixos por item.
+- Os valores são **persistidos** no documento do membro (`points`, `tasksCompleted`, `shoppingCompleted`, `contributions`) e atualizados via `increment()` do Firestore (seguro contra corridas). Reabrir uma tarefa/item **estorna** os pontos.
+- O **Ranking Familiar** (`RankingCard`) é alimentado diretamente pelos pontos persistidos de cada membro (identificado por `id`), sem depender de correspondência por nome.
+
+A lógica de crédito/estorno está em [`src/lib/gamification.ts`](./src/lib/gamification.ts) e é acionada em `index.tsx`, `TasksScreen.tsx` e `shoppinglist.tsx`.
+
+### Comemoração
+
+Quando **todas** as tarefas ou itens de compra são concluídos, o app dispara uma animação de confete + badge "Tudo concluído!" e toca `src/assets/audio/celebration.wav` (via `expo-audio`, hook [`src/hooks/useCelebration.tsx`](./src/hooks/useCelebration.tsx)).
 
 ---
 
@@ -184,6 +207,7 @@ casaemdia/
 ├── app.json                          # Configuração Expo
 ├── eas.json                          # Configuração EAS Build (APK preview / production)
 ├── .firebaserc                       # Projeto Firebase padrão (deploy de rules)
+├── firebase.json                     # Config do Firebase CLI (aponta firestore.rules)
 ├── firestore.rules                   # Regras de segurança Firestore
 ├── .env.example                      # Template de variáveis de ambiente
 │
@@ -239,6 +263,7 @@ casaemdia/
     │   ├── firebase.ts              # Inicialização Firebase
     │   ├── google-auth.ts           # Google Sign-In wrapper
     │   ├── family-migration.ts      # Migração de dados
+    │   ├── gamification.ts          # Crédito/estorno de pontos (gamificação)
     │   ├── onesignal.ts             # OneSignal (push notifications)
     │   └── toast.ts                 # Helper do toast
     │
@@ -246,14 +271,16 @@ casaemdia/
     │   └── Colors.ts                # Tokens de cores (dark theme)
     │
     ├── hooks/                        # Custom hooks
-    │   └── useColorScheme.ts
+    │   ├── useNotificationStatus.ts  # Detecção de chip/notificações
+    │   └── useCelebration.tsx        # Animação + som de comemoração
     │
     ├── types/
     │   └── firebase-auth-rn.d.ts
     │
     └── assets/
         ├── audio/
-        │   └── notification.wav       # Som de notificação personalizado
+        │   ├── notification.wav       # Som de notificação personalizado
+        │   └── celebration.wav        # Som de comemoração (tarefas/compras)
         ├── fonts/
         └── images/
 ```
@@ -412,7 +439,8 @@ npx eas build --platform android --profile production
 
 ### Deploy das regras do Firestore
 
-O projeto padrão está definido em [`.firebaserc`](./.firebaserc):
+O projeto Firebase CLI é configurado em [`.firebaserc`](./.firebaserc) (projeto padrão) e
+[`firebase.json`](./firebase.json) (aponta para `firestore.rules`):
 
 ```bash
 npx firebase-tools deploy --only firestore:rules
