@@ -173,10 +173,14 @@ function SettingsInner() {
               );
               for (const d of snap.docs) batch.delete(d.ref);
             }
+            // Só remove convites que o próprio usuário criou: a regra de leitura
+            // de invitations exige toEmail == email OU fromUserId == uid, então a
+            // query precisa filtrar por fromUserId para não ser negada.
             const invSnap = await getDocs(
               query(
                 collection(db, "invitations"),
                 where("familyId", "==", familyId),
+                where("fromUserId", "==", user.uid),
               ),
             );
             for (const d of invSnap.docs) batch.delete(d.ref);
