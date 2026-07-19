@@ -44,7 +44,11 @@ service cloud.firestore {
     match /families/{familyId} {
       allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
       allow read: if isMember(familyId);
-      allow update, delete: if isAdmin(familyId);
+      // Apenas admins podem alterar dados da família. A exclusão do documento
+      // da família é permitida a qualquer membro, pois só ocorre no fluxo de
+      // exclusão da própria conta (quando resta um único membro na família).
+      allow update: if isAdmin(familyId);
+      allow delete: if isMember(familyId);
 
       match /members/{memberId} {
         allow read: if isMember(familyId);

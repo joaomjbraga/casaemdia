@@ -15,12 +15,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   collection,
-  deleteDoc,
   doc,
   getDocs,
   query,
-  updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -159,16 +158,20 @@ function SettingsInner() {
           );
           const accountMembers = membersSnap.docs.map((d) => ({
             id: d.id,
-            role: d.data().role as string,
+            role: (d.data().role as string) || "member",
           }));
+          const otherMembers = accountMembers.filter((m) => m.id !== user.uid);
 
-          if (accountMembers.length === 1) {
+          const batch = writeBatch(db);
+
+          if (otherMembers.length === 0) {
+            // Único membro: apaga a família e todo o seu conteúdo.
             const subcollections = ["tasks", "shopping_list"];
             for (const sub of subcollections) {
               const snap = await getDocs(
                 collection(db, "families", familyId, sub),
               );
-              for (const d of snap.docs) await deleteDoc(d.ref);
+              for (const d of snap.docs) batch.delete(d.ref);
             }
             const invSnap = await getDocs(
               query(
@@ -176,25 +179,32 @@ function SettingsInner() {
                 where("familyId", "==", familyId),
               ),
             );
-            for (const d of invSnap.docs) await deleteDoc(d.ref);
-            await deleteDoc(doc(db, "families", familyId));
+            for (const d of invSnap.docs) batch.delete(d.ref);
+            batch.delete(doc(db, "families", familyId));
           } else {
-            const currentUserMember = membersSnap.docs.find(
-              (d) => d.id === user.uid,
-            );
-            if (currentUserMember?.data().role === "admin") {
-              const nextAdmin = accountMembers.find((m) => m.id !== user.uid);
-              if (nextAdmin) {
-                await updateDoc(
-                  doc(db, "families", familyId, "members", nextAdmin.id),
-                  { role: "admin" },
-                );
-              }
+            // Há outros membros: a família continua. Se o usuário saindo é o
+            // único admin, transfere o cargo para outro membro (priorizando
+            // alguém que já seja admin, senão o primeiro da lista).
+            const isOnlyAdmin =
+              accountMembers.find((m) => m.id === user.uid)?.role === "admin" &&
+              !otherMembers.some((m) => m.role === "admin");
+            if (isOnlyAdmin) {
+              const nextAdmin =
+                otherMembers.find((m) => m.role === "admin") ?? otherMembers[0];
+              batch.update(
+                doc(db, "families", familyId, "members", nextAdmin.id),
+                { role: "admin" },
+              );
             }
-            await deleteDoc(doc(db, "families", familyId, "members", user.uid));
+            // Remove o próprio membro (permitido pela regra para qualquer membro).
+            batch.delete(
+              doc(db, "families", familyId, "members", user.uid),
+            );
           }
 
-          await deleteDoc(doc(db, "users", user.uid));
+          batch.delete(doc(db, "users", user.uid));
+          await batch.commit();
+
           await signOut();
           router.replace("/(auth)/login");
         } catch (error) {
