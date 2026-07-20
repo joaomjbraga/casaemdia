@@ -1,4 +1,3 @@
-import Aurora from "@/components/shared/ui/aurora";
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,7 +6,7 @@ import { useNotificationStatus } from "@/hooks/useNotificationStatus";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import IconCircleButton from "./common/IconCircleButton";
 import Avatar from "./common/Avatar";
 
@@ -37,28 +36,6 @@ export default function Header({
   } = useNotificationStatus();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-
-  const fadeAnim = useMemo(() => new Animated.Value(0), []);
-  const slideAnim = useMemo(() => new Animated.Value(0), []);
-
-  const startAnimations = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [fadeAnim, slideAnim]);
-
-  useEffect(() => {
-    startAnimations();
-  }, [startAnimations]);
 
   useEffect(() => {
     // Atualiza periodicamente para a saudação (manhã/tarde/noite) e a data
@@ -199,15 +176,6 @@ export default function Header({
   const membersCount = members?.length ?? 0;
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const slideInterpolate = useMemo(
-    () =>
-      slideAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [-30, 0],
-      }),
-    [slideAnim],
-  );
-
   const statusBarHeight = useMemo(() => {
     return StatusBar.currentHeight || 24;
   }, []);
@@ -255,53 +223,27 @@ export default function Header({
     <View style={styles.container}>
       <View style={[styles.statusBarSpacer, { height: statusBarHeight }]} />
 
-      <View style={styles.auroraWrapper}>
-        <Aurora
-          height={340}
-          auroraColors={["#00FF87", "#60EFFF", "#A259FF"]}
-          skyColors={["#0a0e1a", "#0D1B2A"]}
-          speed={0.35}
-          intensity={0.7}
-          waveDirection={[5, -5]}
-        />
-      </View>
-
-      <View style={styles.overlay} />
-
-      <Animated.View
-        style={[
-          styles.header,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideInterpolate }],
-          },
-        ]}
-      >
+      <View style={styles.bar}>
         <View style={styles.brandSection}>
-          <View style={styles.avatarWrapper}>
-            <Avatar
-              photoURL={user?.photoURL}
-              size={56}
-              borderRadius={16}
-              borderColor="rgba(0, 255, 135, 0.25)"
-              backgroundColor="rgba(0, 255, 135, 0.12)"
-              iconName="account"
-              iconColor="#00FF87"
-              iconSize={30}
-            />
-          </View>
+          <Avatar
+            photoURL={user?.photoURL}
+            size={46}
+            borderRadius={14}
+            borderColor="rgba(255, 255, 255, 0.12)"
+            backgroundColor="rgba(255, 255, 255, 0.06)"
+            iconName="account"
+            iconColor="#FFFFFF"
+            iconSize={24}
+          />
           <View style={styles.appTitleContainer}>
             <Text style={styles.appName} numberOfLines={1}>
               {familyName || "Casa em Dia"}
-            </Text>
-            <Text style={styles.userName} numberOfLines={1}>
-              {user?.displayName || user?.email?.split("@")[0] || "Você"}
             </Text>
             <View style={styles.subtitleRow}>
               <MaterialCommunityIcons
                 name="account-group"
                 size={12}
-                color="rgba(96, 239, 255, 0.7)"
+                color="rgba(255, 255, 255, 0.5)"
               />
               <Text style={styles.appSubtitle}>
                 {membersCount} {membersCount === 1 ? "membro" : "membros"}
@@ -310,15 +252,15 @@ export default function Header({
               <MaterialCommunityIcons
                 name={notificationsActive ? "bell-check" : "bell-off-outline"}
                 size={12}
-                color={notificationsActive ? "#00FF87" : "#F5B542"}
+                color={notificationsActive ? "#30D158" : "#FF9F0A"}
               />
               <Text
                 style={[
                   styles.appSubtitle,
                   {
                     color: notificationsActive
-                      ? "rgba(0, 255, 135, 0.8)"
-                      : "rgba(245, 181, 66, 0.9)",
+                      ? "rgba(48, 209, 88, 0.9)"
+                      : "rgba(255, 159, 10, 0.9)",
                   },
                 ]}
               >
@@ -332,174 +274,151 @@ export default function Header({
           <IconCircleButton
             iconName="cog-outline"
             onPress={handleOpenSettings}
-            iconColor="rgba(96, 239, 255, 0.8)"
+            iconColor="rgba(255, 255, 255, 0.85)"
             size={38}
-            backgroundColor="rgba(255, 255, 255, 0.06)"
-            borderColor="rgba(96, 239, 255, 0.15)"
+            backgroundColor="rgba(255, 255, 255, 0.08)"
+            borderColor="rgba(255, 255, 255, 0.12)"
           />
 
           <IconCircleButton
             iconName="logout-variant"
             onPress={handleLogout}
             disabled={isLoggingOut}
-            iconColor="rgba(96, 239, 255, 0.8)"
+            iconColor="rgba(255, 255, 255, 0.85)"
             size={38}
-            backgroundColor="rgba(255, 255, 255, 0.06)"
-            borderColor="rgba(96, 239, 255, 0.15)"
+            backgroundColor="rgba(255, 255, 255, 0.08)"
+            borderColor="rgba(255, 255, 255, 0.12)"
           />
         </View>
-      </Animated.View>
+      </View>
 
-      {notificationsInactive && (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleNotificationBanner}
-          style={styles.alertBanner}
-        >
-          <View style={styles.alertIcon}>
-            <MaterialCommunityIcons
-              name={bannerContent.icon}
-              size={18}
-              color="#F5B542"
-            />
-          </View>
-          <View style={styles.alertTextWrap}>
-            <Text style={styles.alertTitle}>{bannerContent.title}</Text>
-            <Text style={styles.alertHint} numberOfLines={2}>
-              {bannerContent.hint}
-            </Text>
-          </View>
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={20}
-            color="rgba(245, 181, 66, 0.7)"
-          />
-        </TouchableOpacity>
-      )}
-
-      <Animated.View style={[styles.greetingCard, { opacity: fadeAnim }]}>
-        <View style={styles.greetingContent}>
-          <View style={styles.greetingLeft}>
-            <View style={styles.timeIcon}>
+      <View style={styles.body}>
+        {notificationsInactive && (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={handleNotificationBanner}
+            style={styles.alertBanner}
+          >
+            <View style={styles.alertIcon}>
               <MaterialCommunityIcons
-                name={timeInfo.icon}
-                size={22}
-                color="#00FF87"
+                name={bannerContent.icon}
+                size={18}
+                color="#FF9F0A"
               />
             </View>
-            <View style={styles.greetingText}>
-              <Text style={styles.greeting} numberOfLines={1}>
-                {timeInfo.greeting}
+            <View style={styles.alertTextWrap}>
+              <Text style={styles.alertTitle}>{bannerContent.title}</Text>
+              <Text style={styles.alertHint} numberOfLines={2}>
+                {bannerContent.hint}
               </Text>
-              <Text style={styles.period} numberOfLines={1}>
-                {getFullDate()}
-              </Text>
+            </View>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={20}
+              color="rgba(255, 159, 10, 0.7)"
+            />
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.greetingCard}>
+          <View style={styles.greetingContent}>
+            <View style={styles.greetingLeft}>
+              <View style={styles.timeIcon}>
+                <MaterialCommunityIcons
+                  name={timeInfo.icon}
+                  size={22}
+                  color="#30D158"
+                />
+              </View>
+              <View style={styles.greetingText}>
+                <Text style={styles.greeting} numberOfLines={1}>
+                  {timeInfo.greeting}
+                </Text>
+                <Text style={styles.period} numberOfLines={1}>
+                  {getFullDate()}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons
+                name="clipboard-list-outline"
+                size={16}
+                color="#60EFFF"
+              />
+              <Text style={styles.statValue}>{pendingTasks}</Text>
+              <Text style={styles.statText}>a fazer</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons
+                name="check-circle-outline"
+                size={16}
+                color="#30D158"
+              />
+              <Text style={styles.statValue}>{completedTasks}</Text>
+              <Text style={styles.statText}>feitas</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <MaterialCommunityIcons
+                name="progress-check"
+                size={16}
+                color="#A259FF"
+              />
+              <Text style={styles.statValue}>{progress}%</Text>
+              <Text style={styles.statText}>concluído</Text>
             </View>
           </View>
         </View>
-
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <MaterialCommunityIcons
-              name="clipboard-list-outline"
-              size={16}
-              color="#60EFFF"
-            />
-            <Text style={styles.statValue}>{pendingTasks}</Text>
-            <Text style={styles.statText}>a fazer</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <MaterialCommunityIcons
-              name="check-circle-outline"
-              size={16}
-              color="#00FF87"
-            />
-            <Text style={styles.statValue}>{completedTasks}</Text>
-            <Text style={styles.statText}>feitas</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <MaterialCommunityIcons
-              name="progress-check"
-              size={16}
-              color="#A259FF"
-            />
-            <Text style={styles.statValue}>{progress}%</Text>
-            <Text style={styles.statText}>concluído</Text>
-          </View>
-        </View>
-      </Animated.View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-    overflow: "hidden",
+    backgroundColor: "#000000",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   statusBarSpacer: {},
-  auroraWrapper: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 360,
-    overflow: "hidden",
-  },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(10, 14, 26, 0.35)",
-  },
-  header: {
+  bar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 20,
-    paddingBottom: 20,
-    marginBottom: 16,
-    minHeight: 76,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+    minHeight: 64,
+  },
+  body: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   brandSection: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
     minWidth: 0,
-  },
-  avatarWrapper: {
-    marginRight: 14,
-    flexShrink: 0,
+    marginRight: 12,
   },
   appTitleContainer: {
     flex: 1,
     minWidth: 0,
   },
   appName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
     letterSpacing: -0.3,
-    marginBottom: 2,
-    textShadowColor: "rgba(0, 255, 135, 0.3)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-  },
-  userName: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "rgba(96, 239, 255, 0.85)",
-    letterSpacing: 0.1,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   subtitleRow: {
     flexDirection: "row",
@@ -510,13 +429,13 @@ const styles = StyleSheet.create({
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: "rgba(96, 239, 255, 0.4)",
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     marginHorizontal: 3,
   },
   appSubtitle: {
     fontSize: 12,
     fontWeight: "500",
-    color: "rgba(96, 239, 255, 0.7)",
+    color: "rgba(255, 255, 255, 0.55)",
     letterSpacing: 0.2,
   },
   actions: {
@@ -528,10 +447,10 @@ const styles = StyleSheet.create({
   alertBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(245, 181, 66, 0.1)",
+    backgroundColor: "rgba(255, 159, 10, 0.1)",
     borderWidth: 1,
-    borderColor: "rgba(245, 181, 66, 0.3)",
-    borderRadius: 16,
+    borderColor: "rgba(255, 159, 10, 0.3)",
+    borderRadius: 14,
     padding: 12,
     marginBottom: 16,
     gap: 12,
@@ -540,7 +459,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "rgba(245, 181, 66, 0.15)",
+    backgroundColor: "rgba(255, 159, 10, 0.15)",
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -552,7 +471,7 @@ const styles = StyleSheet.create({
   alertTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#F5B542",
+    color: "#FF9F0A",
     marginBottom: 2,
     letterSpacing: -0.1,
   },
@@ -563,11 +482,12 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   greetingCard: {
-    borderRadius: 20,
-    padding: 20,
-    backgroundColor: "rgba(13, 27, 42, 0.65)",
+    borderRadius: 16,
+    padding: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     borderWidth: 1,
-    borderColor: "rgba(96, 239, 255, 0.12)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    marginBottom: 16,
   },
   greetingContent: {
     flexDirection: "row",

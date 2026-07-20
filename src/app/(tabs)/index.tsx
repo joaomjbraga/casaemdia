@@ -196,13 +196,13 @@ export default function Dashboard() {
     >
       <StatusBar style="light" />
 
+      <Header totalTasks={totalTasks} completedTasks={completedTasks} />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <Header totalTasks={totalTasks} completedTasks={completedTasks} />
-
         {pendingInvitations.map((inv) => (
           <View key={inv.id} style={styles.inviteBanner}>
             <View style={styles.inviteIcon}>
@@ -261,6 +261,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 140,
   },
   inviteBanner: {
