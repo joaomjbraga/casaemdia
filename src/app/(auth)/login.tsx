@@ -1,5 +1,5 @@
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
-import LoginBackground from "@/components/templates/login-background";
+import GrainyGradient from "@/components/shared/ui/grainy-gradient";
 import Colors from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -48,7 +48,14 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <LoginBackground />
+      <GrainyGradient
+        colors={["#0A3D38", "#0C2E2B", "#2089af", "#034f58", "#021111"]}
+        amplitude={1.9}
+        intensity={0.1}
+        size={0.3}
+        speed={1.9}
+        style={StyleSheet.absoluteFill}
+      />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
@@ -61,9 +68,7 @@ export default function LoginScreen() {
               />
             </View>
             <Text style={styles.appName}>Casa em Dia</Text>
-            <Text style={styles.tagline}>
-              Organize sua casa em família
-            </Text>
+            <Text style={styles.tagline}>Organize sua casa em família</Text>
           </View>
 
           <View style={styles.bottomSection}>
@@ -82,9 +87,7 @@ export default function LoginScreen() {
                     style={styles.googleIcon}
                     resizeMode="contain"
                   />
-                  <Text style={styles.googleButtonText}>
-                    Entrar com Google
-                  </Text>
+                  <Text style={styles.googleButtonText}>Entrar com Google</Text>
                 </>
               )}
             </TouchableOpacity>

@@ -1,6 +1,5 @@
 import { toast } from "@/lib/toast";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { useState } from "react";
 import {
   ScrollView,
@@ -10,13 +9,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import IconCircleButton from "../../components/common/IconCircleButton";
+import Colors from "../../constants/Colors";
 import { useAuth } from "../../contexts/AuthContext";
 import { useFamily } from "../../contexts/FamilyContext";
 import { useFamilyMembers } from "../../contexts/FamilyMembersContext";
-import Colors from "../../constants/Colors";
-import { db } from "../../lib/firebase";
-import { sendNotificationToFamily } from "../../lib/onesignal";
-import IconCircleButton from "../../components/common/IconCircleButton";
+import { createTask } from "../../services/tasks";
 
 interface AddTaskFormProps {
   onClose: () => void;
@@ -68,21 +66,19 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
 
     setSubmitting(true);
     try {
-      await addDoc(collection(db, "families", familyId, "tasks"), {
-        title: title.trim(),
-        assignee: assignee.name,
-        points: pts,
-        done: false,
-        created_at: Timestamp.now(),
-      });
-
-      const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-      sendNotificationToFamily({
+      await createTask(
         familyId,
-        excludeUserId: user.uid,
-        title: "Nova tarefa",
-        body: `${userName} criou a tarefa "${title.trim()}" para ${assignee.name}`,
-      });
+        {
+          title: title.trim(),
+          assignee: assignee.name,
+          assigneeId: assignee.id,
+          points: pts,
+        },
+        {
+          userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+          userId: user.uid,
+        },
+      );
 
       toast.success("Tarefa criada!");
       if (onCreated) {
