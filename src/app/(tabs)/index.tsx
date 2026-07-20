@@ -183,7 +183,8 @@ export default function Dashboard() {
   };
 
   const isLoading =
-    authLoading || tasksLoading || familyMembersLoading || !familyId;
+    authLoading || (!familyId && familyMembersLoading) ||
+    (familyId && tasksLoading && tasks.length === 0 && familyMembers.length === 0);
 
   if (isLoading) {
     return <LoadingSkeleton variant="dashboard" />;

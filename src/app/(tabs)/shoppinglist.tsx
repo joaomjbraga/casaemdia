@@ -58,24 +58,6 @@ export default function ShoppingList() {
 
   const { celebrate, CelebrationOverlay } = useCelebration();
 
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const slideAnim = React.useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
   useEffect(() => {
     familyRef.current = familyId ?? null;
   }, [familyId]);
@@ -299,9 +281,7 @@ export default function ShoppingList() {
   const statusBarHeight = RNStatusBar.currentHeight || 24;
 
   const renderHeader = () => (
-    <Animated.View
-      style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
-    >
+    <View>
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={styles.headerIcon}>
@@ -400,7 +380,7 @@ export default function ShoppingList() {
           ) : null}
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 
   const renderEmpty = () => (
