@@ -1,9 +1,5 @@
 import Avatar from "@/components/common/Avatar";
-import IconCircleButton from "@/components/common/IconCircleButton";
-import SectionTitle from "@/components/common/SectionTitle";
-import Aurora from "@/components/shared/ui/aurora";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
-import { Glow } from "@/components/shared/ui/glow";
 import { Toast } from "@/components/shared/ui/toast";
 import Colors from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,12 +7,11 @@ import { useFamily } from "@/contexts/FamilyContext";
 import { useFamilyMembers } from "@/contexts/FamilyMembersContext";
 import { useInvitations } from "@/contexts/InvitationContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -35,7 +30,6 @@ export default function SettingsScreen() {
 
 function SettingsInner() {
   const [inviteEmail, setInviteEmail] = useState<string>("");
-  const [saveLoading, setSaveLoading] = useState<boolean>(false);
   const [deletingMember, setDeletingMember] = useState<string | null>(null);
   const [deletingAccount, setDeletingAccount] = useState<boolean>(false);
   const [inviteLoading, setInviteLoading] = useState<boolean>(false);
@@ -46,41 +40,18 @@ function SettingsInner() {
     deleteFamilyMember,
     fetchFamilyMembers,
   } = useFamilyMembers();
-  const {
-    familyId,
-    familyName,
-    members,
-    beginIntentionalExit,
-    cancelIntentionalExit,
-  } = useFamily();
+  const { familyId, familyName, members, beginIntentionalExit, cancelIntentionalExit } =
+    useFamily();
   const { sendInvitation } = useInvitations();
   const router = useRouter();
   const { user, signOut, deleteAccount } = useAuth();
   const { showDialog } = useConfirmDialog();
-
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
 
   const currentUser = useMemo(() => {
     return members.find((m) => m.id === user?.uid);
   }, [members, user?.uid]);
 
   const isAdmin = currentUser?.role === "admin";
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) {
@@ -126,9 +97,10 @@ function SettingsInner() {
           Toast.show(`${memberName} foi removido.`, { type: "success" });
         } catch (error: any) {
           console.error("Erro ao remover membro:", error);
-          Toast.show(error?.message || "Não foi possível remover o membro.", {
-            type: "error",
-          });
+          Toast.show(
+            error?.message || "Não foi possível remover o membro.",
+            { type: "error" },
+          );
         } finally {
           setDeletingMember(null);
         }
@@ -147,7 +119,6 @@ function SettingsInner() {
       onConfirm: async () => {
         try {
           setDeletingAccount(true);
-          // Impede que a remoção do próprio membro dispare a auto-recuperação.
           beginIntentionalExit();
 
           await deleteUserAccountFromFamily({
@@ -158,8 +129,6 @@ function SettingsInner() {
 
           router.replace("/(auth)/login");
         } catch (error) {
-          // A exclusão falhou e o usuário continua logado: reabilita a
-          // auto-recuperação para não deixá-lo em estado inconsistente.
           cancelIntentionalExit();
           console.error("Erro ao excluir conta:", error);
           Toast.show("Falha ao excluir conta.", { type: "error" });
@@ -189,620 +158,492 @@ function SettingsInner() {
   };
 
   const statusBarHeight = useMemo(() => {
-    return StatusBar.currentHeight || 24;
+    return StatusBar.currentHeight || (Platform.OS === "ios" ? 44 : 24);
   }, []);
 
   return (
     <View style={styles.root}>
       <View style={[styles.statusBarSpacer, { height: statusBarHeight }]} />
 
-      <View style={styles.auroraWrapper}>
-        <Aurora
-          height={280}
-          auroraColors={["#A259FF", "#60EFFF", "#00FF87"]}
-          skyColors={["#0a0e1a", "#0D1B2A"]}
-          speed={0.3}
-          intensity={0.6}
-          waveDirection={[4, -3]}
-        />
-      </View>
-      <View style={styles.auroraOverlay} />
-
-      <Animated.View
-        style={[
-          styles.header,
-          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-        ]}
-      >
-        <IconCircleButton
-          iconName="arrow-left"
+      <View style={styles.header}>
+        <TouchableOpacity
           onPress={() => router.back()}
-          size={40}
-          backgroundColor="rgba(255, 255, 255, 0.08)"
-          borderColor="rgba(96, 239, 255, 0.15)"
-          iconColor="#FFFFFF"
-        />
+          style={styles.backBtn}
+          activeOpacity={0.6}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <MaterialCommunityIcons name="chevron-left" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Configurações</Text>
-        <View style={{ width: 40 }} />
-      </Animated.View>
+        <View style={styles.headerRight} />
+      </View>
 
       <ScrollView
         style={styles.content}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
-          style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
-        >
-          <View style={styles.section}>
-            <SectionTitle label="PERFIL" color="rgba(96, 239, 255, 0.7)" />
-            <LinearGradient
-              colors={["rgba(13, 27, 42, 0.88)", "rgba(22, 27, 34, 0.95)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.profileCard}
+        <View style={styles.profileBlock}>
+          <Avatar
+            photoURL={user?.photoURL}
+            size={64}
+            borderRadius={20}
+            borderColor="rgba(255, 255, 255, 0.12)"
+            backgroundColor="rgba(255, 255, 255, 0.06)"
+            iconName="account"
+            iconColor="#FFFFFF"
+            iconSize={32}
+          />
+          <Text style={styles.profileName} numberOfLines={1}>
+            {user?.displayName || "Usuário"}
+          </Text>
+          <Text style={styles.profileEmail} numberOfLines={1}>
+            {user?.email}
+          </Text>
+          <View style={[styles.rolePill, isAdmin && styles.rolePillAdmin]}>
+            <Text
+              style={[styles.rolePillText, isAdmin && styles.rolePillTextAdmin]}
             >
-              <View style={styles.profileBorder}>
-                <View style={styles.profileRow}>
-                  <Avatar
-                    photoURL={user?.photoURL}
-                    size={52}
-                    borderRadius={16}
-                    borderColor="rgba(0, 255, 135, 0.3)"
-                    borderWidth={2}
-                    backgroundColor="rgba(0, 255, 135, 0.1)"
-                    iconName="account"
-                    iconColor="#00FF87"
-                    iconSize={28}
+              {isAdmin ? "Administrador" : "Membro"}
+            </Text>
+          </View>
+        </View>
+
+        <SectionLabel text={"Família · " + familyName} />
+
+        <ListSection>
+          {isAdmin && (
+            <Cell first last={!members.length}>
+              <View style={styles.inviteBody}>
+                <View style={styles.inviteRow}>
+                  <MaterialCommunityIcons
+                    name="email-fast-outline"
+                    size={22}
+                    color="#A259FF"
                   />
-                  <View style={styles.profileInfo}>
-                    <Text style={styles.profileName} numberOfLines={1}>
-                      {user?.displayName || "Usuário"}
-                    </Text>
-                    <Text style={styles.profileEmail} numberOfLines={1}>
-                      {user?.email}
-                    </Text>
-                  </View>
-                  <View
-                    style={[styles.roleBadge, isAdmin && styles.roleBadgeAdmin]}
-                  >
-                    <Text
-                      style={[
-                        styles.roleBadgeText,
-                        isAdmin && styles.roleBadgeTextAdmin,
-                      ]}
-                    >
-                      {isAdmin ? "Admin" : "Membro"}
-                    </Text>
-                  </View>
+                  <Text style={styles.inviteTitle}>Convidar por email</Text>
                 </View>
+                <View style={styles.inputBox}>
+                  <MaterialCommunityIcons
+                    name="email-outline"
+                    size={18}
+                    color={colors.mutedText}
+                    style={{ marginRight: 8 }}
+                  />
+                  <TextInput
+                    style={styles.memberInput}
+                    value={inviteEmail}
+                    onChangeText={setInviteEmail}
+                    placeholder="email@exemplo.com"
+                    placeholderTextColor={colors.mutedText}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.primaryBtn,
+                    (!inviteEmail.trim() || inviteLoading) && styles.btnDisabled,
+                  ]}
+                  onPress={handleInvite}
+                  disabled={!inviteEmail.trim() || inviteLoading}
+                  activeOpacity={0.7}
+                >
+                  {inviteLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons
+                        name="send"
+                        size={18}
+                        color="#fff"
+                      />
+                      <Text style={styles.primaryBtnText}>Enviar convite</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               </View>
-            </LinearGradient>
-          </View>
+            </Cell>
+          )}
 
-          <View style={styles.section}>
-            <SectionTitle
-              label={"FAMÍLIA — " + familyName}
-              color="rgba(96, 239, 255, 0.7)"
-            />
-
-            {isAdmin && (
-              <LinearGradient
-                colors={["rgba(13, 27, 42, 0.88)", "rgba(22, 27, 34, 0.95)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.card}
-              >
-                <View style={styles.cardBorder}>
-                  <View style={styles.cardHeader}>
-                    <View
-                      style={[
-                        styles.cardIcon,
-                        {
-                          backgroundColor: "rgba(162, 89, 255, 0.12)",
-                          borderColor: "rgba(162, 89, 255, 0.25)",
-                        },
-                      ]}
-                    >
-                      <MaterialCommunityIcons
-                        name="email-fast-outline"
-                        size={22}
-                        color="#A259FF"
-                      />
-                    </View>
-                    <View style={styles.cardInfo}>
-                      <Text style={styles.cardLabel}>Convidar por Email</Text>
-                      <Text style={styles.cardHint}>
-                        Envie um convite para outra pessoa
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.inputBox}>
-                    <MaterialCommunityIcons
-                      name="email-outline"
-                      size={18}
-                      color={colors.mutedText}
-                      style={{ marginRight: 8 }}
-                    />
-                    <TextInput
-                      style={styles.memberInput}
-                      value={inviteEmail}
-                      onChangeText={setInviteEmail}
-                      placeholder="email@exemplo.com"
-                      placeholderTextColor={colors.mutedText}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                  </View>
-                  <Text style={styles.inviteHint}>
-                    O convidado precisa ter o app instalado e estar logado com
-                    este email
-                  </Text>
-                  <Glow color="#A259FF" intensity={0.5} size={4}>
-                    <TouchableOpacity
-                      style={[
-                        styles.primaryBtn,
-                        (!inviteEmail.trim() || inviteLoading) &&
-                          styles.btnDisabled,
-                      ]}
-                      onPress={handleInvite}
-                      disabled={!inviteEmail.trim() || inviteLoading}
-                      activeOpacity={0.7}
-                    >
-                      {inviteLoading ? (
-                        <ActivityIndicator size="small" color="#fff" />
-                      ) : (
-                        <>
-                          <MaterialCommunityIcons
-                            name="send"
-                            size={18}
-                            color="#fff"
-                          />
-                          <Text style={styles.primaryBtnText}>
-                            Enviar Convite
-                          </Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  </Glow>
-                </View>
-              </LinearGradient>
-            )}
-
-            {members.length > 0 && (
-              <LinearGradient
-                colors={["rgba(13, 27, 42, 0.88)", "rgba(22, 27, 34, 0.95)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.card, { marginTop: 12 }]}
-              >
-                <View style={styles.cardBorder}>
-                  <View style={styles.cardHeader}>
-                    <View
-                      style={[
-                        styles.cardIcon,
-                        {
-                          backgroundColor: "rgba(96, 239, 255, 0.12)",
-                          borderColor: "rgba(96, 239, 255, 0.25)",
-                        },
-                      ]}
-                    >
-                      <MaterialCommunityIcons
-                        name="account-group"
-                        size={22}
-                        color="#60EFFF"
-                      />
-                    </View>
-                    <View style={styles.cardInfo}>
-                      <Text style={styles.cardLabel}>
-                        {members.length} Membro{members.length !== 1 ? "s" : ""}
-                      </Text>
-                      <Text style={styles.cardHint}>
-                        {isAdmin
-                          ? "Toque no × para remover"
-                          : "Membros da família"}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {members.map((member, index) => (
-                    <View
-                      key={member.id}
-                      style={[
-                        styles.memberRow,
-                        index < members.length - 1 && styles.memberRowBorder,
-                      ]}
-                    >
-                      <View style={styles.memberLeft}>
-                        <Avatar
-                          photoURL={member.photoURL}
-                          size={36}
-                          borderRadius={11}
-                          borderColor="rgba(96, 239, 255, 0.2)"
-                          backgroundColor="rgba(96, 239, 255, 0.1)"
-                          iconName="account"
-                          iconColor="#60EFFF"
-                          iconSize={16}
-                        />
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text style={styles.memberName} numberOfLines={1}>
-                            {member.name}
-                          </Text>
-                          {member.email ? (
-                            <Text style={styles.memberEmail} numberOfLines={1}>
-                              {member.email}
-                            </Text>
-                          ) : null}
-                        </View>
-                        {member.role === "admin" && (
-                          <View style={styles.adminBadge}>
-                            <MaterialCommunityIcons
-                              name="shield-crown"
-                              size={12}
-                              color="#FFC300"
-                            />
-                            <Text style={styles.adminBadgeText}>Admin</Text>
-                          </View>
-                        )}
+          {members.map((member, index) => (
+            <Cell
+              key={member.id}
+              first={index === 0 && !isAdmin}
+              last={index === members.length - 1}
+            >
+              <View style={styles.memberRow}>
+                <Avatar
+                  photoURL={member.photoURL}
+                  size={38}
+                  borderRadius={12}
+                  borderColor="rgba(255, 255, 255, 0.1)"
+                  backgroundColor="rgba(255, 255, 255, 0.06)"
+                  iconName="account"
+                  iconColor="#FFFFFF"
+                  iconSize={18}
+                />
+                <View style={styles.memberInfo}>
+                  <View style={styles.memberNameRow}>
+                    <Text style={styles.memberName} numberOfLines={1}>
+                      {member.name}
+                    </Text>
+                    {member.role === "admin" && (
+                      <View style={styles.adminBadge}>
+                        <Text style={styles.adminBadgeText}>Admin</Text>
                       </View>
-                      {isAdmin && member.id !== user?.uid && (
-                        <TouchableOpacity
-                          onPress={() =>
-                            handleDeleteMember(member.id, member.name)
-                          }
-                          disabled={deletingMember === member.id}
-                          style={styles.removeBtn}
-                          activeOpacity={0.6}
-                        >
-                          {deletingMember === member.id ? (
-                            <ActivityIndicator
-                              size={16}
-                              color={colors.danger}
-                            />
-                          ) : (
-                            <MaterialCommunityIcons
-                              name="close-circle"
-                              size={22}
-                              color={colors.danger}
-                            />
-                          )}
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  ))}
-                </View>
-              </LinearGradient>
-            )}
-          </View>
-
-          <View style={styles.section}>
-            <SectionTitle label="CONTA" color="rgba(96, 239, 255, 0.7)" />
-
-            <Glow color="#F85149" intensity={0.5} size={4}>
-              <TouchableOpacity
-                style={styles.actionBtn}
-                onPress={handleSignOut}
-                activeOpacity={0.7}
-              >
-                <LinearGradient
-                  colors={["rgba(13, 27, 42, 0.88)", "rgba(22, 27, 34, 0.95)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.actionGradient}
-                >
-                  <View style={styles.actionBorder}>
-                    <View style={styles.actionLeft}>
-                      <View
-                        style={[
-                          styles.actionIcon,
-                          {
-                            backgroundColor: "rgba(248, 81, 73, 0.12)",
-                            borderColor: "rgba(248, 81, 73, 0.25)",
-                          },
-                        ]}
-                      >
-                        <MaterialCommunityIcons
-                          name="logout-variant"
-                          size={20}
-                          color="#F85149"
-                        />
-                      </View>
-                      <Text style={styles.actionText}>Sair da Conta</Text>
-                    </View>
-                    <MaterialCommunityIcons
-                      name="chevron-right"
-                      size={20}
-                      color={colors.mutedText}
-                    />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Glow>
-
-            <Glow color="#F85149" intensity={0.5} size={4}>
-              <TouchableOpacity
-                style={[styles.actionBtn, { marginTop: 12 }]}
-                onPress={handleDeleteAccount}
-                disabled={deletingAccount}
-                activeOpacity={0.7}
-              >
-                <LinearGradient
-                  colors={["rgba(13, 27, 42, 0.88)", "rgba(22, 27, 34, 0.95)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.actionGradient}
-                >
-                  <View style={styles.actionBorder}>
-                    <View style={styles.actionLeft}>
-                      <View
-                        style={[
-                          styles.actionIcon,
-                          {
-                            backgroundColor: "rgba(248, 81, 73, 0.12)",
-                            borderColor: "rgba(248, 81, 73, 0.25)",
-                          },
-                        ]}
-                      >
-                        <MaterialCommunityIcons
-                          name="account-remove-outline"
-                          size={20}
-                          color="#F85149"
-                        />
-                      </View>
-                      <Text style={styles.actionText}>Excluir Conta</Text>
-                    </View>
-                    {deletingAccount ? (
-                      <ActivityIndicator size={18} color={colors.danger} />
-                    ) : (
-                      <MaterialCommunityIcons
-                        name="chevron-right"
-                        size={20}
-                        color={colors.mutedText}
-                      />
                     )}
                   </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Glow>
-          </View>
-        </Animated.View>
+                  {member.email ? (
+                    <Text style={styles.memberEmail} numberOfLines={1}>
+                      {member.email}
+                    </Text>
+                  ) : null}
+                </View>
+                {isAdmin && member.id !== user?.uid && (
+                  <TouchableOpacity
+                    onPress={() => handleDeleteMember(member.id, member.name)}
+                    disabled={deletingMember === member.id}
+                    style={styles.removeBtn}
+                    activeOpacity={0.6}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    {deletingMember === member.id ? (
+                      <ActivityIndicator size={16} color={colors.danger} />
+                    ) : (
+                      <MaterialCommunityIcons
+                        name="close"
+                        size={20}
+                        color={colors.danger}
+                      />
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            </Cell>
+          ))}
+        </ListSection>
+
+        <SectionLabel text="Conta" />
+
+        <ListSection>
+          <Cell first last={false} onPress={handleSignOut} chevron>
+            <View style={styles.actionRow}>
+              <View style={[styles.actionIcon, styles.iconRed]}>
+                <MaterialCommunityIcons
+                  name="logout-variant"
+                  size={20}
+                  color="#FF453A"
+                />
+              </View>
+              <Text style={[styles.actionText, styles.textRed]}>
+                Sair da conta
+              </Text>
+            </View>
+          </Cell>
+          <Cell
+            first={false}
+            last
+            onPress={handleDeleteAccount}
+            chevron
+            disabled={deletingAccount}
+          >
+            <View style={styles.actionRow}>
+              <View style={[styles.actionIcon, styles.iconRed]}>
+                <MaterialCommunityIcons
+                  name="account-remove-outline"
+                  size={20}
+                  color="#FF453A"
+                />
+              </View>
+              {deletingAccount ? (
+                <ActivityIndicator size={18} color="#FF453A" />
+              ) : (
+                <Text style={[styles.actionText, styles.textRed]}>
+                  Excluir conta
+                </Text>
+              )}
+            </View>
+          </Cell>
+        </ListSection>
+
+        <Text style={styles.footer}>Casa em Dia</Text>
       </ScrollView>
     </View>
   );
 }
 
+function SectionLabel({ text }: { text: string }) {
+  return <Text style={styles.sectionLabel}>{text}</Text>;
+}
+
+function ListSection({ children }: { children: React.ReactNode }) {
+  return <View style={styles.listSection}>{children}</View>;
+}
+
+function Cell({
+  children,
+  first,
+  last,
+  onPress,
+  chevron,
+  disabled,
+}: {
+  children: React.ReactNode;
+  first?: boolean;
+  last?: boolean;
+  onPress?: () => void;
+  chevron?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.cell,
+        first && styles.cellFirst,
+        last && styles.cellLast,
+        onPress && styles.cellPressable,
+        disabled && styles.cellDisabled,
+      ]}
+    >
+      <TouchableOpacity
+        style={styles.cellTouch}
+        onPress={onPress}
+        disabled={!onPress || disabled}
+        activeOpacity={0.6}
+      >
+        <View
+          style={[
+            styles.cellInner,
+            last && styles.cellInnerLast,
+          ]}
+        >
+          {children}
+          {chevron && (
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={20}
+              color="rgba(255, 255, 255, 0.3)"
+              style={styles.cellChevron}
+            />
+          )}
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#000000" },
+  root: {
+    flex: 1,
+    backgroundColor: "#000000",
+  },
   statusBarSpacer: {},
-  auroraWrapper: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 280,
-    overflow: "hidden",
-  },
-  auroraOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(10, 14, 26, 0.4)",
-  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
-    zIndex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    letterSpacing: -0.3,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  content: { flex: 1, paddingHorizontal: 20 },
-  section: { marginBottom: 28 },
-  profileCard: { borderRadius: 20, overflow: "hidden" },
-  profileBorder: {
-    borderWidth: 1,
-    borderColor: "rgba(96, 239, 255, 0.12)",
-    borderRadius: 20,
-    padding: 20,
-  },
-  profileRow: { flexDirection: "row", alignItems: "center", marginRight: 16 },
-  profileInfo: { flex: 1, minWidth: 0 },
-  profileName: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    letterSpacing: -0.2,
-    marginBottom: 2,
-  },
-  profileEmail: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "rgba(96, 239, 255, 0.65)",
-  },
-  roleBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: "rgba(96, 239, 255, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(96, 239, 255, 0.2)",
-  },
-  roleBadgeAdmin: {
-    backgroundColor: "rgba(255, 195, 0, 0.12)",
-    borderColor: "rgba(255, 195, 0, 0.3)",
-  },
-  roleBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "rgba(96, 239, 255, 0.8)",
-  },
-  roleBadgeTextAdmin: { color: "#FFC300" },
-  card: { borderRadius: 20, overflow: "hidden" },
-  cardBorder: {
-    borderWidth: 1,
-    borderColor: "rgba(96, 239, 255, 0.12)",
-    borderRadius: 20,
-    padding: 20,
-  },
-  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
-  cardIcon: {
+  backBtn: {
     width: 44,
     height: 44,
-    borderRadius: 14,
-    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 14,
-    flexShrink: 0,
   },
-  cardInfo: { flex: 1, minWidth: 0 },
-  cardLabel: {
-    fontSize: 16,
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  headerRight: { width: 44 },
+  content: { flex: 1 },
+  contentContainer: { paddingVertical: 20, paddingBottom: 40 },
+  profileBlock: {
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  profileName: {
+    fontSize: 22,
     fontWeight: "700",
     color: "#FFFFFF",
-    letterSpacing: -0.2,
-    marginBottom: 2,
+    marginTop: 14,
+    letterSpacing: -0.4,
   },
-  cardHint: {
-    fontSize: 13,
+  profileEmail: {
+    fontSize: 14,
     fontWeight: "500",
-    color: "rgba(96, 239, 255, 0.55)",
+    color: "rgba(255, 255, 255, 0.5)",
+    marginTop: 2,
+  },
+  rolePill: {
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+  rolePillAdmin: {
+    backgroundColor: "rgba(255, 195, 0, 0.14)",
+  },
+  rolePillText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.7)",
+  },
+  rolePillTextAdmin: { color: "#FFC300" },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.5)",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  listSection: {
+    marginHorizontal: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  cell: {
+    backgroundColor: "transparent",
+  },
+  cellPressable: {},
+  cellDisabled: { opacity: 0.5 },
+  cellFirst: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  cellLast: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  cellTouch: { flex: 1 },
+  cellInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    minHeight: 56,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+  },
+  cellInnerLast: {
+    borderBottomWidth: 0,
+  },
+  cellChevron: { marginLeft: "auto" },
+  inviteBody: { width: "100%", paddingVertical: 4 },
+  inviteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 12,
+  },
+  inviteTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   inputBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(13, 17, 23, 0.8)",
-    borderRadius: 14,
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 0.6)",
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  inviteHint: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.4)",
-    marginBottom: 14,
-    marginLeft: 4,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: 14,
+    marginBottom: 12,
   },
   memberInput: {
     flex: 1,
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "400",
     color: "#FFFFFF",
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   primaryBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
+    backgroundColor: "#0A84FF",
+    paddingVertical: 12,
+    borderRadius: 10,
     gap: 8,
   },
   btnDisabled: { opacity: 0.5 },
-  primaryBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  primaryBtnText: { fontSize: 15, fontWeight: "600", color: "#fff" },
   memberRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
+    flex: 1,
+    gap: 12,
   },
-  memberRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(48, 54, 61, 0.5)",
+  memberInfo: { flex: 1, minWidth: 0 },
+  memberNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  memberLeft: {
+  memberName: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#FFFFFF",
+  },
+  memberEmail: {
+    fontSize: 13,
+    fontWeight: "400",
+    color: "rgba(255, 255, 255, 0.45)",
+    marginTop: 1,
+  },
+  adminBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: "rgba(255, 195, 0, 0.14)",
+  },
+  adminBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#FFC300",
+  },
+  removeBtn: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  actionRow: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    minWidth: 0,
-    gap: 12,
   },
-  memberName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    letterSpacing: -0.1,
-  },
-  memberEmail: {
-    fontSize: 12,
-    fontWeight: "400",
-    color: "rgba(96, 239, 255, 0.45)",
-  },
-  adminBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    backgroundColor: "rgba(255, 195, 0, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 195, 0, 0.2)",
-    flexShrink: 0,
-  },
-  adminBadgeText: { fontSize: 11, fontWeight: "700", color: "#FFC300" },
-  removeBtn: { padding: 4 },
-  actionBtn: { overflow: "hidden", borderRadius: 20 },
-  actionGradient: { borderRadius: 20 },
-  actionBorder: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "rgba(248, 81, 73, 0.12)",
-    borderRadius: 20,
-    padding: 18,
-  },
-  actionLeft: { flexDirection: "row", alignItems: "center" },
   actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
   },
+  iconRed: {
+    backgroundColor: "rgba(255, 69, 58, 0.16)",
+  },
   actionText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#F85149",
-    letterSpacing: -0.1,
-  },
-  footer: { alignItems: "center", paddingVertical: 24 },
-  footerDivider: {
-    width: 40,
-    height: 2,
-    backgroundColor: "rgba(96, 239, 255, 0.15)",
-    borderRadius: 1,
-    marginBottom: 16,
-  },
-  footerText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
-    letterSpacing: 0.3,
-    marginBottom: 2,
-  },
-  footerSubtext: {
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: "500",
-    color: "rgba(96, 239, 255, 0.35)",
-    letterSpacing: 0.5,
+    color: "#FFFFFF",
+  },
+  textRed: { color: "#FF453A" },
+  footer: {
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.3)",
+    marginTop: 32,
   },
 });
