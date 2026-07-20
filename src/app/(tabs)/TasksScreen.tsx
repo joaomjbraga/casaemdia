@@ -6,20 +6,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect, useRef, useState } from "react";
 import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  onSnapshot,
-  orderBy,
-  query,
-  updateDoc,
-  writeBatch,
-} from "firebase/firestore";
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -29,19 +17,23 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TasksCard from "../../components/TasksCard";
-import LoadingContainer from "../../components/common/LoadingContainer";
 import IconCircleButton from "../../components/common/IconCircleButton";
+import LoadingSkeleton from "../../components/common/LoadingSkeleton";
 import PrimaryIconButton from "../../components/common/PrimaryIconButton";
 import Colors from "../../constants/Colors";
-import { db } from "../../lib/firebase";
-import { sendNotificationToFamily } from "../../lib/onesignal";
-import { creditCompletion, revertCompletion } from "../../lib/gamification";
+import {
+  deleteAllTasks,
+  deleteTask as deleteTaskRecord,
+  subscribeToTasks,
+  toggleTaskCompletion,
+} from "../../services/tasks";
 
 interface Task {
   id: string;
   title: string;
   done: boolean;
   assignee: string;
+  assigneeId?: string;
   points: number;
 }
 
@@ -69,24 +61,8 @@ export default function TasksScreen() {
       return;
     }
 
-    const tasksQuery = query(
-      collection(db, "families", familyId, "tasks"),
-      orderBy("created_at", "desc"),
-    );
-
-    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
-      const data: Task[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        title: d.data().title,
-        done: d.data().done,
-        assignee: d.data().assignee,
-        points: d.data().points,
-      }));
-
-      setTasks(data);
-      setTasksLoading(false);
-      setRefreshing(false);
-    }, () => {
+    const unsubscribe = subscribeToTasks(familyId, (data) => {
+      setTasks(data as Task[]);
       setTasksLoading(false);
       setRefreshing(false);
     });
@@ -107,34 +83,15 @@ export default function TasksScreen() {
     });
 
     try {
-      const ref = doc(db, "families", familyId, "tasks", id);
-      await updateDoc(ref, { done: newDone });
-
-      // Gamificação: credita/estorna pontos no membro responsável.
-      try {
-        if (newDone) {
-          await creditCompletion(familyId, task.assignee, {
-            points: task.points,
-            task: true,
-          });
-        } else {
-          await revertCompletion(familyId, task.assignee, {
-            points: task.points,
-            task: true,
-          });
-        }
-      } catch (gamificationError) {
-        console.error("Erro ao atualizar gamificação (tarefa):", gamificationError);
-      }
-
-      const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-      await sendNotificationToFamily({
+      await toggleTaskCompletion({
         familyId,
-        excludeUserId: user.uid,
-        title: newDone ? "Tarefa concluida" : "Tarefa reaberta",
-        body: newDone
-          ? `${userName} concluiu a tarefa "${task.title}"`
-          : `${userName} reabriu a tarefa "${task.title}"`,
+        taskId: id,
+        task,
+        newDone,
+        options: {
+          userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+          userId: user.uid,
+        },
       });
     } catch {
       setTasks(() => snapshot);
@@ -157,15 +114,14 @@ export default function TasksScreen() {
     });
 
     try {
-      const ref = doc(db, "families", familyId, "tasks", id);
-      await deleteDoc(ref);
-
-      const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-      sendNotificationToFamily({
+      await deleteTaskRecord({
         familyId,
-        excludeUserId: user.uid,
-        title: "Tarefa removida",
-        body: `${userName} removeu a tarefa "${deletedTask?.title ?? "tarefa"}"`,
+        taskId: id,
+        title: deletedTask?.title,
+        options: {
+          userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+          userId: user.uid,
+        },
       });
     } catch {
       setTasks(() => snapshot);
@@ -198,21 +154,17 @@ export default function TasksScreen() {
         setTasks([]);
 
         try {
-          const batch = writeBatch(db);
-          for (const task of previousTasks) {
-            batch.delete(doc(db, "families", familyId!, "tasks", task.id));
-          }
-          await batch.commit();
-
-          if (user) {
-            const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-            sendNotificationToFamily({
-              familyId,
-              excludeUserId: user.uid,
-              title: "Tarefas limpas",
-              body: `${userName} removeu todas as tarefas`,
-            });
-          }
+          await deleteAllTasks({
+            familyId: familyId!,
+            tasks: previousTasks,
+            options: user
+              ? {
+                  userName:
+                    user.displayName || user.email?.split("@")[0] || "Alguem",
+                  userId: user.uid,
+                }
+              : undefined,
+          });
         } catch {
           setTasks(() => previousTasks);
           showAlert({
@@ -226,7 +178,7 @@ export default function TasksScreen() {
   };
 
   if (tasksLoading && tasks.length === 0) {
-    return <LoadingContainer fullScreen={false} />;
+    return <LoadingSkeleton variant="tasks" />;
   }
 
   return (

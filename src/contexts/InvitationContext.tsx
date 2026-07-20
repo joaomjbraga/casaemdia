@@ -1,17 +1,4 @@
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  query,
-  serverTimestamp,
-  Timestamp,
-  updateDoc,
-  where,
-  writeBatch,
-} from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import React, {
   createContext,
   useCallback,
@@ -20,9 +7,15 @@ import React, {
   useState,
 } from "react";
 import { auth, db } from "../lib/firebase";
-import { useFamily } from "./FamilyContext";
+import {
+  acceptFamilyInvitation,
+  declineFamilyInvitation,
+  fetchPendingInvitations as fetchPendingInvitationsService,
+  markInvitationAsExpired,
+  sendFamilyInvitation,
+} from "../services/family";
 import { useAuth } from "./AuthContext";
-import { sendNotificationToEmail } from "../lib/onesignal";
+import { useFamily } from "./FamilyContext";
 
 export interface Invitation {
   id: string;
@@ -71,39 +64,12 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!uid || !email) return;
 
     try {
-      const q = query(
-        collection(db, "invitations"),
-        where("toEmail", "==", email),
-        where("status", "==", "pending"),
-      );
-      const snap = await getDocs(q);
-      const now = Date.now();
-      const expiredIds: string[] = [];
-      const invitations: Invitation[] = snap.docs
-        .map((d) => ({
-          id: d.id,
-          familyId: d.data().familyId,
-          familyName: d.data().familyName,
-          fromUserId: d.data().fromUserId,
-          fromUserName: d.data().fromUserName,
-          toEmail: d.data().toEmail,
-          status: d.data().status,
-          createdAt: d.data().createdAt,
-        }))
-        .filter((inv) => {
-          const docData = snap.docs.find((d) => d.id === inv.id);
-          const expiresAt = docData?.data().expiresAt;
-          if (expiresAt && expiresAt.toMillis() < now) {
-            expiredIds.push(inv.id);
-            return false;
-          }
-          return true;
-        });
-      setPendingInvitations(invitations);
+      const { invitations, expiredIds } =
+        await fetchPendingInvitationsService(email);
+      setPendingInvitations(invitations as Invitation[]);
 
       for (const id of expiredIds) {
-        const docRef = doc(db, "invitations", id);
-        updateDoc(docRef, { status: "expired" }).catch(() => {});
+        markInvitationAsExpired(id).catch(() => {});
       }
     } catch (error) {
       console.error("Error fetching invitations:", error);
@@ -149,43 +115,13 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setLoading(true);
       try {
-        const existingQ = query(
-          collection(db, "invitations"),
-          where("familyId", "==", familyId),
-          where("toEmail", "==", email.trim().toLowerCase()),
-          where("fromUserId", "==", auth.currentUser.uid),
-          where("status", "==", "pending"),
-        );
-        const existingSnap = await getDocs(existingQ);
-        if (!existingSnap.empty) {
-          throw new Error("Convite já enviado para este email");
-        }
-
-        const alreadyMember = members.some(
-          (m) => m.email === email.trim().toLowerCase(),
-        );
-        if (alreadyMember) {
-          throw new Error("Este email já é membro da família");
-        }
-
-        await addDoc(collection(db, "invitations"), {
+        await sendFamilyInvitation(
           familyId,
           familyName,
-          fromUserId: auth.currentUser.uid,
-          fromUserName: auth.currentUser.displayName || "Administrador",
-          toEmail: email.trim().toLowerCase(),
-          status: "pending",
-          createdAt: serverTimestamp(),
-          expiresAt: Timestamp.fromDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
-        });
-
-        const senderName = auth.currentUser.displayName || "Alguem";
-        await sendNotificationToEmail({
-          email: email.trim().toLowerCase(),
-          title: "Convite de Familia",
-          body: `${senderName} te convidou para a familia "${familyName}". Abra o app para aceitar.`,
-          data: { type: "invitation" },
-        });
+          auth.currentUser,
+          email,
+          members,
+        );
       } finally {
         setLoading(false);
       }
@@ -201,54 +137,12 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setLoading(true);
       try {
-        const invRef = doc(db, "invitations", invitationId);
-        const invSnap = await getDoc(invRef);
-        if (!invSnap.exists()) throw new Error("Convite nao encontrado");
-
-        const invData = invSnap.data();
-        if (invData.status !== "pending")
-          throw new Error("Este convite nao esta mais disponivel");
-        if (invData.toEmail?.toLowerCase() !== user.email?.toLowerCase()) {
-          throw new Error("Este convite nao pertence ao usuario atual");
-        }
-
-        const targetFamilyId = invData.familyId;
-        const targetFamilyName = invData.familyName || "Minha Familia";
-
-        const currentFamilyId = familyId;
-
-        const memberRef = doc(db, "families", targetFamilyId, "members", uid);
-        const userRef = doc(db, "users", uid);
-        const batch = writeBatch(db);
-
-        batch.set(memberRef, {
-          name: user.displayName || "Membro",
-          email: user.email || "",
-          photoURL: user.photoURL || null,
-          role: "member",
+        await acceptFamilyInvitation(
           invitationId,
-          joinedAt: serverTimestamp(),
-        });
-
-        batch.set(
-          userRef,
-          {
-            familyId: targetFamilyId,
-            familyName: targetFamilyName,
-            migratedAt: serverTimestamp(),
-          },
-          { merge: true },
+          user,
+          familyId,
+          refreshFamily,
         );
-
-        if (currentFamilyId && currentFamilyId !== targetFamilyId) {
-          const oldMemberRef = doc(db, "families", currentFamilyId, "members", uid);
-          batch.delete(oldMemberRef);
-        }
-
-        batch.update(invRef, { status: "accepted" });
-        await batch.commit();
-
-        await refreshFamily();
       } finally {
         setLoading(false);
       }
@@ -260,8 +154,7 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
     async (invitationId: string) => {
       setLoading(true);
       try {
-        const invRef = doc(db, "invitations", invitationId);
-        await updateDoc(invRef, { status: "declined" });
+        await declineFamilyInvitation(invitationId);
         await fetchPendingInvitations();
       } finally {
         setLoading(false);

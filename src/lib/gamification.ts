@@ -1,19 +1,52 @@
-import { collection, doc, getDocs, increment, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  increment,
+  writeBatch,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 export const SHOPPING_ITEM_POINTS = 3;
 
+interface CompletionOptions {
+  points: number;
+  task?: boolean;
+  shopping?: boolean;
+}
+
 /**
- * Localiza o documento de membro cujo nome corresponde ao responsável, para
- * creditar/estornar pontos de gamificação. A correspondência é por nome
- * (igual ao usado no campo `assignee` das tarefas).
+ * Resolve o documento de membro usando o identificador do membro quando possível,
+ * com fallback para o nome para manter compatibilidade com dados antigos.
  */
-const findMemberRefByName = async (familyId: string, name: string) => {
-  const snap = await getDocs(
-    collection(db, "families", familyId, "members"),
-  );
-  const match = snap.docs.find((d) => d.data().name === name);
+const findMemberRef = async (familyId: string, memberIdOrName: string) => {
+  const snap = await getDocs(collection(db, "families", familyId, "members"));
+
+  const match = snap.docs.find((d) => {
+    if (d.id === memberIdOrName) return true;
+    return d.data().name === memberIdOrName;
+  });
+
   return match ? doc(db, "families", familyId, "members", match.id) : null;
+};
+
+const applyCompletion = async (
+  familyId: string,
+  memberIdOrName: string,
+  options: CompletionOptions,
+  delta: number,
+) => {
+  const memberRef = await findMemberRef(familyId, memberIdOrName);
+  if (!memberRef) return;
+
+  const batch = writeBatch(db);
+  batch.update(memberRef, {
+    points: increment(options.points * delta),
+    contributions: increment(delta),
+    ...(options.task ? { tasksCompleted: increment(delta) } : {}),
+    ...(options.shopping ? { shoppingCompleted: increment(delta) } : {}),
+  });
+  await batch.commit();
 };
 
 /**
@@ -22,20 +55,10 @@ const findMemberRefByName = async (familyId: string, name: string) => {
  */
 export const creditCompletion = async (
   familyId: string,
-  assigneeName: string,
-  options: { points: number; task?: boolean; shopping?: boolean },
+  memberIdOrName: string,
+  options: CompletionOptions,
 ) => {
-  const memberRef = await findMemberRefByName(familyId, assigneeName);
-  if (!memberRef) return;
-
-  const batch = writeBatch(db);
-  batch.update(memberRef, {
-    points: increment(options.points),
-    contributions: increment(1),
-    ...(options.task ? { tasksCompleted: increment(1) } : {}),
-    ...(options.shopping ? { shoppingCompleted: increment(1) } : {}),
-  });
-  await batch.commit();
+  await applyCompletion(familyId, memberIdOrName, options, 1);
 };
 
 /**
@@ -43,18 +66,8 @@ export const creditCompletion = async (
  */
 export const revertCompletion = async (
   familyId: string,
-  assigneeName: string,
-  options: { points: number; task?: boolean; shopping?: boolean },
+  memberIdOrName: string,
+  options: CompletionOptions,
 ) => {
-  const memberRef = await findMemberRefByName(familyId, assigneeName);
-  if (!memberRef) return;
-
-  const batch = writeBatch(db);
-  batch.update(memberRef, {
-    points: increment(-options.points),
-    contributions: increment(-1),
-    ...(options.task ? { tasksCompleted: increment(-1) } : {}),
-    ...(options.shopping ? { shoppingCompleted: increment(-1) } : {}),
-  });
-  await batch.commit();
+  await applyCompletion(familyId, memberIdOrName, options, -1);
 };

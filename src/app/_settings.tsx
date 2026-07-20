@@ -1,6 +1,6 @@
+import Avatar from "@/components/common/Avatar";
 import IconCircleButton from "@/components/common/IconCircleButton";
 import SectionTitle from "@/components/common/SectionTitle";
-import Avatar from "@/components/common/Avatar";
 import Aurora from "@/components/shared/ui/aurora";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
 import { Glow } from "@/components/shared/ui/glow";
@@ -10,18 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { useFamilyMembers } from "@/contexts/FamilyMembersContext";
 import { useInvitations } from "@/contexts/InvitationContext";
-import { db } from "@/lib/firebase";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import {
-  collection,
-  doc,
-  getDocs,
-  query,
-  where,
-  writeBatch,
-} from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -34,6 +25,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { deleteUserAccountFromFamily } from "../services/account";
 
 const colors = Colors.light;
 
@@ -54,8 +46,13 @@ function SettingsInner() {
     deleteFamilyMember,
     fetchFamilyMembers,
   } = useFamilyMembers();
-  const { familyId, familyName, members, beginIntentionalExit, cancelIntentionalExit } =
-    useFamily();
+  const {
+    familyId,
+    familyName,
+    members,
+    beginIntentionalExit,
+    cancelIntentionalExit,
+  } = useFamily();
   const { sendInvitation } = useInvitations();
   const router = useRouter();
   const { user, signOut, deleteAccount } = useAuth();
@@ -153,80 +150,11 @@ function SettingsInner() {
           // Impede que a remoção do próprio membro dispare a auto-recuperação.
           beginIntentionalExit();
 
-          // Lê os membros da família de forma tolerante: se a leitura for
-          // negada, assume que o usuário é o único membro e segue apagando.
-          let otherMembers: { id: string; role: string }[] = [];
-          try {
-            const membersSnap = await getDocs(
-              collection(db, "families", familyId, "members"),
-            );
-            const accountMembers = membersSnap.docs.map((d) => ({
-              id: d.id,
-              role: (d.data().role as string) || "member",
-            }));
-            otherMembers = accountMembers.filter((m) => m.id !== user.uid);
-          } catch (readError) {
-            console.warn("Leitura de membros negada, seguindo mesmo assim:", readError);
-          }
-
-          const batch = writeBatch(db);
-
-          if (otherMembers.length === 0) {
-            // Único membro: apaga a família e todo o seu conteúdo.
-            const subcollections = ["tasks", "shopping_list"];
-            for (const sub of subcollections) {
-              try {
-                const snap = await getDocs(
-                  collection(db, "families", familyId, sub),
-                );
-                for (const d of snap.docs) batch.delete(d.ref);
-              } catch (subError) {
-                console.warn(`Leitura de ${sub} negada:`, subError);
-              }
-            }
-            // Só remove convites que o próprio usuário criou: a regra de leitura
-            // de invitations exige toEmail == email OU fromUserId == uid, então a
-            // query precisa filtrar por fromUserId para não ser negada.
-            try {
-              const invSnap = await getDocs(
-                query(
-                  collection(db, "invitations"),
-                  where("familyId", "==", familyId),
-                  where("fromUserId", "==", user.uid),
-                ),
-              );
-              for (const d of invSnap.docs) batch.delete(d.ref);
-            } catch (invError) {
-              console.warn("Leitura de convites negada:", invError);
-            }
-            batch.delete(doc(db, "families", familyId));
-          } else {
-            // Há outros membros: a família continua. Se o usuário saindo é o
-            // único admin, transfere o cargo para outro membro (priorizando
-            // alguém que já seja admin, senão o primeiro da lista).
-            const isOnlyAdmin =
-              (otherMembers.length > 0 &&
-                !otherMembers.some((m) => m.role === "admin"));
-            if (isOnlyAdmin) {
-              const nextAdmin =
-                otherMembers.find((m) => m.role === "admin") ?? otherMembers[0];
-              batch.update(
-                doc(db, "families", familyId, "members", nextAdmin.id),
-                { role: "admin" },
-              );
-            }
-            // Remove o próprio membro (permitido pela regra para qualquer membro).
-            batch.delete(
-              doc(db, "families", familyId, "members", user.uid),
-            );
-          }
-
-          batch.delete(doc(db, "users", user.uid));
-          await batch.commit();
-
-          // Remove a conta de Authentication (isso apaga o email do Auth).
-          // Feito por último, pois invalida o token e impediria as escritas.
-          await deleteAccount();
+          await deleteUserAccountFromFamily({
+            familyId,
+            userId: user.uid,
+            deleteAccount,
+          });
 
           router.replace("/(auth)/login");
         } catch (error) {
@@ -314,19 +242,19 @@ function SettingsInner() {
               end={{ x: 1, y: 1 }}
               style={styles.profileCard}
             >
-                  <View style={styles.profileBorder}>
-                    <View style={styles.profileRow}>
-                      <Avatar
-                        photoURL={user?.photoURL}
-                        size={52}
-                        borderRadius={16}
-                        borderColor="rgba(0, 255, 135, 0.3)"
-                        borderWidth={2}
-                        backgroundColor="rgba(0, 255, 135, 0.1)"
-                        iconName="account"
-                        iconColor="#00FF87"
-                        iconSize={28}
-                      />
+              <View style={styles.profileBorder}>
+                <View style={styles.profileRow}>
+                  <Avatar
+                    photoURL={user?.photoURL}
+                    size={52}
+                    borderRadius={16}
+                    borderColor="rgba(0, 255, 135, 0.3)"
+                    borderWidth={2}
+                    backgroundColor="rgba(0, 255, 135, 0.1)"
+                    iconName="account"
+                    iconColor="#00FF87"
+                    iconSize={28}
+                  />
                   <View style={styles.profileInfo}>
                     <Text style={styles.profileName} numberOfLines={1}>
                       {user?.displayName || "Usuário"}

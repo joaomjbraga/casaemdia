@@ -4,40 +4,29 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { useFamilyMembers } from "@/contexts/FamilyMembersContext";
 import { useInvitations } from "@/contexts/InvitationContext";
-import { db } from "@/lib/firebase";
-import { sendNotificationToFamily } from "@/lib/onesignal";
-import { creditCompletion, revertCompletion } from "@/lib/gamification";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  updateDoc,
-} from "firebase/firestore";
 import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "../../components/Header";
 import RankingCard from "../../components/RankingCard";
 import TasksCard from "../../components/TasksCard";
 import IconCircleButton from "../../components/common/IconCircleButton";
+import LoadingSkeleton from "../../components/common/LoadingSkeleton";
+import {
+  deleteDashboardTask,
+  fetchDashboardTasks,
+  toggleDashboardTask,
+} from "../../services/tasks";
 
 interface Task {
   id: string;
   title: string;
   done: boolean;
   assignee: string;
+  assigneeId?: string;
   points: number;
 }
 
@@ -97,18 +86,7 @@ export default function Dashboard() {
     setTasksLoading(true);
 
     try {
-      const tasksQuery = query(
-        collection(db, "families", familyId, "tasks"),
-        orderBy("created_at", "desc"),
-      );
-      const snapshot = await getDocs(tasksQuery);
-      const data: Task[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        title: d.data().title,
-        done: d.data().done,
-        assignee: d.data().assignee,
-        points: d.data().points,
-      }));
+      const data = await fetchDashboardTasks(familyId);
       setTasks(data);
     } catch (error) {
       showAlert({
@@ -151,40 +129,18 @@ export default function Dashboard() {
     if (!task) return;
 
     try {
-      const taskRef = doc(db, "families", familyId, "tasks", id);
-      await updateDoc(taskRef, { done: !task.done });
-
-      const newDone = !task.done;
-
-      // Gamificação: credita/estorna pontos no membro responsável.
-      try {
-        if (newDone) {
-          await creditCompletion(familyId, task.assignee, {
-            points: task.points,
-            task: true,
-          });
-        } else {
-          await revertCompletion(familyId, task.assignee, {
-            points: task.points,
-            task: true,
-          });
-        }
-      } catch (gamificationError) {
-        console.error("Erro ao atualizar gamificação (tarefa):", gamificationError);
-      }
-
-      if (user) {
-        const userName =
-          user.displayName || user.email?.split("@")[0] || "Alguem";
-        sendNotificationToFamily({
-          familyId,
-          excludeUserId: user.uid,
-          title: newDone ? "Tarefa concluida" : "Tarefa reaberta",
-          body: newDone
-            ? `${userName} concluiu a tarefa "${task.title}"`
-            : `${userName} reabriu a tarefa "${task.title}"`,
-        });
-      }
+      await toggleDashboardTask({
+        familyId,
+        taskId: id,
+        task,
+        options: user
+          ? {
+              userName:
+                user.displayName || user.email?.split("@")[0] || "Alguem",
+              userId: user.uid,
+            }
+          : undefined,
+      });
     } catch (error) {
       setTasks(() => snapshot);
       showAlert({
@@ -212,8 +168,10 @@ export default function Dashboard() {
     });
 
     try {
-      const taskRef = doc(db, "families", familyId, "tasks", id);
-      await deleteDoc(taskRef);
+      await deleteDashboardTask({
+        familyId,
+        taskId: id,
+      });
     } catch (error) {
       setTasks(() => snapshot);
       showAlert({
@@ -228,19 +186,7 @@ export default function Dashboard() {
     authLoading || tasksLoading || familyMembersLoading || !familyId;
 
   if (isLoading) {
-    return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: Colors.light.background }]}
-      >
-        <StatusBar style="light" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.light.primary} />
-          <Text style={[styles.loadingText, { color: Colors.light.mutedText }]}>
-            Carregando...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <LoadingSkeleton variant="dashboard" />;
   }
 
   return (
@@ -309,15 +255,6 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
   },
   scrollView: {
     flex: 1,

@@ -1,27 +1,14 @@
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
-import { useCelebration } from "@/hooks/useCelebration";
-import { creditCompletion, revertCompletion, SHOPPING_ITEM_POINTS } from "@/lib/gamification";
 import ShoppingItemCard from "@/components/shopping/ShoppingItemCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
+import { useCelebration } from "@/hooks/useCelebration";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  onSnapshot,
-  query,
-  updateDoc,
-  writeBatch,
-} from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Modal,
   StatusBar as RNStatusBar,
@@ -31,18 +18,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  SafeAreaView,
-} from "react-native-safe-area-context";
-import Colors from "../../constants/Colors";
-import { db } from "../../lib/firebase";
-import { sendNotificationToFamily } from "../../lib/onesignal";
-import LoadingContainer from "../../components/common/LoadingContainer";
+import { SafeAreaView } from "react-native-safe-area-context";
 import EmptyState from "../../components/common/EmptyState";
 import IconCircleButton from "../../components/common/IconCircleButton";
+import LoadingSkeleton from "../../components/common/LoadingSkeleton";
 import PrimaryIconButton from "../../components/common/PrimaryIconButton";
 import SectionTitle from "../../components/common/SectionTitle";
-
+import Colors from "../../constants/Colors";
+import {
+  clearCompletedShoppingItems,
+  createShoppingItem,
+  deleteShoppingItem,
+  subscribeToShoppingItems,
+  toggleShoppingItem,
+  updateShoppingItemQuantity,
+} from "../../services/shopping";
 
 interface ShoppingItem {
   id: string;
@@ -98,24 +88,13 @@ export default function ShoppingList() {
       return;
     }
 
-    const q = query(
-      collection(db, "families", currentFamilyId, "shopping_list"),
+    const unsubscribe = subscribeToShoppingItems(
+      currentFamilyId,
+      (mappedItems) => {
+        setItems(mappedItems as ShoppingItem[]);
+        setLoading(false);
+      },
     );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const mappedItems: ShoppingItem[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        name: d.data().title,
-        done: d.data().done,
-        quantity: d.data().quantity ?? "",
-        points: d.data().points ?? SHOPPING_ITEM_POINTS,
-      }));
-
-      setItems(mappedItems);
-      setLoading(false);
-    }, () => {
-      setLoading(false);
-    });
 
     return () => unsubscribe();
   }, [familyId]);
@@ -143,19 +122,22 @@ export default function ShoppingList() {
     setNewItemQty("");
 
     try {
-      const docRef = await addDoc(
-        collection(db, "families", currentFamilyId, "shopping_list"),
-        {
-          title: newItemName.trim(),
-          done: false,
-          quantity: qty,
-          points: SHOPPING_ITEM_POINTS,
-        },
-      );
+      const docId = await createShoppingItem({
+        familyId: currentFamilyId,
+        name: newItemName.trim(),
+        quantity: qty,
+        userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+        userId: user.uid,
+      });
       setItems((prev) =>
         prev.map((i) =>
           i.id === tempId
-            ? { id: docRef.id, name: newItemName.trim(), done: false, quantity: qty }
+            ? {
+                id: docId,
+                name: newItemName.trim(),
+                done: false,
+                quantity: qty,
+              }
             : i,
         ),
       );
@@ -163,14 +145,6 @@ export default function ShoppingList() {
       setItems(() => snapshot);
       return;
     }
-
-    const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-    sendNotificationToFamily({
-      familyId: currentFamilyId,
-      excludeUserId: user.uid,
-      title: "Item adicionado",
-      body: `${userName} adicionou "${newItemName.trim()}" na lista de compras`,
-    });
   };
 
   const openEditQuantity = (item: ShoppingItem) => {
@@ -194,21 +168,13 @@ export default function ShoppingList() {
     setEditQty("");
 
     try {
-      const itemRef = doc(
-        db,
-        "families",
-        currentFamilyId!,
-        "shopping_list",
-        item.id,
-      );
-      await updateDoc(itemRef, { quantity: qty });
-
-      const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-      sendNotificationToFamily({
+      await updateShoppingItemQuantity({
         familyId: currentFamilyId,
-        excludeUserId: user.uid,
-        title: "Item atualizado",
-        body: `${userName} atualizou "${item.name}" na lista de compras`,
+        itemId: item.id,
+        quantity: qty,
+        itemName: item.name,
+        userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+        userId: user.uid,
       });
     } catch {
       setItems(() => snapshot);
@@ -230,49 +196,21 @@ export default function ShoppingList() {
     });
 
     try {
-      const itemRef = doc(
-        db,
-        "families",
-        currentFamilyId!,
-        "shopping_list",
-        id,
-      );
-      await updateDoc(itemRef, { done: newDone });
-
-      // Gamificação: credita/estorna pontos em quem comprou o item.
-      if (user) {
-        const buyerName = user.displayName || user.email?.split("@")[0] || "Alguem";
-        const itemPoints = item.points ?? SHOPPING_ITEM_POINTS;
-        try {
-          if (newDone) {
-            await creditCompletion(currentFamilyId!, buyerName, {
-              points: itemPoints,
-              shopping: true,
-            });
-          } else {
-            await revertCompletion(currentFamilyId!, buyerName, {
-              points: itemPoints,
-              shopping: true,
-            });
-          }
-        } catch (gamificationError) {
-          console.error("Erro ao atualizar gamificação (compra):", gamificationError);
-        }
-      }
+      await toggleShoppingItem({
+        familyId: currentFamilyId,
+        itemId: id,
+        item,
+        newDone,
+        user: user
+          ? {
+              uid: user.uid,
+              displayName: user.displayName,
+              email: user.email,
+            }
+          : undefined,
+      });
 
       if (willCompleteAll) celebrate();
-
-      if (user) {
-        const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-        sendNotificationToFamily({
-          familyId: currentFamilyId!,
-          excludeUserId: user.uid,
-          title: newDone ? "Item comprado" : "Item desmarcado",
-          body: newDone
-            ? `${userName} comprou "${item.name}"`
-            : `${userName} desmarcou "${item.name}" na lista de compras`,
-        });
-      }
     } catch {
       setItems(() => snapshot);
     }
@@ -290,21 +228,12 @@ export default function ShoppingList() {
     });
 
     try {
-      const itemRef = doc(
-        db,
-        "families",
-        currentFamilyId!,
-        "shopping_list",
-        id,
-      );
-      await deleteDoc(itemRef);
-
-      const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-      sendNotificationToFamily({
+      await deleteShoppingItem({
         familyId: currentFamilyId,
-        excludeUserId: user.uid,
-        title: "Item removido",
-        body: `${userName} removeu "${deletedItem?.name ?? "item"}" da lista de compras`,
+        itemId: id,
+        itemName: deletedItem?.name,
+        userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+        userId: user.uid,
       });
     } catch {
       setItems(() => snapshot);
@@ -338,28 +267,13 @@ export default function ShoppingList() {
         });
 
         try {
-          const batch = writeBatch(db);
-          for (const item of completedItems) {
-            const itemRef = doc(
-              db,
-              "families",
-              currentFamilyId,
-              "shopping_list",
-              item.id,
-            );
-            batch.delete(itemRef);
-          }
-          await batch.commit();
-
-          if (user) {
-            const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-            sendNotificationToFamily({
-              familyId: currentFamilyId,
-              excludeUserId: user.uid,
-              title: "Lista limpa",
-              body: `${userName} removeu ${completedItems.length} itens comprados da lista`,
-            });
-          }
+          await clearCompletedShoppingItems({
+            familyId: currentFamilyId,
+            items: completedItems,
+            userName:
+              user?.displayName || user?.email?.split("@")[0] || "Alguem",
+            userId: user?.uid,
+          });
         } catch {
           setItems(() => snapshot);
         }
@@ -496,12 +410,14 @@ export default function ShoppingList() {
       iconColor={Colors.light.primary}
       iconBackgroundColor="rgba(162, 89, 255, 0.12)"
       title={filterName ? "Nenhum resultado" : "Lista vazia"}
-      subtitle={filterName ? "Tente buscar outro termo" : "Adicione itens à sua lista"}
+      subtitle={
+        filterName ? "Tente buscar outro termo" : "Adicione itens à sua lista"
+      }
     />
   );
 
   if (!familyId) {
-    return <LoadingContainer fullScreen={false} />;
+    return <LoadingSkeleton variant="shopping" />;
   }
 
   const renderSectionHeader = (label: string, count: number) => (
@@ -522,11 +438,7 @@ export default function ShoppingList() {
 
   const renderList = () => {
     if (loading && items.length === 0) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.light.primary} />
-        </View>
-      );
+      return <LoadingSkeleton variant="shopping" />;
     }
 
     const rows: React.ReactElement[] = [];
@@ -662,11 +574,6 @@ const styles = StyleSheet.create({
     right: 0,
     height: 360,
     opacity: 0.9,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
   header: {
     paddingHorizontal: 20,

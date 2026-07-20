@@ -1,12 +1,4 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  orderBy,
-  query,
-} from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import React, {
   createContext,
   useCallback,
@@ -15,9 +7,13 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { createNewFamily, migrateOrCreateFamily } from "../lib/family-migration";
 import { auth, db } from "../lib/firebase";
-import { removeUserTags } from "../lib/onesignal";
+import {
+  fetchFamilyMembers,
+  initializeFamilyForUser,
+  recoverFamilyAfterRemoval,
+  subscribeToFamilyMembers,
+} from "../services/family";
 import { useAuth } from "./AuthContext";
 
 export interface FamilyMember {
@@ -83,22 +79,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchMembers = useCallback(async (fId: string) => {
     try {
-      const q = query(
-        collection(db, "families", fId, "members"),
-        orderBy("joinedAt", "asc"),
-      );
-      const snap = await getDocs(q);
-      const membersList: FamilyMember[] = snap.docs.map((d) => ({
-        id: d.id,
-        name: d.data().name,
-        email: d.data().email,
-        photoURL: d.data().photoURL,
-        role: d.data().role,
-        points: d.data().points ?? 0,
-        tasksCompleted: d.data().tasksCompleted ?? 0,
-        shoppingCompleted: d.data().shoppingCompleted ?? 0,
-        contributions: d.data().contributions ?? 0,
-      }));
+      const membersList = await fetchFamilyMembers(fId);
       setMembers(membersList);
     } catch (error) {
       console.error("Error fetching family members:", error);
@@ -136,7 +117,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
     const init = async () => {
       try {
         setLoading(true);
-        const result = await migrateOrCreateFamily(user);
+        const result = await initializeFamilyForUser(user);
         setFamilyId(result.familyId);
         setFamilyName(result.familyName);
       } catch (error) {
@@ -153,16 +134,9 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!familyId) return;
 
-    const membersRef = collection(db, "families", familyId, "members");
-    return onSnapshot(
-      query(membersRef),
-      () => {
-        fetchMembers(familyId);
-      },
-      (error) => {
-        console.error("Members snapshot error:", error);
-      },
-    );
+    return subscribeToFamilyMembers(familyId, () => {
+      fetchMembers(familyId);
+    });
   }, [familyId, fetchMembers]);
 
   // Detecta quando o próprio usuário é removido da família e o recupera criando
@@ -184,8 +158,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const current = auth.currentUser;
         if (!current) return;
-        removeUserTags();
-        const result = await createNewFamily(current);
+        const result = await recoverFamilyAfterRemoval(current);
         setFamilyId(result.familyId);
         setFamilyName(result.familyName);
         await fetchMembers(result.familyId);
