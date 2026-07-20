@@ -27,13 +27,17 @@ interface CoupleStat {
 
 interface RankingCardProps {
   coupleStats: { [key: string]: CoupleStat };
+  currentUserId?: string | null;
 }
 
-export default function RankingCard({ coupleStats }: RankingCardProps) {
+export default function RankingCard({
+  coupleStats,
+  currentUserId,
+}: RankingCardProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
 
-  // Mapas persistentes por nome, para não recriar Animated.Value a cada render
+  // Mapas persistentes por id, para não recriar Animated.Value a cada render
   const scaleAnimsRef = useRef<Map<string, Animated.Value>>(new Map());
   const progressAnimsRef = useRef<Map<string, Animated.Value>>(new Map());
 
@@ -41,6 +45,12 @@ export default function RankingCard({ coupleStats }: RankingCardProps) {
     (a, b) => b.points - a.points,
   );
   const maxPoints = Math.max(...sortedStats.map((stat) => stat.points), 1);
+
+  // Posição do usuário logado no ranking (1-based).
+  const currentUserPosition =
+    currentUserId != null
+      ? sortedStats.findIndex((s) => s.id === currentUserId) + 1
+      : null;
 
   const getScaleAnim = (name: string) => {
     if (!scaleAnimsRef.current.has(name)) {
@@ -104,6 +114,7 @@ export default function RankingCard({ coupleStats }: RankingCardProps) {
       >
         <RankingHeader
           total={sortedStats.reduce((s, s2) => s + s2.tasksCompleted, 0)}
+          currentPosition={currentUserPosition}
         />
 
         <ScrollView
@@ -122,6 +133,7 @@ export default function RankingCard({ coupleStats }: RankingCardProps) {
                   stat={stat}
                   index={index}
                   maxPoints={maxPoints}
+                  isCurrentUser={stat.id === currentUserId}
                   scaleAnim={getScaleAnim(stat.id)}
                   progressAnim={getProgressAnim(stat.id)}
                 />
@@ -134,19 +146,6 @@ export default function RankingCard({ coupleStats }: RankingCardProps) {
     </Animated.View>
   );
 }
-
-const getGradient = (position: number): readonly [string, string] => {
-  switch (position) {
-    case 0:
-      return [Colors.light.illustrationYellow, Colors.light.accentYellow];
-    case 1:
-      return [Colors.light.accentBlue, Colors.light.accentCyan];
-    case 2:
-      return [Colors.light.illustrationOrange, Colors.light.accentYellow];
-    default:
-      return [Colors.light.background, Colors.light.backgroundSecondary];
-  }
-};
 
 const getIcon = (position: number) => {
   switch (position) {
@@ -174,7 +173,13 @@ const getRankColor = (position: number) => {
   }
 };
 
-function RankingHeader({ total }: { total: number }) {
+function RankingHeader({
+  total,
+  currentPosition,
+}: {
+  total: number;
+  currentPosition: number | null;
+}) {
   return (
     <View style={styles.header}>
       <View style={styles.headerIcon}>
@@ -186,7 +191,11 @@ function RankingHeader({ total }: { total: number }) {
       </View>
       <View style={styles.headerContent}>
         <Text style={styles.title}>Ranking Familiar</Text>
-        <Text style={styles.subtitle}>Liderança atual</Text>
+        <Text style={styles.subtitle}>
+          {currentPosition != null && currentPosition > 0
+            ? `Você está em ${currentPosition}º lugar`
+            : "Liderança atual"}
+        </Text>
       </View>
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{total}</Text>
@@ -200,12 +209,14 @@ function RankingItem({
   stat,
   index,
   maxPoints,
+  isCurrentUser,
   scaleAnim,
   progressAnim,
 }: {
   stat: CoupleStat;
   index: number;
   maxPoints: number;
+  isCurrentUser?: boolean;
   scaleAnim: Animated.Value;
   progressAnim: Animated.Value;
 }) {
@@ -230,7 +241,6 @@ function RankingItem({
     extrapolate: "clamp",
   });
 
-  const gradient = getGradient(index);
   const rankColor = getRankColor(index);
 
   return (
@@ -242,16 +252,18 @@ function RankingItem({
       <Animated.View
         style={[
           styles.itemContainer,
+          isCurrentUser && styles.itemContainerCurrent,
           {
             transform: [{ scale: scaleAnim }],
           },
         ]}
       >
-        <LinearGradient
-          colors={gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.itemContent}
+        <View
+          style={[
+            styles.itemContent,
+            isCurrentUser && styles.itemContentCurrent,
+            { borderLeftColor: rankColor },
+          ]}
         >
           <View style={styles.rankSection}>
             <View style={[styles.rankIcon, { backgroundColor: rankColor }]}>
@@ -282,7 +294,16 @@ function RankingItem({
               </View>
             )}
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{stat.name}</Text>
+              <View style={styles.userNameRow}>
+                <Text style={styles.userName} numberOfLines={1}>
+                  {stat.name}
+                </Text>
+                {isCurrentUser && (
+                  <View style={styles.youBadge}>
+                    <Text style={styles.youBadgeText}>Você</Text>
+                  </View>
+                )}
+              </View>
               <View style={styles.statsRow}>
                 <Text style={[styles.userStats, { color: rankColor }]}>
                   {stat.points} pts
@@ -308,7 +329,7 @@ function RankingItem({
               {Math.round((stat.points / maxPoints) * 100)}%
             </Text>
           </View>
-        </LinearGradient>
+        </View>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -418,35 +439,46 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   item: {
-    borderRadius: 10,
+    borderRadius: 12,
   },
   itemContainer: {
-    borderRadius: 10,
+    borderRadius: 12,
+  },
+  itemContainerCurrent: {
+    borderRadius: 12,
   },
   itemContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingLeft: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
     borderColor: Colors.light.borderLight,
-    borderRadius: 10,
+    borderLeftWidth: 4,
+    borderRadius: 12,
+  },
+  itemContentCurrent: {
+    backgroundColor: "rgba(162, 89, 255, 0.14)",
+    borderColor: "rgba(162, 89, 255, 0.4)",
   },
   rankSection: {
     alignItems: "center",
-    marginRight: 6,
+    marginRight: 10,
     minWidth: 30,
   },
   rankIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 3,
   },
   rankText: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "700",
     letterSpacing: 0.2,
   },
   userSection: {
@@ -455,49 +487,68 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 1,
     borderColor: Colors.light.borderLight,
     backgroundColor: Colors.light.cardBackground,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 6,
+    marginRight: 10,
   },
   avatarImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 1,
     borderColor: Colors.light.borderLight,
-    marginRight: 6,
+    marginRight: 10,
   },
   userInfo: {
     flex: 1,
   },
+  userNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   userName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
     color: Colors.light.text,
     letterSpacing: -0.1,
   },
+  youBadge: {
+    backgroundColor: "rgba(162, 89, 255, 0.25)",
+    borderWidth: 1,
+    borderColor: "rgba(162, 89, 255, 0.5)",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  youBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#C9A6FF",
+    letterSpacing: 0.2,
+  },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 2,
+    marginTop: 3,
   },
   userStats: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "400",
     color: Colors.light.mutedText,
   },
   progress: {
     alignItems: "flex-end",
-    minWidth: 48,
+    minWidth: 52,
   },
   progressBar: {
-    width: 44,
+    width: 48,
     height: 6,
     borderRadius: 3,
     overflow: "hidden",
@@ -510,7 +561,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 11,
-    fontWeight: "500",
+    fontWeight: "600",
     color: Colors.light.mutedText,
   },
   footer: {

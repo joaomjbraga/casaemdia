@@ -292,7 +292,7 @@ export default function Dashboard() {
           </View>
         ))}
 
-        <RankingCard coupleStats={coupleStats} />
+        <RankingCard coupleStats={coupleStats} currentUserId={user?.uid} />
         <TasksCard
           tasks={tasks}
           progressPercentage={progressPercentage}
