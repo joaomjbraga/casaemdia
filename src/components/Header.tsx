@@ -286,7 +286,7 @@ export default function Header({
             ) : (
               <MaterialCommunityIcons
                 name="account"
-                size={22}
+                size={30}
                 color="#00FF87"
               />
             )}
@@ -294,6 +294,9 @@ export default function Header({
           <View style={styles.appTitleContainer}>
             <Text style={styles.appName} numberOfLines={1}>
               {familyName || "Casa em Dia"}
+            </Text>
+            <Text style={styles.userName} numberOfLines={1}>
+              {user?.displayName || user?.email?.split("@")[0] || "Você"}
             </Text>
             <View style={styles.subtitleRow}>
               <MaterialCommunityIcons
@@ -463,9 +466,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 12,
+    paddingTop: 20,
+    paddingBottom: 20,
     marginBottom: 16,
-    minHeight: 44,
+    minHeight: 76,
   },
   brandSection: {
     flexDirection: "row",
@@ -474,22 +478,22 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   avatarContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     backgroundColor: "rgba(0, 255, 135, 0.12)",
     borderWidth: 1,
     borderColor: "rgba(0, 255, 135, 0.25)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 14,
     flexShrink: 0,
     overflow: "hidden",
   },
   avatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
   },
   appTitleContainer: {
     flex: 1,
@@ -500,10 +504,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
     letterSpacing: -0.3,
-    marginBottom: 3,
+    marginBottom: 2,
     textShadowColor: "rgba(0, 255, 135, 0.3)",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
+  },
+  userName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(96, 239, 255, 0.85)",
+    letterSpacing: 0.1,
+    marginBottom: 4,
   },
   subtitleRow: {
     flexDirection: "row",
