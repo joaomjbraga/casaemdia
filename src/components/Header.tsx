@@ -410,6 +410,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     minWidth: 0,
+    gap: 12,
     marginRight: 12,
   },
   appTitleContainer: {
