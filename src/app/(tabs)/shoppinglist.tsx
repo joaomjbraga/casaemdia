@@ -319,9 +319,6 @@ export default function ShoppingList() {
               ]}
             />
           </View>
-          <Text style={styles.progressLabel}>
-            {Math.round(progress * 100)}%
-          </Text>
         </View>
       </View>
 
@@ -593,7 +590,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 18,
-    gap: 12,
   },
   progressTrack: {
     flex: 1,
@@ -606,13 +602,6 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#3FB950",
     borderRadius: 4,
-  },
-  progressLabel: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#3FB950",
-    minWidth: 38,
-    textAlign: "right",
   },
   addSection: {
     paddingHorizontal: 20,

@@ -312,9 +312,6 @@ function RankingItem({
                 ]}
               />
             </View>
-            <Text style={styles.progressText}>
-              {Math.round((stat.points / maxPoints) * 100)}%
-            </Text>
           </View>
         </View>
       </Animated.View>
@@ -505,7 +502,7 @@ const styles = StyleSheet.create({
   },
   progress: {
     alignItems: "flex-end",
-    minWidth: 52,
+    width: 48,
   },
   progressBar: {
     width: 48,
@@ -513,16 +510,11 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     overflow: "hidden",
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    marginBottom: 3,
+    marginBottom: 0,
   },
   progressFill: {
     height: "100%",
     borderRadius: 3,
-  },
-  progressText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
   },
   footer: {
     flexDirection: "row",

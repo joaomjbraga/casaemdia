@@ -174,7 +174,6 @@ export default function Header({
 
   const pendingTasks = Math.max(totalTasks - completedTasks, 0);
   const membersCount = members?.length ?? 0;
-  const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   const statusBarHeight = useMemo(() => {
     return StatusBar.currentHeight || 24;
@@ -362,18 +361,6 @@ export default function Header({
               />
               <Text style={styles.statValue}>{completedTasks}</Text>
               <Text style={styles.statText}>feitas</Text>
-            </View>
-
-            <View style={styles.statDivider} />
-
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons
-                name="progress-check"
-                size={16}
-                color="#A259FF"
-              />
-              <Text style={styles.statValue}>{progress}%</Text>
-              <Text style={styles.statText}>concluído</Text>
             </View>
           </View>
         </View>
