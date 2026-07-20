@@ -384,11 +384,13 @@ export default function Header({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#000000",
+    backgroundColor: "#0B0B0F",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
-  statusBarSpacer: {},
+  statusBarSpacer: {
+    backgroundColor: "#0B0B0F",
+  },
   bar: {
     flexDirection: "row",
     alignItems: "center",
@@ -397,6 +399,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 12,
     minHeight: 64,
+    backgroundColor: "#0B0B0F",
   },
   body: {
     paddingHorizontal: 20,
