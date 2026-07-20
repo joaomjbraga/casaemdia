@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android"
+    "android": "expo run:android",
+    "firebase:login": "firebase login",
+    "firebase:rules": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
