@@ -1,10 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "expo-router/build/react-navigation/bottom-tabs";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
+  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
@@ -86,6 +88,7 @@ function DockItem({
 
 export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const shimmerOpacity = useSharedValue(0.35);
 
   const DOCK_PADDING = 8;
   const ITEM_WIDTH = 58;
@@ -97,6 +100,21 @@ export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
     width: ITEM_WIDTH,
   }));
 
+  const shimmerStyle = useAnimatedStyle(() => ({
+    opacity: shimmerOpacity.value,
+  }));
+
+  useEffect(() => {
+    shimmerOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.82, { duration: 950 }),
+        withTiming(0.45, { duration: 1100 }),
+      ),
+      -1,
+      true,
+    );
+  }, [shimmerOpacity]);
+
   React.useEffect(() => {
     indicatorX.value = withTiming(DOCK_PADDING + state.index * ITEM_WIDTH, {
       duration: 260,
@@ -107,7 +125,7 @@ export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
     <View style={[styles.container, { paddingBottom: insets.bottom + 28 }]}>
       <View style={styles.dock}>
         <Animated.View style={[styles.indicator, indicatorStyle]}>
-          <View style={styles.indicatorPill} />
+          <Animated.View style={[styles.indicatorPill, shimmerStyle]} />
         </Animated.View>
 
         {state.routes.map((route, index) => {
@@ -185,6 +203,12 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: "rgba(162, 89, 255, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(162, 89, 255, 0.2)",
+    shadowColor: "#A259FF",
+    shadowOpacity: 0.14,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   item: {
     width: 58,
