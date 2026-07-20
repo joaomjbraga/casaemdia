@@ -43,24 +43,26 @@ service cloud.firestore {
 
     match /families/{familyId} {
       allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
-      allow read: if isMember(familyId);
+      allow read: if signedIn() && (isMember(familyId) || resource.data.createdBy == request.auth.uid);
       // Apenas admins podem alterar dados da família. A exclusão do documento
       // da família é permitida a qualquer membro, pois só ocorre no fluxo de
       // exclusão da própria conta (quando resta um único membro na família).
-      allow update: if isAdmin(familyId);
-      allow delete: if isMember(familyId);
+      allow update: if signedIn() && (isAdmin(familyId) || resource.data.createdBy == request.auth.uid);
+      allow delete: if signedIn() && (isMember(familyId) || resource.data.createdBy == request.auth.uid);
 
       match /members/{memberId} {
-        allow read: if isMember(familyId);
-        allow create: if isInitialAdmin(familyId, memberId)
-          || hasPendingInvitation(familyId, memberId)
-          || (isAdmin(familyId) && request.resource.data.role == 'member');
-        allow update: if isAdmin(familyId)
+        allow read: if signedIn() && (isMember(familyId) || resource.data.role == 'admin' && get(/databases/$(database)/documents/families/$(familyId)).data.createdBy == request.auth.uid);
+        allow create: if signedIn()
+          && (isInitialAdmin(familyId, memberId)
+            || hasPendingInvitation(familyId, memberId)
+            || (isAdmin(familyId) && request.resource.data.role == 'member')
+            || (memberId == request.auth.uid && request.resource.data.role == 'member'));
+        allow update: if signedIn() && (isAdmin(familyId)
           || (isMember(familyId) && memberId == request.auth.uid
               && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['name', 'photoURL', 'email',
-                           'points', 'tasksCompleted', 'shoppingCompleted', 'contributions']));
-        allow delete: if isAdmin(familyId) || (isMember(familyId) && memberId == request.auth.uid);
+                           'points', 'tasksCompleted', 'shoppingCompleted', 'contributions'])));
+        allow delete: if signedIn() && (isAdmin(familyId) || (isMember(familyId) && memberId == request.auth.uid));
       }
 
       match /tasks/{taskId} {
@@ -76,18 +78,18 @@ service cloud.firestore {
       allow read: if signedIn()
         && (resource.data.toEmail == request.auth.token.email || resource.data.fromUserId == request.auth.uid);
       allow create: if signedIn()
-        && isAdmin(request.resource.data.familyId)
+        && (isAdmin(request.resource.data.familyId) || request.resource.data.fromUserId == request.auth.uid)
         && request.resource.data.fromUserId == request.auth.uid
         && request.resource.data.status == 'pending';
       allow update: if signedIn()
-        && resource.data.toEmail == request.auth.token.email
+        && (resource.data.toEmail == request.auth.token.email || resource.data.fromUserId == request.auth.uid)
         && resource.data.status == 'pending'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
         && (request.resource.data.status == 'accepted'
             || request.resource.data.status == 'declined'
             || request.resource.data.status == 'expired');
       allow delete: if signedIn()
-        && isMember(resource.data.familyId)
+        && (resource.data.toEmail == request.auth.token.email || resource.data.fromUserId == request.auth.uid)
         && (resource.data.status == 'expired'
             || resource.data.status == 'declined'
             || resource.data.fromUserId == request.auth.uid);
