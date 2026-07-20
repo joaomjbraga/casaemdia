@@ -163,19 +163,20 @@ function SettingsInner() {
 
   return (
     <View style={styles.root}>
-      <View style={[styles.statusBarSpacer, { height: statusBarHeight }]} />
-
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backBtn}
-          activeOpacity={0.6}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <MaterialCommunityIcons name="chevron-left" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Configurações</Text>
-        <View style={styles.headerRight} />
+      <View style={styles.headerFixed}>
+        <View style={[styles.statusBarSpacer, { height: statusBarHeight }]} />
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backBtn}
+            activeOpacity={0.6}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <MaterialCommunityIcons name="chevron-left" size={28} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Configurações</Text>
+          <View style={styles.headerRight} />
+        </View>
       </View>
 
       <ScrollView
@@ -440,14 +441,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000",
   },
   statusBarSpacer: {},
+  headerFixed: {
+    backgroundColor: "#0B0B0F",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 8,
     paddingVertical: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   backBtn: {
     width: 44,
@@ -462,10 +466,11 @@ const styles = StyleSheet.create({
   },
   headerRight: { width: 44 },
   content: { flex: 1 },
-  contentContainer: { paddingVertical: 20, paddingBottom: 40 },
+  contentContainer: { paddingTop: 8, paddingBottom: 40 },
   profileBlock: {
     alignItems: "center",
     paddingHorizontal: 24,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   profileName: {
@@ -504,13 +509,13 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.6,
     marginHorizontal: 20,
-    marginTop: 24,
+    marginTop: 28,
     marginBottom: 8,
   },
   listSection: {
     marginHorizontal: 16,
     backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
   },
   cell: {
@@ -519,12 +524,12 @@ const styles = StyleSheet.create({
   cellPressable: {},
   cellDisabled: { opacity: 0.5 },
   cellFirst: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
   },
   cellLast: {
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
   },
   cellTouch: { flex: 1 },
   cellInner: {
@@ -554,8 +559,8 @@ const styles = StyleSheet.create({
   inputBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-    borderRadius: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
     paddingHorizontal: 14,
@@ -573,8 +578,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#0A84FF",
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 13,
+    borderRadius: 12,
     gap: 8,
   },
   btnDisabled: { opacity: 0.5 },
@@ -623,9 +628,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
