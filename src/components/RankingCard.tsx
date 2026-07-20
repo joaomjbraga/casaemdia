@@ -1,6 +1,5 @@
 import Colors from "@/constants/Colors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef } from "react";
 import {
   Animated,
@@ -106,43 +105,36 @@ export default function RankingCard({
         },
       ]}
     >
-      <LinearGradient
-        colors={[Colors.light.gradientStart, Colors.light.gradientEnd]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.cardGradient}
+      <RankingHeader
+        total={sortedStats.reduce((s, s2) => s + s2.tasksCompleted, 0)}
+        currentPosition={currentUserPosition}
+      />
+
+      <ScrollView
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
       >
-        <RankingHeader
-          total={sortedStats.reduce((s, s2) => s + s2.tasksCompleted, 0)}
-          currentPosition={currentUserPosition}
-        />
+        {sortedStats.length === 0 ? (
+          <RankingEmptyState />
+        ) : (
+          sortedStats
+            .slice(0, 5)
+            .map((stat, index) => (
+              <RankingItem
+                key={stat.id}
+                stat={stat}
+                index={index}
+                maxPoints={maxPoints}
+                isCurrentUser={stat.id === currentUserId}
+                scaleAnim={getScaleAnim(stat.id)}
+                progressAnim={getProgressAnim(stat.id)}
+              />
+            ))
+        )}
+      </ScrollView>
 
-        <ScrollView
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {sortedStats.length === 0 ? (
-            <RankingEmptyState />
-          ) : (
-            sortedStats
-              .slice(0, 5)
-              .map((stat, index) => (
-                <RankingItem
-                  key={stat.id}
-                  stat={stat}
-                  index={index}
-                  maxPoints={maxPoints}
-                  isCurrentUser={stat.id === currentUserId}
-                  scaleAnim={getScaleAnim(stat.id)}
-                  progressAnim={getProgressAnim(stat.id)}
-                />
-              ))
-          )}
-        </ScrollView>
-
-        {sortedStats.length > 0 && <RankingFooter />}
-      </LinearGradient>
+      {sortedStats.length > 0 && <RankingFooter />}
     </Animated.View>
   );
 }
@@ -163,11 +155,11 @@ const getIcon = (position: number) => {
 const getRankColor = (position: number) => {
   switch (position) {
     case 0:
-      return Colors.light.accentBlue;
+      return "#FFC300";
     case 1:
-      return "#1b1b1b";
+      return "#C0C0C8";
     case 2:
-      return "#00a01b";
+      return "#CD7F32";
     default:
       return Colors.light.mutedText;
   }
@@ -360,78 +352,70 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     borderRadius: 16,
-    shadowColor: Colors.light.border,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 6,
-    flex: 1,
-    minHeight: 320,
-  },
-  cardGradient: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    padding: 16,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 14,
   },
   headerIcon: {
     width: 36,
     height: 36,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.light.borderLight,
-    backgroundColor: Colors.light.cardBackground,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 6,
+    marginRight: 12,
   },
   headerContent: {
     flex: 1,
   },
   title: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: Colors.light.text,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
     letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 11,
-    fontWeight: "400",
-    color: Colors.light.mutedText,
+    fontSize: 12,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.5)",
     marginTop: 2,
   },
   badge: {
     borderWidth: 1,
-    borderColor: Colors.light.borderLight,
+    borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 10,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     alignItems: "center",
-    backgroundColor: Colors.light.cardBackground,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     minWidth: 48,
   },
   badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: Colors.light.accentBlue,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   badgeLabel: {
     fontSize: 10,
-    fontWeight: "400",
-    color: Colors.light.mutedText,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.5)",
     marginTop: 1,
   },
   list: {
     flex: 1,
-    maxHeight: 220,
+    maxHeight: 240,
   },
   listContent: {
-    gap: 6,
-    paddingBottom: 6,
+    gap: 8,
+    paddingBottom: 4,
   },
   item: {
     borderRadius: 12,
@@ -447,10 +431,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 12,
-    paddingLeft: 14,
     backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: Colors.light.borderLight,
+    borderColor: "rgba(255, 255, 255, 0.08)",
     borderLeftWidth: 4,
     borderRadius: 12,
   },
@@ -493,7 +476,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 14,
     fontWeight: "600",
-    color: Colors.light.text,
+    color: "#FFFFFF",
     letterSpacing: -0.1,
   },
   youBadge: {
@@ -517,8 +500,8 @@ const styles = StyleSheet.create({
   },
   userStats: {
     fontSize: 12,
-    fontWeight: "400",
-    color: Colors.light.mutedText,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.5)",
   },
   progress: {
     alignItems: "flex-end",
@@ -529,7 +512,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     overflow: "hidden",
-    backgroundColor: Colors.light.progressBackground,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     marginBottom: 3,
   },
   progressFill: {
@@ -539,22 +522,22 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 11,
     fontWeight: "600",
-    color: Colors.light.mutedText,
+    color: "rgba(255, 255, 255, 0.5)",
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 5,
-    paddingTop: 6,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.light.borderLight,
-    marginTop: 6,
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    marginTop: 8,
   },
   footerText: {
     fontSize: 11,
-    fontWeight: "400",
-    color: Colors.light.mutedText,
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.4)",
     textAlign: "center",
   },
 });
