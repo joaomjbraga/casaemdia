@@ -1,11 +1,10 @@
 import Colors from "@/constants/Colors";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef } from "react";
 import {
   Animated,
   Dimensions,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
   View,
 } from "react-native";
 import EmptyState from "./common/EmptyState";
+import Avatar from "./common/Avatar";
 
 const { width } = Dimensions.get("window");
 
@@ -279,20 +279,15 @@ function RankingItem({
           </View>
 
           <View style={styles.userSection}>
-            {stat.photoURL ? (
-              <Image
-                source={{ uri: stat.photoURL }}
-                style={styles.avatarImage}
-              />
-            ) : (
-              <View style={styles.avatar}>
-                <Ionicons
-                  name={stat.avatar}
-                  size={18}
-                  color={Colors.light.iconPrimary}
-                />
-              </View>
-            )}
+            <Avatar
+              photoURL={stat.photoURL}
+              size={34}
+              borderRadius={17}
+              iconSet="ion"
+              iconName={stat.avatar}
+              iconColor={Colors.light.iconPrimary}
+              iconSize={18}
+            />
             <View style={styles.userInfo}>
               <View style={styles.userNameRow}>
                 <Text style={styles.userName} numberOfLines={1}>
@@ -485,24 +480,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: Colors.light.borderLight,
-    backgroundColor: Colors.light.cardBackground,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  avatarImage: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
-    borderColor: Colors.light.borderLight,
     marginRight: 10,
   },
   userInfo: {

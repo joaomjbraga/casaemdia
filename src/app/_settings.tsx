@@ -1,5 +1,6 @@
 import IconCircleButton from "@/components/common/IconCircleButton";
 import SectionTitle from "@/components/common/SectionTitle";
+import Avatar from "@/components/common/Avatar";
 import Aurora from "@/components/shared/ui/aurora";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
 import { Glow } from "@/components/shared/ui/glow";
@@ -25,7 +26,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -314,22 +314,19 @@ function SettingsInner() {
               end={{ x: 1, y: 1 }}
               style={styles.profileCard}
             >
-              <View style={styles.profileBorder}>
-                <View style={styles.profileRow}>
-                  {user?.photoURL ? (
-                    <Image
-                      source={{ uri: user.photoURL }}
-                      style={styles.avatarImage}
-                    />
-                  ) : (
-                    <View style={styles.avatar}>
-                      <MaterialCommunityIcons
-                        name="account"
-                        size={28}
-                        color="#00FF87"
+                  <View style={styles.profileBorder}>
+                    <View style={styles.profileRow}>
+                      <Avatar
+                        photoURL={user?.photoURL}
+                        size={52}
+                        borderRadius={16}
+                        borderColor="rgba(0, 255, 135, 0.3)"
+                        borderWidth={2}
+                        backgroundColor="rgba(0, 255, 135, 0.1)"
+                        iconName="account"
+                        iconColor="#00FF87"
+                        iconSize={28}
                       />
-                    </View>
-                  )}
                   <View style={styles.profileInfo}>
                     <Text style={styles.profileName} numberOfLines={1}>
                       {user?.displayName || "Usuário"}
@@ -490,20 +487,16 @@ function SettingsInner() {
                       ]}
                     >
                       <View style={styles.memberLeft}>
-                        {member.photoURL ? (
-                          <Image
-                            source={{ uri: member.photoURL }}
-                            style={styles.memberAvatarImage}
-                          />
-                        ) : (
-                          <View style={styles.memberAvatar}>
-                            <MaterialCommunityIcons
-                              name="account"
-                              size={16}
-                              color="#60EFFF"
-                            />
-                          </View>
-                        )}
+                        <Avatar
+                          photoURL={member.photoURL}
+                          size={36}
+                          borderRadius={11}
+                          borderColor="rgba(96, 239, 255, 0.2)"
+                          backgroundColor="rgba(96, 239, 255, 0.1)"
+                          iconName="account"
+                          iconColor="#60EFFF"
+                          iconSize={16}
+                        />
                         <View style={{ flex: 1, minWidth: 0 }}>
                           <Text style={styles.memberName} numberOfLines={1}>
                             {member.name}
@@ -697,26 +690,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
   },
-  profileRow: { flexDirection: "row", alignItems: "center" },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 255, 135, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 255, 135, 0.25)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  avatarImage: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    marginRight: 16,
-    borderWidth: 2,
-    borderColor: "rgba(0, 255, 135, 0.3)",
-  },
+  profileRow: { flexDirection: "row", alignItems: "center", marginRight: 16 },
   profileInfo: { flex: 1, minWidth: 0 },
   profileName: {
     fontSize: 17,
@@ -830,18 +804,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 12,
   },
-  memberAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    backgroundColor: "rgba(96, 239, 255, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(96, 239, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  memberAvatarImage: { width: 36, height: 36, borderRadius: 11, flexShrink: 0 },
   memberName: {
     fontSize: 15,
     fontWeight: "600",

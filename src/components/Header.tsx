@@ -7,8 +7,9 @@ import { useNotificationStatus } from "@/hooks/useNotificationStatus";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
+import { Animated, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import IconCircleButton from "./common/IconCircleButton";
+import Avatar from "./common/Avatar";
 
 interface HeaderProps {
   /** Total de tarefas cadastradas na família. */
@@ -277,19 +278,17 @@ export default function Header({
         ]}
       >
         <View style={styles.brandSection}>
-          <View style={styles.avatarContainer}>
-            {user?.photoURL ? (
-              <Image
-                source={{ uri: user.photoURL }}
-                style={styles.avatarImage}
-              />
-            ) : (
-              <MaterialCommunityIcons
-                name="account"
-                size={30}
-                color="#00FF87"
-              />
-            )}
+          <View style={styles.avatarWrapper}>
+            <Avatar
+              photoURL={user?.photoURL}
+              size={56}
+              borderRadius={16}
+              borderColor="rgba(0, 255, 135, 0.25)"
+              backgroundColor="rgba(0, 255, 135, 0.12)"
+              iconName="account"
+              iconColor="#00FF87"
+              iconSize={30}
+            />
           </View>
           <View style={styles.appTitleContainer}>
             <Text style={styles.appName} numberOfLines={1}>
@@ -477,23 +476,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  avatarContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: "rgba(0, 255, 135, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 255, 135, 0.25)",
-    justifyContent: "center",
-    alignItems: "center",
+  avatarWrapper: {
     marginRight: 14,
     flexShrink: 0,
-    overflow: "hidden",
-  },
-  avatarImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
   },
   appTitleContainer: {
     flex: 1,
