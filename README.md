@@ -35,7 +35,7 @@ Essa estrutura ajuda a manter as telas mais enxutas e centraliza as regras de ne
 
 ## Requisitos
 
-- Node.js 20+
+- Node.js 20+ (22 recomendado para CI)
 - npm
 - Android Studio e um emulador ou dispositivo Android
 - Conta Firebase com Firestore e Google Sign-In habilitados
@@ -58,7 +58,7 @@ cp .env.example .env
 npm install
 ```
 
-5. Gere o projeto Android:
+5. Gere o projeto Android (se necessário):
 
 ```bash
 npx expo prebuild --platform android
@@ -67,7 +67,7 @@ npx expo prebuild --platform android
 6. Execute o app:
 
 ```bash
-npx expo run:android
+npm run android
 ```
 
 ## Variáveis de ambiente
@@ -108,15 +108,47 @@ As notificações são enviadas para os membros da família via OneSignal, com f
 ```bash
 npm start
 npm run android
+npm run lint
+npm run lint:fix
+npm run format
+npm run format:check
+npm run typecheck
 ```
 
 ## Validação
 
-Para validar a tipagem do projeto:
+Use o TypeScript para validar tipos sem output:
 
 ```bash
-npx tsc --noEmit --pretty false
+npm run typecheck
 ```
+
+Verifique formatação e lint antes de commitar:
+
+```bash
+npm run format:check
+npm run lint
+```
+
+Para aplicar correções automáticas:
+
+```bash
+npm run format
+npm run lint:fix
+```
+
+## Integração contínua (CI)
+
+O repositório roda um workflow GitHub Actions em `push` e `pull_request` para as branches `main` e `master`.
+
+Ele realiza as seguintes etapas:
+
+- instala dependências com `npm ci`
+- executa `npm run format:check`
+- executa `npm run lint`
+- executa `npx tsc --noEmit`
+
+Se qualquer etapa falhar, o resultado do `tsc` é armazenado como artefato de build.
 
 ## Estrutura do projeto
 
