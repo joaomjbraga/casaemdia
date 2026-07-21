@@ -6,6 +6,10 @@
     "start": "expo start",
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**\" --ext .ts,.tsx",
+    "lint:fix": "eslint \"src/**\" --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"**/*.json\" \"**/*.md\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"**/*.json\" \"**/*.md\"",
     "firebase:login": "firebase login",
     "firebase:rules": "firebase deploy --only firestore:rules"
   },
@@ -16,6 +20,7 @@
     "@react-native-google-signin/google-signin": "^16.1.2",
     "@react-native-picker/picker": "2.11.4",
     "@shopify/react-native-skia": "2.6.2",
+    "@zappicon/react-native": "^1.2.1",
     "expo": "~57.0.7",
     "expo-audio": "~57.0.2",
     "expo-blur": "~57.0.2",
@@ -47,6 +52,15 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@types/react": "~19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-native": "^5.0.0",
+    "prettier": "^3.9.5",
     "typescript": "~6.0.3"
   },
   "private": true
