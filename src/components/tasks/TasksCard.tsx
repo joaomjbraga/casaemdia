@@ -1,10 +1,11 @@
 import type { Task } from "@/types/models";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
 import { useCelebration } from "@/hooks/useCelebration";
+import { useLevelUp } from "@/hooks/useLevelUp";
 import { toast } from "@/lib/toast";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import Colors from "@/constants/Colors";
 import EmptyState from "@/components/common/EmptyState";
@@ -38,12 +39,36 @@ export default function TasksList({
   const [errorTaskId, setErrorTaskId] = useState<string | null>(null);
   const { showDialog } = useConfirmDialog();
   const { celebrate, CelebrationOverlay } = useCelebration();
+  const { showLevelUp, LevelUpOverlay } = useLevelUp();
+  const previousTotalPoints = useRef(0);
 
   const completedCount = propCompleted ?? tasks.filter((t) => t.done).length;
   const totalCount = propTotal ?? tasks.length;
   const progressPercentage =
     propProgress ?? (totalCount > 0 ? (completedCount / totalCount) * 100 : 0);
   const isComplete = totalCount > 0 && completedCount === totalCount;
+
+  const totalPoints = useMemo(
+    () => tasks.reduce((sum, t) => sum + t.points, 0),
+    [tasks],
+  );
+
+  const getLevel = useCallback((points: number) => {
+    if (points >= 1000) return 5;
+    if (points >= 600) return 4;
+    if (points >= 300) return 3;
+    if (points >= 100) return 2;
+    return 1;
+  }, []);
+
+  useEffect(() => {
+    const currentLevel = getLevel(totalPoints);
+    const prevLevel = getLevel(previousTotalPoints.current);
+    if (currentLevel > prevLevel) {
+      showLevelUp(currentLevel);
+    }
+    previousTotalPoints.current = totalPoints;
+  }, [totalPoints, getLevel, showLevelUp]);
 
   const pendingTasks = useMemo(() => tasks.filter((t) => !t.done), [tasks]);
   const doneTasks = useMemo(() => tasks.filter((t) => t.done), [tasks]);
@@ -228,6 +253,7 @@ export default function TasksList({
       </View>
 
       <CelebrationOverlay />
+      <LevelUpOverlay />
     </View>
   );
 }
