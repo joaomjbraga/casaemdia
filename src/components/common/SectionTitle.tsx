@@ -1,6 +1,6 @@
-import React from "react";
-import { StyleSheet, Text } from "react-native";
-import Colors from "@/constants/Colors";
+import React from 'react';
+import { StyleSheet, Text } from 'react-native';
+import Colors from '@/constants/Colors';
 
 interface SectionTitleProps {
   label: string;
@@ -8,17 +8,7 @@ interface SectionTitleProps {
   uppercase?: boolean;
   fontSize?: number;
   fontWeight?:
-    | "normal"
-    | "bold"
-    | "100"
-    | "200"
-    | "300"
-    | "400"
-    | "500"
-    | "600"
-    | "700"
-    | "800"
-    | "900";
+    'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
   letterSpacing?: number;
   style?: any;
 }
@@ -28,7 +18,7 @@ export default function SectionTitle({
   color = Colors.light.primary,
   uppercase = true,
   fontSize = 13,
-  fontWeight = "700",
+  fontWeight = '700',
   letterSpacing = 0.8,
   style,
 }: SectionTitleProps) {
@@ -49,6 +39,6 @@ export default function SectionTitle({
 const styles = StyleSheet.create({
   title: {},
   uppercase: {
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
 });

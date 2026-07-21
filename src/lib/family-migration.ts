@@ -1,11 +1,5 @@
 import { db } from './firebase';
-import {
-  collection,
-  doc,
-  getDoc,
-  serverTimestamp,
-  writeBatch,
-} from 'firebase/firestore';
+import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 
 export interface FamilyData {
@@ -43,12 +37,16 @@ async function createFamilyForUser(user: User): Promise<FamilyData> {
     shoppingCompleted: 0,
     contributions: 0,
   });
-  setupBatch.set(userDocRef, {
-    familyId,
-    familyName,
-    email: user.email?.toLowerCase() || "",
-    migratedAt: serverTimestamp(),
-  }, { merge: true });
+  setupBatch.set(
+    userDocRef,
+    {
+      familyId,
+      familyName,
+      email: user.email?.toLowerCase() || '',
+      migratedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
   await setupBatch.commit();
 
   return { familyId, familyName };

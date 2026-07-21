@@ -1,13 +1,8 @@
-import { useCallback, useRef } from "react";
-import {
-  Animated,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import Colors from "@/constants/Colors";
+import { useCallback, useMemo, useRef } from 'react';
+import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
+import ZappIcon from '@/components/common/ZappIcon';
+import * as Haptics from 'expo-haptics';
+import Colors from '@/constants/Colors';
 
 interface IconCircleButtonProps {
   iconName: string;
@@ -24,8 +19,8 @@ export default function IconCircleButton({
   iconName,
   onPress,
   size = 40,
-  backgroundColor = "rgba(255,255,255,0.06)",
-  borderColor = "rgba(255,255,255,0.08)",
+  backgroundColor = 'rgba(255,255,255,0.06)',
+  borderColor = 'rgba(255,255,255,0.08)',
   iconColor = Colors.light.text,
   disabled = false,
   style,
@@ -59,6 +54,20 @@ export default function IconCircleButton({
 
   const iconSize = size * 0.5;
 
+  const animatedButtonStyle = useMemo(
+    () => ({
+      width: size,
+      height: size,
+      borderRadius: size * 0.36,
+      backgroundColor,
+      borderColor,
+      transform: [{ scale }],
+      borderBottomWidth: Math.max(3, size * 0.08),
+      borderBottomColor: 'rgba(0, 0, 0, 0.12)',
+    }),
+    [size, backgroundColor, borderColor, scale],
+  );
+
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -69,29 +78,14 @@ export default function IconCircleButton({
       style={style}
       // @ts-ignore
       android_ripple={{
-        color: "rgba(0, 0, 0, 0.08)",
+        color: 'rgba(0, 0, 0, 0.08)',
         borderless: true,
       }}
     >
       <Animated.View
-        style={[
-          styles.button,
-          {
-            width: size,
-            height: size,
-            borderRadius: size * 0.5,
-            backgroundColor,
-            borderColor,
-            transform: [{ scale }],
-          },
-          disabled && styles.disabled,
-        ]}
+        style={[styles.button, styles.button3D, animatedButtonStyle, disabled && styles.disabled]}
       >
-        <MaterialCommunityIcons
-          name={iconName as any}
-          size={iconSize}
-          color={iconColor}
-        />
+        <ZappIcon name={iconName} size={iconSize} color={iconColor} />
       </Animated.View>
     </TouchableOpacity>
   );
@@ -99,9 +93,16 @@ export default function IconCircleButton({
 
 const styles = StyleSheet.create({
   button: {
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
+  },
+  button3D: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
   },
   disabled: {
     opacity: 0.5,

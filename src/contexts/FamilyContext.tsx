@@ -1,25 +1,18 @@
-import type { FamilyMember } from "@/types/models";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { auth, db } from "../lib/firebase";
+import type { FamilyMember } from '@/types/models';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { auth, db } from '../lib/firebase';
 import {
   deleteFamilyMemberFromStore,
   fetchFamilyMembersFromStore,
-} from "../services/family-members";
+} from '../services/family-members';
 import {
   initializeFamilyForUser,
   recoverFamilyAfterRemoval,
   subscribeToFamilyMembers,
-} from "../services/family";
-import { useAuth } from "./AuthContext";
-
+} from '../services/family';
+import { useAuth } from './AuthContext';
+import logger from '@/lib/logger';
 
 interface FamilyContextType {
   familyId: string | null;
@@ -46,17 +39,15 @@ const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 export const useFamily = () => {
   const context = useContext(FamilyContext);
   if (!context) {
-    throw new Error("useFamily must be used within a FamilyProvider");
+    throw new Error('useFamily must be used within a FamilyProvider');
   }
   return context;
 };
 
-export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, initialized: authInitialized } = useAuth();
   const [familyId, setFamilyId] = useState<string | null>(null);
-  const [familyName, setFamilyName] = useState<string>("Minha Família");
+  const [familyName, setFamilyName] = useState<string>('Minha Família');
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
@@ -72,26 +63,29 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
     intentionalExit.current = false;
   }, []);
 
-  const fetchMembers = useCallback(async (fId?: string) => {
-    const targetFamilyId = fId || familyId;
-    if (!targetFamilyId || !auth.currentUser) return;
-    try {
-      const membersList = await fetchFamilyMembersFromStore(targetFamilyId);
-      setMembers(membersList);
-    } catch (error) {
-      console.error("Error fetching family members:", error);
-    }
-  }, [familyId]);
+  const fetchMembers = useCallback(
+    async (fId?: string) => {
+      const targetFamilyId = fId || familyId;
+      if (!targetFamilyId || !auth.currentUser) return;
+      try {
+        const membersList = await fetchFamilyMembersFromStore(targetFamilyId);
+        setMembers(membersList);
+      } catch (error) {
+        logger.error('Error fetching family members:', error);
+      }
+    },
+    [familyId],
+  );
 
   const deleteFamilyMember = useCallback(
     async (id: string) => {
-      if (!familyId) throw new Error("Família não carregada");
+      if (!familyId) throw new Error('Família não carregada');
 
       try {
         setLoading(true);
 
         const member = members.find((m) => m.id === id);
-        if (!member) throw new Error("Membro não encontrado.");
+        if (!member) throw new Error('Membro não encontrado.');
 
         await deleteFamilyMemberFromStore({
           familyId,
@@ -115,13 +109,13 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    const userSnap = await getDoc(doc(db, "users", uid));
+    const userSnap = await getDoc(doc(db, 'users', uid));
     if (!userSnap.exists()) return;
     const userData = userSnap.data();
     const nextFamilyId = userData?.familyId as string | undefined;
     if (!nextFamilyId) return;
 
-    const nextFamilyName = userData?.familyName || "Minha Família";
+    const nextFamilyName = userData?.familyName || 'Minha Família';
     setFamilyId(nextFamilyId);
     setFamilyName(nextFamilyName);
     await fetchMembers(nextFamilyId);
@@ -131,7 +125,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!authInitialized || !user) {
       if (authInitialized && !user) {
         setFamilyId(null);
-        setFamilyName("Minha Família");
+        setFamilyName('Minha Família');
         setMembers([]);
         setLoading(false);
         setInitialized(true);
@@ -146,7 +140,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
         setFamilyId(result.familyId);
         setFamilyName(result.familyName);
       } catch (error) {
-        console.error("Error initializing family:", error);
+        logger.error('Error initializing family:', error);
       } finally {
         setInitialized(true);
         setLoading(false);
@@ -159,10 +153,10 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!familyId) return;
 
-    return subscribeToFamilyMembers(familyId, () => {
-      fetchMembers(familyId);
+    return subscribeToFamilyMembers(familyId, (membersList) => {
+      setMembers(membersList);
     });
-  }, [familyId, fetchMembers]);
+  }, [familyId]);
 
   // Detecta quando o próprio usuário é removido da família e o recupera criando
   // uma nova família própria.
@@ -190,11 +184,11 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
         setWasRemoved(true);
       } catch (error) {
         recovering = false;
-        console.error("Error recovering from family removal:", error);
+        logger.error('Error recovering from family removal:', error);
       }
     };
 
-    const memberDocRef = doc(db, "families", familyId, "members", uid);
+    const memberDocRef = doc(db, 'families', familyId, 'members', uid);
     const unsubscribe = onSnapshot(
       memberDocRef,
       (snap) => {
@@ -210,11 +204,11 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
         // Ao ser removido, o cliente pode perder a permissão de leitura antes
         // de receber o snapshot de remoção. Tratamos permission-denied como
         // remoção, desde que o membro já tivesse sido confirmado.
-        if (error?.code === "permission-denied" && confirmedMember) {
+        if (error?.code === 'permission-denied' && confirmedMember) {
           recover();
           return;
         }
-        console.error("Member self snapshot error:", error);
+        logger.error('Member self snapshot error:', error);
       },
     );
 

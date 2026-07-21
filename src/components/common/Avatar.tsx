@@ -1,7 +1,6 @@
-import Colors from "@/constants/Colors";
-import { Image, StyleSheet, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Colors from '@/constants/Colors';
+import { Image, StyleSheet, View } from 'react-native';
+import ZappIcon from '@/components/common/ZappIcon';
 
 interface AvatarProps {
   /** URL da foto do usuário. Se vazia, exibe o ícone de fallback. */
@@ -19,7 +18,7 @@ interface AvatarProps {
   /** Nome do ícone de fallback. */
   iconName?: string;
   /** Biblioteca do ícone de fallback. */
-  iconSet?: "mci" | "ion";
+  iconSet?: 'mci' | 'ion';
   /** Tamanho do ícone de fallback. Padrão: size * 0.55. */
   iconSize?: number;
   /** Cor do ícone de fallback. */
@@ -38,8 +37,8 @@ export default function Avatar({
   borderColor = Colors.light.border,
   borderWidth = 1,
   backgroundColor = Colors.light.cardDark,
-  iconName = "account",
-  iconSet = "mci",
+  iconName = 'account',
+  iconSet = 'mci',
   iconSize,
   iconColor = Colors.light.primary,
 }: AvatarProps) {
@@ -63,19 +62,10 @@ export default function Avatar({
       {photoURL ? (
         <Image
           source={{ uri: photoURL }}
-          style={[
-            styles.image,
-            { width: size, height: size, borderRadius: radius },
-          ]}
+          style={[styles.image, { width: size, height: size, borderRadius: radius }]}
         />
-      ) : iconSet === "ion" ? (
-        <Ionicons name={iconName as any} size={fallbackSize} color={iconColor} />
       ) : (
-        <MaterialCommunityIcons
-          name={iconName as any}
-          size={fallbackSize}
-          color={iconColor}
-        />
+        <ZappIcon name={iconName} size={fallbackSize} color={iconColor} />
       )}
     </View>
   );
@@ -83,11 +73,11 @@ export default function Avatar({
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   image: {
-    resizeMode: "cover",
+    resizeMode: 'cover',
   },
 });

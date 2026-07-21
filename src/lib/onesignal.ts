@@ -1,27 +1,35 @@
-import { OneSignal, LogLevel, type NotificationClickEvent } from "react-native-onesignal";
+import { OneSignal, LogLevel, type NotificationClickEvent } from 'react-native-onesignal';
+import logger from '@/lib/logger';
 
-const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID!;
-const ONESIGNAL_REST_API_KEY = process.env.EXPO_PUBLIC_ONESIGNAL_REST_API_KEY!;
-const ONESIGNAL_API_URL = "https://api.onesignal.com/notifications";
+const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '';
+const ONESIGNAL_REST_API_KEY = process.env.EXPO_PUBLIC_ONESIGNAL_REST_API_KEY || '';
+const ONESIGNAL_API_URL = 'https://api.onesignal.com/notifications';
 
 export function initializeOneSignal(): void {
   if (!ONESIGNAL_APP_ID) {
-    console.error("[OneSignal] App ID nao configurado");
+    logger.error('[OneSignal] App ID nao configurado');
     return;
   }
 
   OneSignal.Debug.setLogLevel(LogLevel.Warn);
   OneSignal.initialize(ONESIGNAL_APP_ID);
-  OneSignal.Notifications.requestPermission(true);
 
-  console.log("[OneSignal] Inicializado com App ID:", ONESIGNAL_APP_ID.substring(0, 8) + "...");
+  logger.info('[OneSignal] Inicializado com App ID:', ONESIGNAL_APP_ID.substring(0, 8) + '...');
+}
+
+export async function requestPermissionAfterLogin(): Promise<void> {
+  try {
+    await OneSignal.Notifications.requestPermission(true);
+  } catch {
+    // non-blocking
+  }
 }
 
 export async function checkPushPermission(): Promise<boolean> {
   try {
     const permission = await OneSignal.Notifications.getPermissionAsync();
     if (!permission) {
-      console.warn("[OneSignal] Push permission denied - usuario sem chip ou permissao negada");
+      logger.warn('[OneSignal] Push permission denied - usuario sem chip ou permissao negada');
     }
     return permission;
   } catch {
@@ -38,14 +46,14 @@ export async function requestPushPermission(): Promise<boolean> {
 }
 
 export function setUserTags(familyId: string, userId: string, email?: string): void {
-  const tags: Record<string, string> = { familyId, userId, userEmail: email || "" };
+  const tags: Record<string, string> = { familyId, userId, userEmail: email || '' };
   OneSignal.User.addTags(tags);
-  console.log("[OneSignal] Tags definidas:", { familyId, userId: userId.substring(0, 8) + "..." });
+  logger.info('[OneSignal] Tags definidas:', { familyId, userId: userId.substring(0, 8) + '...' });
 }
 
 export function removeUserTags(): void {
-  OneSignal.User.removeTags(["familyId", "userId", "userEmail"]);
-  console.log("[OneSignal] Tags removidas");
+  OneSignal.User.removeTags(['familyId', 'userId', 'userEmail']);
+  logger.info('[OneSignal] Tags removidas');
 }
 
 export async function sendNotificationToFamily(params: {
@@ -57,28 +65,32 @@ export async function sendNotificationToFamily(params: {
 }): Promise<boolean> {
   const { familyId, excludeUserId, title, body, data } = params;
 
-  if (!ONESIGNAL_REST_API_KEY || ONESIGNAL_REST_API_KEY.includes("COLE")) {
-    console.warn("[OneSignal] REST API Key nao configurada");
+  if (!ONESIGNAL_REST_API_KEY || ONESIGNAL_REST_API_KEY.includes('COLE')) {
+    logger.warn('[OneSignal] REST API Key nao configurada');
+    return false;
+  }
+  if (!ONESIGNAL_APP_ID) {
+    logger.warn('[OneSignal] App ID nao configurado');
     return false;
   }
 
   try {
     const response = await fetch(ONESIGNAL_API_URL, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Key ${ONESIGNAL_REST_API_KEY}`,
       },
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
-        target_channel: "push",
+        target_channel: 'push',
         headings: { en: title, pt: title },
         contents: { en: body, pt: body },
         data: data || {},
-        android_sound: "notification",
+        android_sound: 'notification',
         filters: [
-          { field: "tag", key: "familyId", relation: "=", value: familyId },
-          { field: "tag", key: "userId", relation: "!=", value: excludeUserId },
+          { field: 'tag', key: 'familyId', relation: '=', value: familyId },
+          { field: 'tag', key: 'userId', relation: '!=', value: excludeUserId },
         ],
       }),
     });
@@ -88,17 +100,19 @@ export async function sendNotificationToFamily(params: {
     if (response.ok) {
       const recipients = result.recipients ?? result.android_recipients;
       if (!recipients || recipients === 0) {
-        console.log("[OneSignal] Notificacao sem destinatarios (provavelmente usuario unico na familia)");
+        logger.info(
+          '[OneSignal] Notificacao sem destinatarios (provavelmente usuario unico na familia)',
+        );
       } else {
-        console.log("[OneSignal] Notificacao enviada:", result.id, "| recipients:", recipients);
+        logger.info('[OneSignal] Notificacao enviada:', result.id, '| recipients:', recipients);
       }
       return true;
     }
 
-    console.error("[OneSignal] Erro na API:", result);
+    logger.error('[OneSignal] Erro na API:', result);
     return false;
   } catch (error) {
-    console.error("[OneSignal] Erro ao enviar notificacao:", error);
+    logger.error('[OneSignal] Erro ao enviar notificacao:', error);
     return false;
   }
 }
@@ -111,28 +125,30 @@ export async function sendNotificationToEmail(params: {
 }): Promise<boolean> {
   const { email, title, body, data } = params;
 
-  if (!ONESIGNAL_REST_API_KEY || ONESIGNAL_REST_API_KEY.includes("COLE")) {
-    console.warn("[OneSignal] REST API Key nao configurada");
+  if (!ONESIGNAL_REST_API_KEY || ONESIGNAL_REST_API_KEY.includes('COLE')) {
+    logger.warn('[OneSignal] REST API Key nao configurada');
+    return false;
+  }
+  if (!ONESIGNAL_APP_ID) {
+    logger.warn('[OneSignal] App ID nao configurado');
     return false;
   }
 
   try {
     const response = await fetch(ONESIGNAL_API_URL, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Key ${ONESIGNAL_REST_API_KEY}`,
       },
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
-        target_channel: "push",
+        target_channel: 'push',
         headings: { en: title, pt: title },
         contents: { en: body, pt: body },
         data: data || {},
-        android_sound: "notification",
-        filters: [
-          { field: "tag", key: "userEmail", relation: "=", value: email.toLowerCase() },
-        ],
+        android_sound: 'notification',
+        filters: [{ field: 'tag', key: 'userEmail', relation: '=', value: email.toLowerCase() }],
       }),
     });
 
@@ -140,14 +156,20 @@ export async function sendNotificationToEmail(params: {
 
     if (response.ok) {
       const recipients = result.recipients ?? result.android_recipients;
-      console.log("[OneSignal] Notificacao enviada para email:", email.substring(0, 5), "***", "| recipients:", recipients ?? 0);
+      logger.info(
+        '[OneSignal] Notificacao enviada para email:',
+        email.substring(0, 5),
+        '***',
+        '| recipients:',
+        recipients ?? 0,
+      );
       return true;
     }
 
-    console.error("[OneSignal] Erro na API (email):", result);
+    logger.error('[OneSignal] Erro na API (email):', result);
     return false;
   } catch (error) {
-    console.error("[OneSignal] Erro ao enviar notificacao (email):", error);
+    logger.error('[OneSignal] Erro ao enviar notificacao (email):', error);
     return false;
   }
 }
@@ -160,17 +182,17 @@ export function addNotificationClickListener(
   removeNotificationClickListener();
   clickHandler = (event: NotificationClickEvent) => {
     const notificationData = event.notification.additionalData;
-    console.log("[OneSignal] Clique na notificacao:", notificationData);
+    logger.info('[OneSignal] Clique na notificacao:', notificationData);
     if (notificationData) {
       handler(notificationData as Record<string, unknown>);
     }
   };
-  OneSignal.Notifications.addEventListener("click", clickHandler);
+  OneSignal.Notifications.addEventListener('click', clickHandler);
 }
 
 export function removeNotificationClickListener(): void {
   if (clickHandler) {
-    OneSignal.Notifications.removeEventListener("click", clickHandler);
+    OneSignal.Notifications.removeEventListener('click', clickHandler);
     clickHandler = null;
   }
 }

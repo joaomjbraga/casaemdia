@@ -1,22 +1,17 @@
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { auth, db } from "../lib/firebase";
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { auth, db } from '../lib/firebase';
 import {
   acceptFamilyInvitation,
   declineFamilyInvitation,
   fetchPendingInvitations as fetchPendingInvitationsService,
   markInvitationAsExpired,
   sendFamilyInvitation,
-} from "../services/family";
-import { useAuth } from "./AuthContext";
-import { useFamily } from "./FamilyContext";
-import type { Invitation } from "@/types/models";
+} from '../services/family';
+import { useAuth } from './AuthContext';
+import { useFamily } from './FamilyContext';
+import type { Invitation } from '@/types/models';
+import logger from '@/lib/logger';
 
 interface InvitationContextType {
   pendingInvitations: Invitation[];
@@ -26,26 +21,20 @@ interface InvitationContextType {
   declineInvitation: (invitationId: string) => Promise<void>;
 }
 
-const InvitationContext = createContext<InvitationContextType | undefined>(
-  undefined,
-);
+const InvitationContext = createContext<InvitationContextType | undefined>(undefined);
 
 export const useInvitations = () => {
   const context = useContext(InvitationContext);
   if (!context) {
-    throw new Error("useInvitations must be used within an InvitationProvider");
+    throw new Error('useInvitations must be used within an InvitationProvider');
   }
   return context;
 };
 
-export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { familyId, familyName, members, refreshFamily } = useFamily();
   const { user } = useAuth();
-  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>(
-    [],
-  );
+  const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchPendingInvitations = useCallback(async () => {
@@ -54,15 +43,14 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!uid || !email) return;
 
     try {
-      const { invitations, expiredIds } =
-        await fetchPendingInvitationsService(email);
+      const { invitations, expiredIds } = await fetchPendingInvitationsService(email);
       setPendingInvitations(invitations as Invitation[]);
 
       for (const id of expiredIds) {
         markInvitationAsExpired(id).catch(() => {});
       }
     } catch (error) {
-      console.error("Error fetching invitations:", error);
+      logger.error('Error fetching invitations:', error);
     }
   }, []);
 
@@ -74,9 +62,9 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchPendingInvitations();
 
     const q = query(
-      collection(db, "invitations"),
-      where("toEmail", "==", email),
-      where("status", "==", "pending"),
+      collection(db, 'invitations'),
+      where('toEmail', '==', email),
+      where('status', '==', 'pending'),
     );
 
     const unsubscribe = onSnapshot(
@@ -85,7 +73,7 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
         fetchPendingInvitations();
       },
       (error) => {
-        console.error("Invitations snapshot error:", error);
+        logger.error('Invitations snapshot error:', error);
       },
     );
 
@@ -100,18 +88,12 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const sendInvitation = useCallback(
     async (email: string) => {
-      if (!familyId || !familyName) throw new Error("Família não carregada");
-      if (!auth.currentUser) throw new Error("Usuário não autenticado");
+      if (!familyId || !familyName) throw new Error('Família não carregada');
+      if (!auth.currentUser) throw new Error('Usuário não autenticado');
 
       setLoading(true);
       try {
-        await sendFamilyInvitation(
-          familyId,
-          familyName,
-          auth.currentUser,
-          email,
-          members,
-        );
+        await sendFamilyInvitation(familyId, familyName, auth.currentUser, email, members);
       } finally {
         setLoading(false);
       }
@@ -123,16 +105,11 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({
     async (invitationId: string) => {
       const uid = auth.currentUser?.uid;
       const user = auth.currentUser;
-      if (!uid || !user) throw new Error("Usuario nao autenticado");
+      if (!uid || !user) throw new Error('Usuario nao autenticado');
 
       setLoading(true);
       try {
-        await acceptFamilyInvitation(
-          invitationId,
-          user,
-          familyId,
-          refreshFamily,
-        );
+        await acceptFamilyInvitation(invitationId, user, familyId, refreshFamily);
       } finally {
         setLoading(false);
       }

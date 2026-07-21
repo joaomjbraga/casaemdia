@@ -1,19 +1,14 @@
-import { toast } from "@/lib/toast";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import IconCircleButton from "@/components/common/IconCircleButton";
-import Colors from "@/constants/Colors";
-import { useAuth } from "@/contexts/AuthContext";
-import { useFamily } from "@/contexts/FamilyContext";
-import { createTask } from "@/services/tasks";
+import { toast } from '@/lib/toast';
+import ZappIcon from '@/components/common/ZappIcon';
+import StyledInput from '@/components/common/StyledInput';
+import PrimaryActionButton from '@/components/common/PrimaryActionButton';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import IconCircleButton from '@/components/common/IconCircleButton';
+import Colors from '@/constants/Colors';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
+import { createTask } from '@/services/tasks';
 
 interface AddTaskFormProps {
   onClose: () => void;
@@ -22,44 +17,43 @@ interface AddTaskFormProps {
 
 export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
   const { user } = useAuth();
-  const { familyId } = useFamily();
-  const { members } = useFamily();
+  const { familyId, members } = useFamily();
 
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
-  const [points, setPoints] = useState("");
+  const [points, setPoints] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (!user) {
-      toast.error("Usuário não autenticado.");
+      toast.error('Usuário não autenticado.');
       return;
     }
 
     if (!familyId) {
-      toast.error("Família não encontrada.");
+      toast.error('Família não encontrada.');
       return;
     }
 
     if (!title.trim()) {
-      toast.error("Digite o título da tarefa.");
+      toast.error('Digite o título da tarefa.');
       return;
     }
 
     if (!assigneeId) {
-      toast.error("Selecione um responsável.");
+      toast.error('Selecione um responsável.');
       return;
     }
 
     const pts = parseInt(points);
     if (!pts || pts <= 0) {
-      toast.error("Defina uma quantidade de pontos.");
+      toast.error('Defina uma quantidade de pontos.');
       return;
     }
 
     const assignee = members.find((m) => m.id === assigneeId);
     if (!assignee) {
-      toast.error("Membro não encontrado.");
+      toast.error('Membro não encontrado.');
       return;
     }
 
@@ -74,19 +68,19 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
           points: pts,
         },
         {
-          userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+          userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
           userId: user.uid,
         },
       );
 
-      toast.success("Tarefa criada!");
+      toast.success('Tarefa criada!');
       if (onCreated) {
         onCreated();
       } else {
         onClose();
       }
     } catch (err) {
-      toast.error("Não foi possível criar a tarefa.");
+      toast.error('Não foi possível criar a tarefa.');
     } finally {
       setSubmitting(false);
     }
@@ -106,9 +100,7 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
           />
           <View>
             <Text style={styles.headerTitle}>Nova Tarefa</Text>
-            <Text style={styles.headerSubtitle}>
-              Crie uma tarefa para alguém
-            </Text>
+            <Text style={styles.headerSubtitle}>Crie uma tarefa para alguém</Text>
           </View>
         </View>
       </View>
@@ -117,13 +109,7 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Título da Tarefa</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ex: Lavar a louça"
-              placeholderTextColor={Colors.light.mutedText}
-              value={title}
-              onChangeText={setTitle}
-            />
+            <StyledInput value={title} onChangeText={setTitle} placeholder="Ex: Lavar a louça" />
           </View>
 
           <View style={styles.inputGroup}>
@@ -135,18 +121,13 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
                 members.map((member) => (
                   <TouchableOpacity
                     key={member.id}
-                    style={[
-                      styles.memberChip,
-                      assigneeId === member.id && styles.memberChipActive,
-                    ]}
+                    style={[styles.memberChip, assigneeId === member.id && styles.memberChipActive]}
                     onPress={() => setAssigneeId(member.id)}
                   >
-                    <MaterialCommunityIcons
+                    <ZappIcon
                       name="account"
                       size={18}
-                      color={
-                        assigneeId === member.id ? "#fff" : Colors.light.primary
-                      }
+                      color={assigneeId === member.id ? '#fff' : Colors.light.primary}
                     />
                     <Text
                       style={[
@@ -168,47 +149,34 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
               {[5, 10, 15, 20].map((p) => (
                 <TouchableOpacity
                   key={p}
-                  style={[
-                    styles.pointChip,
-                    points === p.toString() && styles.pointChipActive,
-                  ]}
+                  style={[styles.pointChip, points === p.toString() && styles.pointChipActive]}
                   onPress={() => setPoints(p.toString())}
                 >
                   <Text
-                    style={[
-                      styles.pointText,
-                      points === p.toString() && styles.pointTextActive,
-                    ]}
+                    style={[styles.pointText, points === p.toString() && styles.pointTextActive]}
                   >
                     {p}
                   </Text>
                 </TouchableOpacity>
               ))}
-              <TextInput
-                style={[styles.pointsInput, points && styles.pointsInputActive]}
-                placeholder="Outro"
-                placeholderTextColor={Colors.light.mutedText}
+              <StyledInput
                 value={points}
                 onChangeText={setPoints}
+                placeholder="Outro"
                 keyboardType="numeric"
+                style={points ? [styles.pointsInput, styles.pointsInputActive] : styles.pointsInput}
               />
             </View>
           </View>
 
-          <TouchableOpacity
-            style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+          <PrimaryActionButton
+            title={submitting ? 'Criando...' : 'Criar Tarefa'}
+            icon={submitting ? undefined : 'check'}
             onPress={handleSubmit}
             disabled={submitting}
-          >
-            <MaterialCommunityIcons
-              name={submitting ? "loading" : "check"}
-              size={22}
-              color="#fff"
-            />
-            <Text style={styles.submitText}>
-              {submitting ? "Criando..." : "Criar Tarefa"}
-            </Text>
-          </TouchableOpacity>
+            loading={submitting}
+            style={styles.submitBtn}
+          />
         </View>
       </ScrollView>
     </View>
@@ -226,12 +194,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.light.text,
   },
   headerSubtitle: {
@@ -251,33 +219,23 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.text,
     marginBottom: 10,
   },
-  input: {
-    backgroundColor: Colors.light.cardBackground,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: Colors.light.text,
-    borderWidth: 1,
-    borderColor: Colors.light.borderLight,
-  },
   membersGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
   noMembers: {
     fontSize: 14,
     color: Colors.light.mutedText,
-    fontStyle: "italic",
+    fontStyle: 'italic',
   },
   memberChip: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
@@ -292,15 +250,15 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: '500',
     color: Colors.light.text,
   },
   memberNameActive: {
     color: Colors.light.text,
   },
   pointsRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
   pointChip: {
@@ -317,11 +275,11 @@ const styles = StyleSheet.create({
   },
   pointText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.text,
   },
   pointTextActive: {
-    color: "#fff",
+    color: '#fff',
   },
   pointsInput: {
     flex: 1,
@@ -337,26 +295,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.primary,
   },
   submitBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.light.primary,
-    borderRadius: 24,
-    paddingVertical: 18,
     marginTop: 24,
-    gap: 10,
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
-  submitText: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: Colors.light.text,
   },
 });

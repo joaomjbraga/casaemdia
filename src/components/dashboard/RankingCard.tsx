@@ -1,28 +1,18 @@
-import type { CoupleStat } from "@/types/models";
-import Colors from "@/constants/Colors";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
-import {
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import EmptyState from "@/components/common/EmptyState";
-import Avatar from "@/components/common/Avatar";
-
+import type { CoupleStat } from '@/types/models';
+import Colors from '@/constants/Colors';
+import ZappIcon from '@/components/common/ZappIcon';
+import ProgressRing from '@/components/common/ProgressRing';
+import { useEffect, useMemo, useRef } from 'react';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import EmptyState from '@/components/common/EmptyState';
+import Avatar from '@/components/common/Avatar';
 
 interface RankingCardProps {
   coupleStats: { [key: string]: CoupleStat };
   currentUserId?: string | null;
 }
 
-export default function RankingCard({
-  coupleStats,
-  currentUserId,
-}: RankingCardProps) {
+export default function RankingCard({ coupleStats, currentUserId }: RankingCardProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
 
@@ -30,16 +20,12 @@ export default function RankingCard({
   const scaleAnimsRef = useRef<Map<string, Animated.Value>>(new Map());
   const progressAnimsRef = useRef<Map<string, Animated.Value>>(new Map());
 
-  const sortedStats = Object.values(coupleStats).sort(
-    (a, b) => b.points - a.points,
-  );
+  const sortedStats = Object.values(coupleStats).sort((a, b) => b.points - a.points);
   const maxPoints = Math.max(...sortedStats.map((stat) => stat.points), 1);
 
   // Posição do usuário logado no ranking (1-based).
   const currentUserPosition =
-    currentUserId != null
-      ? sortedStats.findIndex((s) => s.id === currentUserId) + 1
-      : null;
+    currentUserId != null ? sortedStats.findIndex((s) => s.id === currentUserId) + 1 : null;
 
   const getScaleAnim = (name: string) => {
     if (!scaleAnimsRef.current.has(name)) {
@@ -132,24 +118,24 @@ export default function RankingCard({
 const getIcon = (position: number) => {
   switch (position) {
     case 0:
-      return "crown";
+      return 'crown';
     case 1:
-      return "medal";
+      return 'medal';
     case 2:
-      return "trophy-variant";
+      return 'trophy-variant';
     default:
-      return "account-circle-outline";
+      return 'account-circle-outline';
   }
 };
 
 const getRankColor = (position: number) => {
   switch (position) {
     case 0:
-      return "#FFD700";
+      return '#FFD700';
     case 1:
-      return "#C0C0C8";
+      return '#C0C0C8';
     case 2:
-      return "#CD7F32";
+      return '#CD7F32';
     default:
       return Colors.light.mutedText;
   }
@@ -158,13 +144,13 @@ const getRankColor = (position: number) => {
 const getRankBgColor = (position: number) => {
   switch (position) {
     case 0:
-      return "rgba(255, 215, 0, 0.15)";
+      return 'rgba(255, 215, 0, 0.15)';
     case 1:
-      return "rgba(192, 192, 200, 0.15)";
+      return 'rgba(192, 192, 200, 0.15)';
     case 2:
-      return "rgba(205, 127, 50, 0.15)";
+      return 'rgba(205, 127, 50, 0.15)';
     default:
-      return "transparent";
+      return 'transparent';
   }
 };
 
@@ -178,18 +164,14 @@ function RankingHeader({
   return (
     <View style={styles.header}>
       <View style={styles.headerIcon}>
-        <MaterialCommunityIcons
-          name="trophy"
-          size={20}
-          color={Colors.light.iconPrimary}
-        />
+        <ZappIcon name="trophy" size={20} color={Colors.light.iconPrimary} />
       </View>
       <View style={styles.headerContent}>
         <Text style={styles.title}>Ranking Familiar</Text>
         <Text style={styles.subtitle}>
           {currentPosition != null && currentPosition > 0
             ? `Você está em ${currentPosition}º lugar`
-            : "Liderança atual"}
+            : 'Liderança atual'}
         </Text>
       </View>
       <View style={styles.badge}>
@@ -215,6 +197,41 @@ function RankingItem({
   scaleAnim: Animated.Value;
   progressAnim: Animated.Value;
 }) {
+  const glowAnim = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    if (index === 0) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0.4,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    }
+  }, [index, glowAnim]);
+
+  const rankColor = getRankColor(index);
+  const rankBgColor = getRankBgColor(index);
+
+  const glowStyle = useMemo(
+    () => ({
+      shadowColor: rankColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: glowAnim,
+      shadowRadius: 8,
+      elevation: 4,
+    }),
+    [rankColor, glowAnim],
+  );
+
   const handlePress = () => {
     Animated.sequence([
       Animated.timing(scaleAnim, {
@@ -232,19 +249,12 @@ function RankingItem({
 
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["0%", `${(stat.points / maxPoints) * 100}%`],
-    extrapolate: "clamp",
+    outputRange: ['0%', `${(stat.points / maxPoints) * 100}%`],
+    extrapolate: 'clamp',
   });
 
-  const rankColor = getRankColor(index);
-  const rankBgColor = getRankBgColor(index);
-
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={handlePress}
-      style={styles.item}
-    >
+    <TouchableOpacity activeOpacity={0.8} onPress={handlePress} style={styles.item}>
       <Animated.View
         style={[
           styles.itemContainer,
@@ -262,32 +272,32 @@ function RankingItem({
           ]}
         >
           <View style={styles.rankSection}>
-            <View style={[styles.rankIcon, { backgroundColor: rankBgColor }]}>
-              <MaterialCommunityIcons
-                name={getIcon(index)}
-                size={14}
-                color={rankColor}
-              />
-            </View>
-            <Text style={[styles.rankText, { color: rankColor }]}>
-              {index + 1}º
-            </Text>
+            <Animated.View
+              style={[styles.rankIcon, { backgroundColor: rankBgColor }, index === 0 && glowStyle]}
+            >
+              <ZappIcon name={getIcon(index)} size={14} color={rankColor} />
+            </Animated.View>
+            <Text style={[styles.rankText, { color: rankColor }]}>{index + 1}º</Text>
           </View>
 
           <View style={styles.userSection}>
             <View style={styles.avatarWrap}>
-              <View style={[styles.xpRing, { borderColor: rankColor }]}>
-                <View style={[styles.xpRingFill, { width: `${(stat.points / maxPoints) * 100}%` }]} />
-              </View>
-              <Avatar
-                photoURL={stat.photoURL}
-                size={34}
-                borderRadius={17}
-                iconSet="ion"
-                iconName={stat.avatar}
-                iconColor={Colors.light.iconPrimary}
-                iconSize={18}
-              />
+              <ProgressRing
+                size={42}
+                strokeWidth={3}
+                progress={(stat.points / maxPoints) * 100}
+                color={rankColor}
+              >
+                <Avatar
+                  photoURL={stat.photoURL}
+                  size={34}
+                  borderRadius={17}
+                  iconSet="ion"
+                  iconName={stat.avatar}
+                  iconColor={Colors.light.iconPrimary}
+                  iconSize={18}
+                />
+              </ProgressRing>
             </View>
             <View style={styles.userInfo}>
               <View style={styles.userNameRow}>
@@ -301,13 +311,8 @@ function RankingItem({
                 )}
               </View>
               <View style={styles.statsRow}>
-                <Text style={[styles.userStats, { color: rankColor }]}>
-                  {stat.points} pts
-                </Text>
-                <Text style={styles.userStats}>
-                  {" "}
-                  • {stat.tasksCompleted} tarefas
-                </Text>
+                <Text style={[styles.userStats, { color: rankColor }]}>{stat.points} pts</Text>
+                <Text style={styles.userStats}> • {stat.tasksCompleted} tarefas</Text>
               </View>
             </View>
           </View>
@@ -315,10 +320,7 @@ function RankingItem({
           <View style={styles.progress}>
             <View style={styles.progressBar}>
               <Animated.View
-                style={[
-                  styles.progressFill,
-                  { backgroundColor: rankColor, width: progressWidth },
-                ]}
+                style={[styles.progressFill, { backgroundColor: rankColor, width: progressWidth }]}
               />
             </View>
           </View>
@@ -341,14 +343,8 @@ function RankingEmptyState() {
 function RankingFooter() {
   return (
     <View style={styles.footer}>
-      <MaterialCommunityIcons
-        name="star-circle"
-        size={12}
-        color={Colors.light.mutedText}
-      />
-      <Text style={styles.footerText}>
-        Continue completando tarefas para subir no ranking
-      </Text>
+      <ZappIcon name="star-circle" size={12} color={Colors.light.mutedText} />
+      <Text style={styles.footerText}>Continue completando tarefas para subir no ranking</Text>
     </View>
   );
 }
@@ -364,8 +360,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 14,
   },
   headerIcon: {
@@ -375,8 +371,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.light.border,
     backgroundColor: Colors.light.cardDark,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   headerContent: {
@@ -384,13 +380,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.text,
     letterSpacing: -0.2,
   },
   subtitle: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '500',
     color: Colors.light.mutedText,
     marginTop: 2,
   },
@@ -400,18 +396,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    alignItems: "center",
+    alignItems: 'center',
     backgroundColor: Colors.light.cardDark,
     minWidth: 48,
   },
   badgeText: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.light.text,
   },
   badgeLabel: {
     fontSize: 10,
-    fontWeight: "500",
+    fontWeight: '500',
     color: Colors.light.mutedText,
     marginTop: 1,
   },
@@ -433,8 +429,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   itemContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 12,
     backgroundColor: Colors.light.cardDark,
@@ -445,10 +441,10 @@ const styles = StyleSheet.create({
   },
   itemContentCurrent: {
     backgroundColor: Colors.light.accentPurpleSurface,
-    borderColor: "rgba(175, 82, 222, 0.25)",
+    borderColor: 'rgba(175, 82, 222, 0.25)',
   },
   rankSection: {
-    alignItems: "center",
+    alignItems: 'center',
     marginRight: 10,
     minWidth: 30,
   },
@@ -456,105 +452,87 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 3,
     borderWidth: 1,
   },
   rankText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   userSection: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginRight: 10,
     gap: 10,
   },
   avatarWrap: {
-    position: "relative",
-    width: 34,
-    height: 34,
-  },
-  xpRing: {
-    position: "absolute",
-    top: -3,
-    left: -3,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: Colors.light.border,
-    overflow: "hidden",
-  },
-  xpRingFill: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    height: "100%",
-    backgroundColor: Colors.light.primary,
-    opacity: 0.3,
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   userInfo: {
     flex: 1,
   },
   userNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
   userName: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.text,
     letterSpacing: -0.1,
   },
   youBadge: {
     backgroundColor: Colors.light.accentPurpleSurface,
     borderWidth: 1,
-    borderColor: "rgba(175, 82, 222, 0.25)",
+    borderColor: 'rgba(175, 82, 222, 0.25)',
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 1,
   },
   youBadgeText: {
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.light.accentPurple,
     letterSpacing: 0.2,
   },
   statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 3,
   },
   userStats: {
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: '500',
     color: Colors.light.mutedText,
   },
   progress: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
     width: 48,
   },
   progressBar: {
     width: 48,
     height: 6,
     borderRadius: 3,
-    overflow: "hidden",
+    overflow: 'hidden',
     backgroundColor: Colors.light.progressBackground,
     marginBottom: 0,
   },
   progressFill: {
-    height: "100%",
+    height: '100%',
     borderRadius: 3,
   },
   footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: 5,
     paddingTop: 12,
     borderTopWidth: 1,
@@ -563,8 +541,8 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 11,
-    fontWeight: "500",
+    fontWeight: '500',
     color: Colors.light.mutedText,
-    textAlign: "center",
+    textAlign: 'center',
   },
 });

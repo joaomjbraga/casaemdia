@@ -18,7 +18,8 @@
     "onesignal",
     "shopify",
     "skia",
-    "worklets"
+    "worklets",
+    "Zapp"
   ],
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true

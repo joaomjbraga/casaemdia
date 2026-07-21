@@ -1,17 +1,11 @@
-import IconCircleButton from "@/components/common/IconCircleButton";
-import PrimaryIconButton from "@/components/common/PrimaryIconButton";
-import ProgressBar from "@/components/common/ProgressBar";
-import ScreenHeader from "@/components/common/ScreenHeader";
-import Colors from "@/constants/Colors";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import IconCircleButton from '@/components/common/IconCircleButton';
+import PrimaryIconButton from '@/components/common/PrimaryIconButton';
+import ProgressBar from '@/components/common/ProgressBar';
+import ScreenHeader from '@/components/common/ScreenHeader';
+import Colors from '@/constants/Colors';
+import ZappIcon from '@/components/common/ZappIcon';
+import React from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ShoppingListHeaderProps {
   pendingCount: number;
@@ -45,7 +39,7 @@ export default function ShoppingListHeader({
       <ScreenHeader
         iconName="cart-outline"
         title="Lista de Compras"
-        subtitle={`${pendingCount} a comprar · ${completedCount} comprado${completedCount !== 1 ? "s" : ""}`}
+        subtitle={`${pendingCount} a comprar · ${completedCount} comprado${completedCount !== 1 ? 's' : ''}`}
         iconBackgroundColor={Colors.light.accentPurpleSurface}
         iconColor={Colors.light.accentPurple}
         subtitleColor={Colors.light.mutedText}
@@ -63,11 +57,7 @@ export default function ShoppingListHeader({
         }
         footer={
           <View style={styles.progressWrap}>
-            <ProgressBar
-              progress={progress}
-              height={8}
-              color={Colors.light.success}
-            />
+            <ProgressBar progress={progress} height={8} color={Colors.light.success} />
           </View>
         }
       />
@@ -83,11 +73,7 @@ export default function ShoppingListHeader({
             onSubmitEditing={onAddItem}
             returnKeyType="done"
           />
-          <PrimaryIconButton
-            iconName="plus"
-            onPress={onAddItem}
-            disabled={!newItemName.trim()}
-          />
+          <PrimaryIconButton iconName="plus" onPress={onAddItem} disabled={!newItemName.trim()} />
         </View>
 
         <TextInput
@@ -101,11 +87,7 @@ export default function ShoppingListHeader({
         />
 
         <View style={styles.filterRow}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={18}
-            color={Colors.light.mutedText}
-          />
+          <ZappIcon name="magnify" size={18} color={Colors.light.mutedText} />
           <TextInput
             style={styles.filterInput}
             placeholder="Buscar item..."
@@ -114,15 +96,8 @@ export default function ShoppingListHeader({
             onChangeText={onFilterChange}
           />
           {filterName ? (
-            <TouchableOpacity
-              onPress={() => onFilterChange("")}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={20}
-                color={Colors.light.mutedText}
-              />
+            <TouchableOpacity onPress={() => onFilterChange('')} activeOpacity={0.7}>
+              <ZappIcon name="close-circle" size={20} color={Colors.light.mutedText} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -141,7 +116,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   inputRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 12,
   },
   input: {
@@ -166,11 +141,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: Colors.light.text,
-    textAlignVertical: "center",
+    textAlignVertical: 'center',
   },
   filterRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.light.inputBackground,
     borderRadius: 12,
     borderWidth: 1,

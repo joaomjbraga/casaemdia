@@ -1,21 +1,25 @@
-import type { Task } from "@/types/models";
+import type { Task } from '@/types/models';
 import {
   addDoc,
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   Timestamp,
   updateDoc,
   writeBatch,
-} from "firebase/firestore";
-import { db } from "../lib/firebase";
-import { creditCompletion, revertCompletion } from "../lib/gamification";
-import { sendNotificationToFamily } from "../lib/onesignal";
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import logger from '@/lib/logger';
+import { creditCompletion, revertCompletion } from '../lib/gamification';
+import { sendNotificationToFamily } from '../lib/onesignal';
 
+const BATCH_LIMIT = 500;
 
 export type TaskSnapshot = Task;
 
@@ -25,20 +29,35 @@ export interface TaskMutationOptions {
 }
 
 const buildTasksQuery = (familyId: string) =>
-  query(
-    collection(db, "families", familyId, "tasks"),
-    orderBy("created_at", "desc"),
-  );
+  query(collection(db, 'families', familyId, 'tasks'), orderBy('created_at', 'desc'));
 
-const mapTaskSnapshot = (d: any): TaskSnapshot => ({
-  id: d.id,
-  title: d.data().title,
-  done: d.data().done,
-  assignee: d.data().assignee,
-  assigneeId: d.data().assigneeId,
-  points: d.data().points,
-  createdAt: d.data().created_at,
-});
+const mapTaskSnapshot = (d: any): TaskSnapshot => {
+  const data = d.data();
+  return {
+    id: d.id,
+    title: data.title,
+    done: data.done,
+    assignee: data.assignee,
+    assigneeId: data.assigneeId,
+    points: data.points,
+    createdAt: data.created_at,
+  };
+};
+
+const commitBatched = async (
+  ops: { type: 'delete' | 'update' | 'set'; ref: any; data?: any }[],
+) => {
+  for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+    const chunk = ops.slice(i, i + BATCH_LIMIT);
+    const batch = writeBatch(db);
+    for (const op of chunk) {
+      if (op.type === 'delete') batch.delete(op.ref);
+      else if (op.type === 'update') batch.update(op.ref, op.data);
+      else if (op.type === 'set') batch.set(op.ref, op.data);
+    }
+    await batch.commit();
+  }
+};
 
 const applyTaskCompletion = async ({
   familyId,
@@ -53,57 +72,71 @@ const applyTaskCompletion = async ({
   newDone: boolean;
   options?: TaskMutationOptions;
 }) => {
-  const ref = doc(db, "families", familyId, "tasks", taskId);
-  await updateDoc(ref, { done: newDone });
+  const ref = doc(db, 'families', familyId, 'tasks', taskId);
+
+  const stateChanged = await runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(ref);
+    if (!snap.exists()) return false;
+
+    const currentDone = snap.data().done;
+    if (currentDone === newDone) return false;
+
+    transaction.update(ref, { done: newDone });
+    return true;
+  });
+
+  if (!stateChanged) return;
+
+  const assigneeId = task.assigneeId || task.assignee;
+  if (!assigneeId) return;
 
   try {
     if (newDone) {
-      await creditCompletion(familyId, task.assigneeId ?? task.assignee, {
+      await creditCompletion(familyId, assigneeId, {
         points: task.points,
         task: true,
       });
     } else {
-      await revertCompletion(familyId, task.assigneeId ?? task.assignee, {
+      await revertCompletion(familyId, assigneeId, {
         points: task.points,
         task: true,
       });
     }
   } catch (error) {
-    console.error("Erro ao atualizar gamificação (tarefa):", error);
+    logger.error('Erro ao atualizar gamificação (tarefa):', error);
   }
 
   if (options?.userName && options.userId) {
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: options.userId,
-      title: newDone ? "Tarefa concluida" : "Tarefa reaberta",
-      body: newDone
-        ? `${options.userName} concluiu a tarefa "${task.title}"`
-        : `${options.userName} reabriu a tarefa "${task.title}"`,
-    });
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: options.userId,
+        title: newDone ? 'Tarefa concluida' : 'Tarefa reaberta',
+        body: newDone
+          ? `${options.userName} concluiu a tarefa "${task.title}"`
+          : `${options.userName} reabriu a tarefa "${task.title}"`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (tarefa):', error);
+    }
   }
 };
 
-export const subscribeToTasks = (
-  familyId: string,
-  callback: (tasks: TaskSnapshot[]) => void,
-) => {
+export const subscribeToTasks = (familyId: string, callback: (tasks: TaskSnapshot[]) => void) => {
   return onSnapshot(
     buildTasksQuery(familyId),
     (snapshot) => {
       const data: TaskSnapshot[] = snapshot.docs.map(mapTaskSnapshot);
-
       callback(data);
     },
     (error) => {
-      console.error("Tasks snapshot error:", error);
+      logger.error('Tasks snapshot error:', error);
     },
   );
 };
 
 export const fetchDashboardTasks = async (familyId: string) => {
   const snapshot = await getDocs(buildTasksQuery(familyId));
-
   return snapshot.docs.map(mapTaskSnapshot) satisfies TaskSnapshot[];
 };
 
@@ -117,7 +150,7 @@ export const createTask = async (
   },
   options?: TaskMutationOptions,
 ) => {
-  const ref = await addDoc(collection(db, "families", familyId, "tasks"), {
+  const ref = await addDoc(collection(db, 'families', familyId, 'tasks'), {
     title: payload.title,
     assignee: payload.assignee,
     assigneeId: payload.assigneeId,
@@ -127,12 +160,16 @@ export const createTask = async (
   });
 
   if (options?.userName && options.userId) {
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: options.userId,
-      title: "Nova tarefa",
-      body: `${options.userName} criou a tarefa "${payload.title}" para ${payload.assignee}`,
-    });
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: options.userId,
+        title: 'Nova tarefa',
+        body: `${options.userName} criou a tarefa "${payload.title}" para ${payload.assignee}`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (nova tarefa):', error);
+    }
   }
 
   return ref.id;
@@ -149,12 +186,11 @@ export const toggleDashboardTask = async ({
   task: TaskSnapshot;
   options?: TaskMutationOptions;
 }) => {
-  const newDone = !task.done;
   await applyTaskCompletion({
     familyId,
     taskId,
     task,
-    newDone,
+    newDone: !task.done,
     options,
   });
 };
@@ -188,7 +224,7 @@ export const deleteDashboardTask = async ({
   familyId: string;
   taskId: string;
 }) => {
-  const ref = doc(db, "families", familyId, "tasks", taskId);
+  const ref = doc(db, 'families', familyId, 'tasks', taskId);
   await deleteDoc(ref);
 };
 
@@ -203,16 +239,20 @@ export const deleteTask = async ({
   title?: string;
   options?: TaskMutationOptions;
 }) => {
-  const ref = doc(db, "families", familyId, "tasks", taskId);
+  const ref = doc(db, 'families', familyId, 'tasks', taskId);
   await deleteDoc(ref);
 
   if (options?.userName && options.userId) {
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: options.userId,
-      title: "Tarefa removida",
-      body: `${options.userName} removeu a tarefa "${title ?? "tarefa"}"`,
-    });
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: options.userId,
+        title: 'Tarefa removida',
+        body: `${options.userName} removeu a tarefa "${title ?? 'tarefa'}"`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (remover tarefa):', error);
+    }
   }
 };
 
@@ -225,18 +265,22 @@ export const deleteAllTasks = async ({
   tasks: TaskSnapshot[];
   options?: TaskMutationOptions;
 }) => {
-  const batch = writeBatch(db);
-  for (const task of tasks) {
-    batch.delete(doc(db, "families", familyId, "tasks", task.id));
-  }
-  await batch.commit();
+  const ops = tasks.map((task) => ({
+    type: 'delete' as const,
+    ref: doc(db, 'families', familyId, 'tasks', task.id),
+  }));
+  await commitBatched(ops);
 
   if (options?.userName && options.userId) {
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: options.userId,
-      title: "Tarefas limpas",
-      body: `${options.userName} removeu todas as tarefas`,
-    });
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: options.userId,
+        title: 'Tarefas limpas',
+        body: `${options.userName} removeu todas as tarefas`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (limpar tarefas):', error);
+    }
   }
 };

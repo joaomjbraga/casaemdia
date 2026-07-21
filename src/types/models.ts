@@ -13,7 +13,7 @@ export interface FamilyMember {
   name: string;
   email: string;
   photoURL: string | null;
-  role: "admin" | "member";
+  role: 'admin' | 'member';
   points: number;
   tasksCompleted: number;
   shoppingCompleted: number;
@@ -32,7 +32,7 @@ export interface CoupleStat {
   id: string;
   name: string;
   points: number;
-  avatar: "person" | "person-outline" | "trophy";
+  avatar: 'person' | 'person-outline' | 'trophy';
   tasksCompleted: number;
   photoURL?: string | null;
 }
@@ -44,6 +44,6 @@ export interface Invitation {
   fromUserId: string;
   fromUserName: string;
   toEmail: string;
-  status: "pending" | "accepted" | "declined";
+  status: 'pending' | 'accepted' | 'declined';
   createdAt: any;
 }

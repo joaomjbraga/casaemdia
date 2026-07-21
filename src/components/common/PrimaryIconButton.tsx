@@ -1,13 +1,8 @@
-import { useCallback, useRef } from "react";
-import {
-  Animated,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import Colors from "@/constants/Colors";
+import { useCallback, useMemo, useRef } from 'react';
+import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
+import ZappIcon from '@/components/common/ZappIcon';
+import * as Haptics from 'expo-haptics';
+import Colors from '@/constants/Colors';
 
 interface PrimaryIconButtonProps {
   iconName: string;
@@ -55,6 +50,20 @@ export default function PrimaryIconButton({
     onPress();
   }, [onPress]);
 
+  const animatedButtonStyle = useMemo(
+    () => ({
+      width: size,
+      height: size,
+      borderRadius: size * 0.32,
+      backgroundColor: color,
+      shadowColor,
+      transform: [{ scale }],
+      borderBottomWidth: Math.max(3, size * 0.08),
+      borderBottomColor: 'rgba(0, 0, 0, 0.2)',
+    }),
+    [size, color, shadowColor, scale],
+  );
+
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -65,29 +74,12 @@ export default function PrimaryIconButton({
       style={style}
       // @ts-ignore
       android_ripple={{
-        color: "rgba(255, 255, 255, 0.2)",
+        color: 'rgba(255, 255, 255, 0.2)',
         borderless: true,
       }}
     >
-      <Animated.View
-        style={[
-          styles.button,
-          {
-            width: size,
-            height: size,
-            borderRadius: size * 0.32,
-            backgroundColor: color,
-            shadowColor,
-            transform: [{ scale }],
-          },
-          disabled && styles.disabled,
-        ]}
-      >
-        <MaterialCommunityIcons
-          name={iconName as any}
-          size={size * 0.5}
-          color={Colors.light.text}
-        />
+      <Animated.View style={[styles.button, animatedButtonStyle, disabled && styles.disabled]}>
+        <ZappIcon name={iconName} size={size * 0.5} color={Colors.light.text} />
       </Animated.View>
     </TouchableOpacity>
   );
@@ -95,8 +87,8 @@ export default function PrimaryIconButton({
 
 const styles = StyleSheet.create({
   button: {
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 4,

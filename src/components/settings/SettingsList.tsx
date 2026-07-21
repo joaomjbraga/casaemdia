@@ -1,7 +1,7 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Colors from "@/constants/Colors";
+import ZappIcon from '@/components/common/ZappIcon';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Colors from '@/constants/Colors';
 
 export function SectionLabel({ text }: { text: string }) {
   return <Text style={styles.sectionLabel}>{text}</Text>;
@@ -42,15 +42,10 @@ export function Cell({
         disabled={!onPress || disabled}
         activeOpacity={0.6}
       >
-        <View
-          style={[
-            styles.cellInner,
-            last && styles.cellInnerLast,
-          ]}
-        >
+        <View style={[styles.cellInner, last && styles.cellInnerLast]}>
           {children}
           {chevron && (
-            <MaterialCommunityIcons
+            <ZappIcon
               name="chevron-right"
               size={20}
               color={Colors.light.mutedText}
@@ -66,9 +61,9 @@ export function Cell({
 const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.mutedText,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginHorizontal: 20,
     marginTop: 28,
@@ -78,12 +73,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     backgroundColor: Colors.light.cardBackground,
     borderRadius: 12,
-    overflow: "hidden",
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
   cell: {
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
   },
   cellPressable: {},
   cellDisabled: { opacity: 0.5 },
@@ -97,8 +92,8 @@ const styles = StyleSheet.create({
   },
   cellTouch: { flex: 1 },
   cellInner: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     minHeight: 52,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -107,5 +102,5 @@ const styles = StyleSheet.create({
   cellInnerLast: {
     borderBottomWidth: 0,
   },
-  cellChevron: { marginLeft: "auto" },
+  cellChevron: { marginLeft: 'auto' },
 });

@@ -5,16 +5,16 @@ import {
   doc,
   onSnapshot,
   query,
+  runTransaction,
   updateDoc,
   writeBatch,
-} from "firebase/firestore";
-import { db } from "../lib/firebase";
-import {
-  creditCompletion,
-  revertCompletion,
-  SHOPPING_ITEM_POINTS,
-} from "../lib/gamification";
-import { sendNotificationToFamily } from "../lib/onesignal";
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import logger from '@/lib/logger';
+import { creditCompletion, revertCompletion, SHOPPING_ITEM_POINTS } from '../lib/gamification';
+import { sendNotificationToFamily } from '../lib/onesignal';
+
+const BATCH_LIMIT = 500;
 
 export interface ShoppingItemSnapshot {
   id: string;
@@ -28,23 +28,26 @@ export const subscribeToShoppingItems = (
   familyId: string,
   callback: (items: ShoppingItemSnapshot[]) => void,
 ) => {
-  const q = query(collection(db, "families", familyId, "shopping_list"));
+  const q = query(collection(db, 'families', familyId, 'shopping_list'));
 
   return onSnapshot(
     q,
     (snapshot) => {
-      const mappedItems: ShoppingItemSnapshot[] = snapshot.docs.map((d) => ({
-        id: d.id,
-        name: d.data().title,
-        done: d.data().done,
-        quantity: d.data().quantity ?? "",
-        points: d.data().points ?? SHOPPING_ITEM_POINTS,
-      }));
+      const mappedItems: ShoppingItemSnapshot[] = snapshot.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.title,
+          done: data.done,
+          quantity: data.quantity ?? '',
+          points: data.points ?? SHOPPING_ITEM_POINTS,
+        };
+      });
 
       callback(mappedItems);
     },
     (error) => {
-      console.error("Shopping snapshot error:", error);
+      logger.error('Shopping snapshot error:', error);
     },
   );
 };
@@ -62,23 +65,24 @@ export const createShoppingItem = async ({
   userName?: string;
   userId?: string;
 }) => {
-  const docRef = await addDoc(
-    collection(db, "families", familyId, "shopping_list"),
-    {
-      title: name,
-      done: false,
-      quantity,
-      points: SHOPPING_ITEM_POINTS,
-    },
-  );
+  const docRef = await addDoc(collection(db, 'families', familyId, 'shopping_list'), {
+    title: name,
+    done: false,
+    quantity,
+    points: SHOPPING_ITEM_POINTS,
+  });
 
   if (userName && userId) {
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: userId,
-      title: "Item adicionado",
-      body: `${userName} adicionou "${name}" na lista de compras`,
-    });
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: userId,
+        title: 'Item adicionado',
+        body: `${userName} adicionou "${name}" na lista de compras`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (item adicionado):', error);
+    }
   }
 
   return docRef.id;
@@ -99,16 +103,20 @@ export const updateShoppingItemQuantity = async ({
   userName?: string;
   userId?: string;
 }) => {
-  const itemRef = doc(db, "families", familyId, "shopping_list", itemId);
+  const itemRef = doc(db, 'families', familyId, 'shopping_list', itemId);
   await updateDoc(itemRef, { quantity });
 
   if (userName && userId) {
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: userId,
-      title: "Item atualizado",
-      body: `${userName} atualizou "${itemName}" na lista de compras`,
-    });
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: userId,
+        title: 'Item atualizado',
+        body: `${userName} atualizou "${itemName}" na lista de compras`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (item atualizado):', error);
+    }
   }
 };
 
@@ -125,8 +133,20 @@ export const toggleShoppingItem = async ({
   newDone: boolean;
   user?: { uid: string; displayName?: string | null; email?: string | null };
 }) => {
-  const itemRef = doc(db, "families", familyId, "shopping_list", itemId);
-  await updateDoc(itemRef, { done: newDone });
+  const itemRef = doc(db, 'families', familyId, 'shopping_list', itemId);
+
+  const stateChanged = await runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(itemRef);
+    if (!snap.exists()) return false;
+
+    const currentDone = snap.data().done;
+    if (currentDone === newDone) return false;
+
+    transaction.update(itemRef, { done: newDone });
+    return true;
+  });
+
+  if (!stateChanged) return;
 
   if (user) {
     const itemPoints = item.points ?? SHOPPING_ITEM_POINTS;
@@ -143,18 +163,22 @@ export const toggleShoppingItem = async ({
         });
       }
     } catch (error) {
-      console.error("Erro ao atualizar gamificação (compra):", error);
+      logger.error('Erro ao atualizar gamificação (compra):', error);
     }
 
-    const userName = user.displayName || user.email?.split("@")[0] || "Alguem";
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: user.uid,
-      title: newDone ? "Item comprado" : "Item desmarcado",
-      body: newDone
-        ? `${userName} comprou "${item.name}"`
-        : `${userName} desmarcou "${item.name}" na lista de compras`,
-    });
+    const userName = user.displayName || user.email?.split('@')[0] || 'Alguem';
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: user.uid,
+        title: newDone ? 'Item comprado' : 'Item desmarcado',
+        body: newDone
+          ? `${userName} comprou "${item.name}"`
+          : `${userName} desmarcou "${item.name}" na lista de compras`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (compra):', error);
+    }
   }
 };
 
@@ -171,16 +195,20 @@ export const deleteShoppingItem = async ({
   userName?: string;
   userId?: string;
 }) => {
-  const itemRef = doc(db, "families", familyId, "shopping_list", itemId);
+  const itemRef = doc(db, 'families', familyId, 'shopping_list', itemId);
   await deleteDoc(itemRef);
 
   if (userName && userId) {
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: userId,
-      title: "Item removido",
-      body: `${userName} removeu "${itemName ?? "item"}" da lista de compras`,
-    });
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: userId,
+        title: 'Item removido',
+        body: `${userName} removeu "${itemName ?? 'item'}" da lista de compras`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (remover item):', error);
+    }
   }
 };
 
@@ -195,18 +223,30 @@ export const clearCompletedShoppingItems = async ({
   userName?: string;
   userId?: string;
 }) => {
-  const batch = writeBatch(db);
-  for (const item of items) {
-    batch.delete(doc(db, "families", familyId, "shopping_list", item.id));
+  const ops = items.map((item) => ({
+    type: 'delete' as const,
+    ref: doc(db, 'families', familyId, 'shopping_list', item.id),
+  }));
+
+  for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+    const chunk = ops.slice(i, i + BATCH_LIMIT);
+    const batch = writeBatch(db);
+    for (const op of chunk) {
+      batch.delete(op.ref);
+    }
+    await batch.commit();
   }
-  await batch.commit();
 
   if (userName && userId) {
-    await sendNotificationToFamily({
-      familyId,
-      excludeUserId: userId,
-      title: "Lista limpa",
-      body: `${userName} removeu ${items.length} itens comprados da lista`,
-    });
+    try {
+      await sendNotificationToFamily({
+        familyId,
+        excludeUserId: userId,
+        title: 'Lista limpa',
+        body: `${userName} removeu ${items.length} itens comprados da lista`,
+      });
+    } catch (error) {
+      logger.error('Erro ao enviar notificação (limpar lista):', error);
+    }
   }
 };

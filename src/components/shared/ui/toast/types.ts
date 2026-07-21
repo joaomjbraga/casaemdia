@@ -1,8 +1,8 @@
-import type { StyleProp, ViewStyle } from "react-native";
-import type { ReactNode } from "react";
+import type { StyleProp, ViewStyle } from 'react-native';
+import type { ReactNode } from 'react';
 
-type ToastType = "info" | "warning" | "error" | "success" | "default";
-type ToastPosition = "bottom" | "top";
+type ToastType = 'info' | 'warning' | 'error' | 'success' | 'default';
+type ToastPosition = 'bottom' | 'top';
 
 interface ToastOptions {
   duration?: number;
@@ -20,7 +20,7 @@ interface ToastOptions {
 interface Toast {
   id: string;
   content: ReactNode | string;
-  options: Omit<Required<ToastOptions>, "backgroundColor">;
+  options: Omit<Required<ToastOptions>, 'backgroundColor'>;
 }
 
 interface ToastContextValue {
@@ -38,11 +38,4 @@ interface ToastProps {
   children: ReactNode;
 }
 
-export type {
-  ToastType,
-  ToastPosition,
-  ToastOptions,
-  Toast,
-  ToastContextValue,
-  ToastProps,
-};
+export type { ToastType, ToastPosition, ToastOptions, Toast, ToastContextValue, ToastProps };

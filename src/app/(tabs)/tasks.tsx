@@ -1,30 +1,24 @@
-import type { Task } from "@/types/models";
-import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
-import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
-import { useAuth } from "@/contexts/AuthContext";
-import { useFamily } from "@/contexts/FamilyContext";
-import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import TasksCard from "@/components/tasks/TasksCard";
-import TasksScreenHeader from "@/components/tasks/TasksScreenHeader";
-import LoadingSkeleton from "@/components/common/LoadingSkeleton";
-import Colors from "@/constants/Colors";
-import { DOCK_CLEARANCE } from "@/constants/Layout";
+import type { Task } from '@/types/models';
+import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
+import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
+import { StatusBar } from 'expo-status-bar';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import TasksCard from '@/components/tasks/TasksCard';
+import TasksScreenHeader from '@/components/tasks/TasksScreenHeader';
+import LoadingSkeleton from '@/components/common/LoadingSkeleton';
+import Colors from '@/constants/Colors';
+import { DOCK_CLEARANCE } from '@/constants/Layout';
 import {
   deleteAllTasks,
   deleteTask as deleteTaskRecord,
   subscribeToTasks,
   toggleTaskCompletion,
-} from "@/services/tasks";
-
+} from '@/services/tasks';
 
 export default function TasksScreen() {
   const { user } = useAuth();
@@ -40,8 +34,7 @@ export default function TasksScreen() {
 
   const completedTasks = tasks.filter((t) => t.done).length;
   const totalTasks = tasks.length;
-  const progressPercentage =
-    totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+  const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   useEffect(() => {
     if (!familyId) {
@@ -78,16 +71,16 @@ export default function TasksScreen() {
         task,
         newDone,
         options: {
-          userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+          userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
           userId: user.uid,
         },
       });
     } catch {
       setTasks(() => snapshot);
       showAlert({
-        title: "Erro",
-        message: "Nao foi possivel atualizar a tarefa.",
-        type: "error",
+        title: 'Erro',
+        message: 'Nao foi possivel atualizar a tarefa.',
+        type: 'error',
       });
     }
   };
@@ -108,16 +101,16 @@ export default function TasksScreen() {
         taskId: id,
         title: deletedTask?.title,
         options: {
-          userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+          userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
           userId: user.uid,
         },
       });
     } catch {
       setTasks(() => snapshot);
       showAlert({
-        title: "Erro",
-        message: "Não foi possível excluir a tarefa.",
-        type: "error",
+        title: 'Erro',
+        message: 'Não foi possível excluir a tarefa.',
+        type: 'error',
       });
     }
   };
@@ -127,17 +120,17 @@ export default function TasksScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const openAdd = () => router.push("/AddTaskScreen");
+  const openAdd = () => router.push('/AddTaskScreen');
 
   const handleDeleteAll = async () => {
     if (!familyId || tasks.length === 0) return;
 
     showDialog({
-      title: "Excluir todas as tarefas",
+      title: 'Excluir todas as tarefas',
       message: `Remover todas as ${tasks.length} tarefa(s)?`,
-      type: "danger",
-      confirmText: "Excluir todas",
-      cancelText: "Cancelar",
+      type: 'danger',
+      confirmText: 'Excluir todas',
+      cancelText: 'Cancelar',
       onConfirm: async () => {
         const previousTasks = tasksRef.current;
         setTasks([]);
@@ -148,8 +141,7 @@ export default function TasksScreen() {
             tasks: previousTasks,
             options: user
               ? {
-                  userName:
-                    user.displayName || user.email?.split("@")[0] || "Alguem",
+                  userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
                   userId: user.uid,
                 }
               : undefined,
@@ -157,9 +149,9 @@ export default function TasksScreen() {
         } catch {
           setTasks(() => previousTasks);
           showAlert({
-            title: "Erro",
-            message: "Não foi possível excluir as tarefas.",
-            type: "error",
+            title: 'Erro',
+            message: 'Não foi possível excluir as tarefas.',
+            type: 'error',
           });
         }
       },
@@ -171,7 +163,7 @@ export default function TasksScreen() {
   }
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       <StatusBar style="dark" />
 
       <View style={styles.headerSpacer} />

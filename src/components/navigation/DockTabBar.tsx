@@ -1,7 +1,7 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import type { BottomTabBarProps } from "expo-router/build/react-navigation/bottom-tabs";
-import React, { useCallback, useEffect } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import ZappIcon from '@/components/common/ZappIcon';
+import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs';
+import React, { useCallback, useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,22 +9,22 @@ import Animated, {
   withSequence,
   withSpring,
   withTiming,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/constants/Colors";
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Colors from '@/constants/Colors';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const ICON_MAP: Record<string, string> = {
-  shoppinglist: "cart",
-  tasks: "checkbox-marked",
-  index: "home-variant",
+  shoppinglist: 'cart',
+  tasks: 'checkbox-marked',
+  index: 'home-variant',
 };
 
 const LABEL_MAP: Record<string, string> = {
-  shoppinglist: "Compras",
-  tasks: "Tarefas",
-  index: "Início",
+  shoppinglist: 'Compras',
+  tasks: 'Tarefas',
+  index: 'Início',
 };
 
 function DockItem({
@@ -50,7 +50,7 @@ function DockItem({
       stiffness: 300,
       mass: 0.5,
     });
-  }, []);
+  }, [scale]);
 
   const handlePressOut = useCallback(() => {
     scale.value = withSpring(1, {
@@ -58,9 +58,9 @@ function DockItem({
       stiffness: 200,
       mass: 0.8,
     });
-  }, []);
+  }, [scale]);
 
-  const iconName = (ICON_MAP[routeName] as any) || "circle";
+  const iconName = (ICON_MAP[routeName] as any) || 'circle';
   const label = LABEL_MAP[routeName] || routeName;
   const color = isFocused ? Colors.light.tint : Colors.light.tabIconDefault;
 
@@ -75,13 +75,11 @@ function DockItem({
       accessibilityRole="button"
       accessibilityState={{ selected: isFocused }}
     >
-      <MaterialCommunityIcons name={iconName} size={24} color={color} />
-      <Text
-        style={[styles.label, { color }, isFocused && styles.labelFocused]}
-        numberOfLines={1}
-      >
+      <ZappIcon name={iconName} size={22} color={color} />
+      <Text style={[styles.label, { color }, isFocused && styles.labelFocused]} numberOfLines={1}>
         {label}
       </Text>
+      {isFocused && <View style={styles.dot} />}
     </AnimatedPressable>
   );
 }
@@ -91,7 +89,7 @@ export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
   const shimmerOpacity = useSharedValue(0.35);
 
   const DOCK_PADDING = 8;
-  const ITEM_WIDTH = 58;
+  const ITEM_WIDTH = 56;
 
   const indicatorX = useSharedValue(0);
 
@@ -106,10 +104,7 @@ export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
 
   useEffect(() => {
     shimmerOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.82, { duration: 950 }),
-        withTiming(0.45, { duration: 1100 }),
-      ),
+      withSequence(withTiming(0.82, { duration: 950 }), withTiming(0.45, { duration: 1100 })),
       -1,
       true,
     );
@@ -119,7 +114,7 @@ export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
     indicatorX.value = withTiming(DOCK_PADDING + state.index * ITEM_WIDTH, {
       duration: 260,
     });
-  }, [state.index]);
+  }, [indicatorX, state.index]);
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom + 28 }]}>
@@ -133,7 +128,7 @@ export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
 
           const onPress = () => {
             const event = navigation.emit({
-              type: "tabPress",
+              type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
             });
@@ -145,7 +140,7 @@ export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
 
           const onLongPress = () => {
             navigation.emit({
-              type: "tabLongPress",
+              type: 'tabLongPress',
               target: route.key,
             });
           };
@@ -167,17 +162,17 @@ export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
+    position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: "center",
+    alignItems: 'center',
     zIndex: 100,
   },
   dock: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
     backgroundColor: Colors.light.cardBackground,
     borderRadius: 24,
     paddingTop: 10,
@@ -187,11 +182,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
   },
   indicator: {
-    position: "absolute",
+    position: 'absolute',
     top: 4,
     height: 36,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   indicatorPill: {
     width: 40,
@@ -199,21 +194,28 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: Colors.light.accentPurpleSurface,
     borderWidth: 1,
-    borderColor: "rgba(175, 82, 222, 0.15)",
+    borderColor: 'rgba(175, 82, 222, 0.15)',
   },
   item: {
     width: 56,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 4,
   },
   label: {
     fontSize: 11,
-    fontWeight: "500",
+    fontWeight: '500',
     letterSpacing: 0.2,
     marginTop: 4,
   },
   labelFocused: {
-    fontWeight: "700",
+    fontWeight: '700',
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.light.tint,
+    marginTop: 3,
   },
 });

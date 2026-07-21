@@ -6,15 +6,16 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { createAudioPlayer } from "expo-audio";
-import type { AudioPlayer } from "expo-audio";
-import type { Toast, ToastContextValue, ToastOptions } from "../types";
+} from 'react';
+import logger from '@/lib/logger';
+import { createAudioPlayer } from 'expo-audio';
+import type { AudioPlayer } from 'expo-audio';
+import type { Toast, ToastContextValue, ToastOptions } from '../types';
 
-const DEFAULT_TOAST_OPTIONS: Omit<Required<ToastOptions>, "backgroundColor"> = {
+const DEFAULT_TOAST_OPTIONS: Omit<Required<ToastOptions>, 'backgroundColor'> = {
   duration: 3000,
-  type: "default",
-  position: "bottom",
+  type: 'default',
+  position: 'bottom',
   onClose: () => {},
   action: null,
   expandedContent: null,
@@ -26,14 +27,12 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 export const useToast = (): ToastContextValue => {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error("useToast must be used within a ToastProvider");
+    throw new Error('useToast must be used within a ToastProvider');
   }
   return context;
 };
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [expandedToasts, setExpandedToasts] = useState<Set<string>>(new Set());
   const playerRef = useRef<AudioPlayer | null>(null);
@@ -41,10 +40,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     try {
       playerRef.current = createAudioPlayer(
-        require("../../../../../assets/audio/notification2.wav")
+        require('../../../../../assets/audio/notification2.wav'),
       );
     } catch (error) {
-      console.warn("[Toast] Erro ao carregar som:", error);
+      logger.warn('[Toast] Erro ao carregar som:', error);
     }
     return () => {
       playerRef.current?.remove();
@@ -149,18 +148,19 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [toasts, dismiss]);
 
-  const value: ToastContextValue = useMemo(() => ({
-    toasts,
-    show,
-    update,
-    dismiss,
-    dismissAll,
-    expandedToasts,
-    expandToast,
-    collapseToast,
-  }), [toasts, expandedToasts, show, update, dismiss, dismissAll, expandToast, collapseToast]);
-
-  return (
-    <ToastContext.Provider value={value}>{children}</ToastContext.Provider>
+  const value: ToastContextValue = useMemo(
+    () => ({
+      toasts,
+      show,
+      update,
+      dismiss,
+      dismissAll,
+      expandedToasts,
+      expandToast,
+      collapseToast,
+    }),
+    [toasts, expandedToasts, show, update, dismiss, dismissAll, expandToast, collapseToast],
   );
+
+  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
 };

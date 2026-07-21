@@ -1,39 +1,45 @@
-import Colors from "@/constants/Colors";
-import { createAudioPlayer } from "expo-audio";
-import type { AudioPlayer } from "expo-audio";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Dimensions,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-} from "react-native";
+import Colors from '@/constants/Colors';
+import { createAudioPlayer } from 'expo-audio';
+import type { AudioPlayer } from 'expo-audio';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import logger from '@/lib/logger';
+import { Animated, Dimensions, Easing, Modal, Pressable, StyleSheet, Text } from 'react-native';
 
-const SCREEN = Dimensions.get("window");
+const SCREEN = Dimensions.get('window');
 
-const CELEBRATION_SOUND = require("@/assets/audio/celebration.wav");
+const CELEBRATION_SOUND = require('@/assets/audio/celebration.wav');
 
 interface CelebrationPiece {
   id: number;
   left: number;
-  emoji: string;
+  color: string;
   delay: number;
   duration: number;
   size: number;
+  shape: 'circle' | 'square' | 'star';
 }
 
-const EMOJIS = ["🎉", "✨", "🎊", "⭐", "💫", "🏆"];
+const CONFETTI_COLORS = [
+  '#FFD700',
+  '#FF6B6B',
+  '#4ECDC4',
+  '#45B7D1',
+  '#96E6A1',
+  '#DDA0DD',
+  '#FF9500',
+  '#007AFF',
+];
+const SHAPES: Array<'circle' | 'square' | 'star'> = ['circle', 'square', 'star'];
 
 const buildPieces = (): CelebrationPiece[] =>
-  Array.from({ length: 36 }, (_, id) => ({
+  Array.from({ length: 40 }, (_, id) => ({
     id,
-    left: Math.random() * (SCREEN.width - 40) + 20,
-    emoji: EMOJIS[id % EMOJIS.length],
+    left: Math.random() * (SCREEN.width - 20) + 10,
+    color: CONFETTI_COLORS[id % CONFETTI_COLORS.length],
     delay: Math.random() * 600,
     duration: 2600 + Math.random() * 1200,
-    size: 18 + Math.random() * 18,
+    size: 6 + Math.random() * 10,
+    shape: SHAPES[id % SHAPES.length],
   }));
 
 const OVERLAY_DURATION = 4200;
@@ -48,7 +54,7 @@ export function useCelebration() {
     try {
       playerRef.current = createAudioPlayer(CELEBRATION_SOUND);
     } catch (error) {
-      console.warn("[Celebration] Erro ao carregar som:", error);
+      logger.warn('[Celebration] Erro ao carregar som:', error);
     }
     return () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -62,10 +68,10 @@ export function useCelebration() {
         playerRef.current.seekTo(0);
         playerRef.current.play();
       } else {
-        console.warn("[Celebration] Player de audio indisponível");
+        logger.warn('[Celebration] Player de audio indisponível');
       }
     } catch (error) {
-      console.warn("[Celebration] Erro ao tocar som:", error);
+      logger.warn('[Celebration] Erro ao tocar som:', error);
     }
   }, []);
 
@@ -75,7 +81,7 @@ export function useCelebration() {
   }, []);
 
   const celebrate = useCallback(() => {
-    console.log("[Celebration] Disparando comemoração");
+    logger.info('[Celebration] Disparando comemoração');
     playSound();
     setPieces(buildPieces());
     setVisible(true);
@@ -87,11 +93,7 @@ export function useCelebration() {
     () =>
       visible ? (
         <Modal visible transparent animationType="none" statusBarTranslucent>
-          <Pressable
-            style={styles.overlay}
-            onPress={dismiss}
-            pointerEvents="auto"
-          >
+          <Pressable style={styles.overlay} onPress={dismiss} pointerEvents="auto">
             {pieces.map((piece) => (
               <FallingPiece key={piece.id} piece={piece} />
             ))}
@@ -137,48 +139,51 @@ function FallingPiece({ piece }: { piece: CelebrationPiece }) {
     ]).start();
   }, [piece, translateY, opacity, rotate]);
 
+  const borderRadius = piece.shape === 'circle' ? piece.size / 2 : piece.shape === 'square' ? 2 : 0;
+
   return (
-    <Animated.Text
+    <Animated.View
       style={[
         styles.piece,
         {
           left: piece.left,
-          fontSize: piece.size,
+          width: piece.size,
+          height: piece.size,
+          borderRadius,
+          backgroundColor: piece.color,
           opacity,
           transform: [
             { translateY },
             {
               rotate: rotate.interpolate({
                 inputRange: [0, 1],
-                outputRange: ["0deg", "360deg"],
+                outputRange: ['0deg', '360deg'],
               }),
             },
           ],
         },
       ]}
-    >
-      {piece.emoji}
-    </Animated.Text>
+    />
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   piece: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
   },
   badge: {
-    position: "absolute",
-    top: "38%",
+    position: 'absolute',
+    top: '38%',
     left: 0,
     right: 0,
-    alignItems: "center",
+    alignItems: 'center',
   },
   badgeEmoji: {
     fontSize: 64,
@@ -186,9 +191,9 @@ const styles = StyleSheet.create({
   badgeText: {
     marginTop: 8,
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: '800',
     color: Colors.light.text,
-    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
   },

@@ -1,14 +1,7 @@
-import { useEffect, useRef } from "react";
-import {
-  Animated,
-  Easing,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Colors from "@/constants/Colors";
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ZappIcon from '@/components/common/ZappIcon';
+import Colors from '@/constants/Colors';
 
 interface ShoppingItemCardProps {
   name: string;
@@ -24,65 +17,61 @@ interface ShoppingItemCardProps {
 function getItemIcon(name: string): string {
   const lower = name.toLowerCase();
   if (
-    lower.includes("fruta") ||
-    lower.includes("banana") ||
-    lower.includes("maçã") ||
-    lower.includes("laranja") ||
-    lower.includes("uva")
+    lower.includes('fruta') ||
+    lower.includes('banana') ||
+    lower.includes('maçã') ||
+    lower.includes('laranja') ||
+    lower.includes('uva')
   )
-    return "food-apple";
+    return 'food-apple';
   if (
-    lower.includes("verdura") ||
-    lower.includes("alface") ||
-    lower.includes("tomate") ||
-    lower.includes("cebola") ||
-    lower.includes("cenoura")
+    lower.includes('verdura') ||
+    lower.includes('alface') ||
+    lower.includes('tomate') ||
+    lower.includes('cebola') ||
+    lower.includes('cenoura')
   )
-    return "carrot";
+    return 'carrot';
   if (
-    lower.includes("carne") ||
-    lower.includes("frango") ||
-    lower.includes("peixe") ||
-    lower.includes("ovo")
+    lower.includes('carne') ||
+    lower.includes('frango') ||
+    lower.includes('peixe') ||
+    lower.includes('ovo')
   )
-    return "food-drumstick";
+    return 'food-drumstick';
   if (
-    lower.includes("leite") ||
-    lower.includes("queijo") ||
-    lower.includes("iogurte") ||
-    lower.includes("manteiga")
+    lower.includes('leite') ||
+    lower.includes('queijo') ||
+    lower.includes('iogurte') ||
+    lower.includes('manteiga')
   )
-    return "cow";
+    return 'cow';
   if (
-    lower.includes("pão") ||
-    lower.includes("biscoito") ||
-    lower.includes("bolo") ||
-    lower.includes("torrada")
+    lower.includes('pão') ||
+    lower.includes('biscoito') ||
+    lower.includes('bolo') ||
+    lower.includes('torrada')
   )
-    return "bread-slice";
+    return 'bread-slice';
   if (
-    lower.includes("limpeza") ||
-    lower.includes("detergente") ||
-    lower.includes("sabão") ||
-    lower.includes("alvejante")
+    lower.includes('limpeza') ||
+    lower.includes('detergente') ||
+    lower.includes('sabão') ||
+    lower.includes('alvejante')
   )
-    return "spray-bottle";
-  if (
-    lower.includes("remédio") ||
-    lower.includes("medicamento") ||
-    lower.includes("farmácia")
-  )
-    return "pill";
-  return "basket";
+    return 'spray-bottle';
+  if (lower.includes('remédio') || lower.includes('medicamento') || lower.includes('farmácia'))
+    return 'pill';
+  return 'basket';
 }
 
 function getIconColor(name: string): string {
   const lower = name.toLowerCase();
-  if (lower.includes("fruta") || lower.includes("verdura")) return "#4CAF50";
-  if (lower.includes("carne") || lower.includes("frango")) return "#FF5722";
-  if (lower.includes("limpeza")) return "#2196F3";
-  if (lower.includes("remédio")) return "#9C27B0";
-  return "#FF9800";
+  if (lower.includes('fruta') || lower.includes('verdura')) return '#4CAF50';
+  if (lower.includes('carne') || lower.includes('frango')) return '#FF5722';
+  if (lower.includes('limpeza')) return '#2196F3';
+  if (lower.includes('remédio')) return '#9C27B0';
+  return '#FF9800';
 }
 
 export default function ShoppingItemCard({
@@ -102,6 +91,7 @@ export default function ShoppingItemCard({
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(12)).current;
   const translateX = useRef(new Animated.Value(0)).current;
+  const strikeWidth = useRef(new Animated.Value(done ? 1 : 0)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -121,6 +111,15 @@ export default function ShoppingItemCard({
       }),
     ]).start();
   }, [index, opacity, translateY]);
+
+  useEffect(() => {
+    Animated.timing(strikeWidth, {
+      toValue: done ? 1 : 0,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [done, strikeWidth]);
 
   useEffect(() => {
     if (error) {
@@ -168,43 +167,45 @@ export default function ShoppingItemCard({
         onPress={onToggle}
         activeOpacity={0.8}
       >
-        {done && <MaterialCommunityIcons name="check" size={18} color="#fff" />}
+        {done && <ZappIcon name="check" size={18} color="#fff" />}
       </TouchableOpacity>
 
       <View
         style={[
           styles.iconBadge,
           {
-            backgroundColor: done
-              ? Colors.light.cardDark
-              : `${iconColor}20`,
+            backgroundColor: done ? Colors.light.cardDark : `${iconColor}20`,
           },
         ]}
       >
-        <MaterialCommunityIcons
-          name={iconName as any}
-          size={20}
-          color={iconColor}
-        />
+        <ZappIcon name={iconName} size={20} color={iconColor} />
       </View>
 
       <View style={styles.textWrap}>
-        <Text style={[styles.name, done && styles.nameDone]}>{name}</Text>
+        <View style={styles.nameContainer}>
+          <Text style={[styles.name, done && styles.nameDone]}>{name}</Text>
+          {done && (
+            <Animated.View
+              style={[
+                styles.strikeLine,
+                {
+                  width: strikeWidth.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0%', '100%'],
+                  }),
+                },
+              ]}
+            />
+          )}
+        </View>
         {hasQty && (
-          <TouchableOpacity
-            style={styles.qtyBadge}
-            onPress={onEditQuantity}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons
+          <TouchableOpacity style={styles.qtyBadge} onPress={onEditQuantity} activeOpacity={0.7}>
+            <ZappIcon
               name="tag-outline"
               size={11}
               color={done ? Colors.light.mutedText : Colors.light.primary}
             />
-            <Text
-              style={[styles.qtyText, done && styles.qtyTextDone]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.qtyText, done && styles.qtyTextDone]} numberOfLines={1}>
               {quantity!.trim()}
             </Text>
           </TouchableOpacity>
@@ -213,40 +214,16 @@ export default function ShoppingItemCard({
 
       <View style={styles.actions}>
         {hasQty ? (
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={onEditQuantity}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons
-              name="pencil-outline"
-              size={18}
-              color={Colors.light.mutedText}
-            />
+          <TouchableOpacity style={styles.editBtn} onPress={onEditQuantity} activeOpacity={0.7}>
+            <ZappIcon name="pencil-outline" size={18} color={Colors.light.mutedText} />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={onEditQuantity}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons
-              name="tag-plus-outline"
-              size={18}
-              color={Colors.light.mutedText}
-            />
+          <TouchableOpacity style={styles.editBtn} onPress={onEditQuantity} activeOpacity={0.7}>
+            <ZappIcon name="tag-plus-outline" size={18} color={Colors.light.mutedText} />
           </TouchableOpacity>
         )}
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          onPress={onDelete}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons
-            name="close"
-            size={20}
-            color={Colors.light.mutedText}
-          />
+        <TouchableOpacity style={styles.deleteBtn} onPress={onDelete} activeOpacity={0.7}>
+          <ZappIcon name="close" size={20} color={Colors.light.mutedText} />
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -255,8 +232,8 @@ export default function ShoppingItemCard({
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 14,
     backgroundColor: Colors.light.cardBackground,
@@ -264,7 +241,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -283,8 +260,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.light.border,
     marginRight: 12,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   checkboxDone: {
     backgroundColor: Colors.light.success,
@@ -294,18 +271,29 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   name: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.text,
   },
   nameDone: {
-    textDecorationLine: "line-through",
     color: Colors.light.mutedText,
+  },
+  nameContainer: {
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  strikeLine: {
+    position: 'absolute',
+    left: 0,
+    top: '50%',
+    height: 2,
+    backgroundColor: Colors.light.mutedText,
+    borderRadius: 1,
   },
   textWrap: {
     flex: 1,
@@ -313,28 +301,28 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   qtyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
     marginTop: 4,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
     backgroundColor: Colors.light.accentPurpleSurface,
-    maxWidth: "100%",
+    maxWidth: '100%',
   },
   qtyText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.primary,
   },
   qtyTextDone: {
     color: Colors.light.mutedText,
   },
   actions: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 2,
   },
   editBtn: {

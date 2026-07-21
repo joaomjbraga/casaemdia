@@ -13,10 +13,22 @@ const firebaseConfig = {
 };
 
 const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'] as const;
+
+function envVarNameFor(key: string) {
+  // converte camelCase -> UPPER_SNAKE (apiKey -> API_KEY)
+  return 'EXPO_PUBLIC_FIREBASE_' + key.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase();
+}
+
+const missing: string[] = [];
 for (const key of requiredKeys) {
   if (!firebaseConfig[key]) {
-    throw new Error(`[Firebase] Variável de ambiente EXPO_PUBLIC_FIREBASE_${key.toUpperCase()} não configurada. Verifique o arquivo .env`);
+    missing.push(envVarNameFor(key));
   }
+}
+if (missing.length > 0) {
+  throw new Error(
+    `[Firebase] Variáveis de ambiente faltando: ${missing.join(', ')}. Verifique o arquivo .env`,
+  );
 }
 
 const isFirstInit = getApps().length === 0;

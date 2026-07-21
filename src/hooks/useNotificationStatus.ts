@@ -1,21 +1,18 @@
-import * as Cellular from "expo-cellular";
-import NetInfo, { NetInfoStateType } from "@react-native-community/netinfo";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, Platform } from "react-native";
-import {
-  checkPushPermission,
-  requestPushPermission,
-} from "@/lib/onesignal";
+import * as Cellular from 'expo-cellular';
+import NetInfo, { NetInfoStateType } from '@react-native-community/netinfo';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Platform } from 'react-native';
+import { checkPushPermission, requestPushPermission } from '@/lib/onesignal';
 
-export type NotificationStatus = "checking" | "active" | "inactive";
+export type NotificationStatus = 'checking' | 'active' | 'inactive';
 
 /** Estado da detecção de chip (SIM). */
 export type ChipStatus =
-  | "unknown" // ainda não verificado
-  | "present" // chip detectado com serviço de rede móvel
-  | "no-service" // sem serviço GSM (sem sinal / chip sem registro na rede)
-  | "absent" // sem chip
-  | "permission-denied"; // não foi possível verificar (permissão de telefone negada)
+  | 'unknown' // ainda não verificado
+  | 'present' // chip detectado com serviço de rede móvel
+  | 'no-service' // sem serviço GSM (sem sinal / chip sem registro na rede)
+  | 'absent' // sem chip
+  | 'permission-denied'; // não foi possível verificar (permissão de telefone negada)
 
 interface DetectChipResult {
   chipStatus: ChipStatus;
@@ -66,7 +63,7 @@ async function detectChip(): Promise<DetectChipResult> {
   let permissionDenied = false;
 
   try {
-    if (Platform.OS === "android") {
+    if (Platform.OS === 'android') {
       // Garante a permissão READ_PHONE_STATE antes de consultar a operadora.
       let perm = await Cellular.getPermissionsAsync();
       if (!perm.granted && perm.canAskAgain) {
@@ -78,9 +75,7 @@ async function detectChip(): Promise<DetectChipResult> {
     [carrierName, mcc, generation] = await Promise.all([
       Cellular.getCarrierNameAsync().catch(() => null),
       Cellular.getMobileCountryCodeAsync().catch(() => null),
-      Cellular.getCellularGenerationAsync().catch(
-        () => Cellular.CellularGeneration.UNKNOWN,
-      ),
+      Cellular.getCellularGenerationAsync().catch(() => Cellular.CellularGeneration.UNKNOWN),
     ]);
   } catch {
     // mantém valores nulos; decisão final abaixo
@@ -93,14 +88,14 @@ async function detectChip(): Promise<DetectChipResult> {
   const hasNetworkService = generation !== Cellular.CellularGeneration.UNKNOWN;
 
   if (chipReady && hasNetworkService) {
-    return { chipStatus: "present", carrierName: carrier };
+    return { chipStatus: 'present', carrierName: carrier };
   }
 
   // Fallback: conexão ativa via rede celular confirma chip com serviço.
   try {
     const net = await NetInfo.fetch();
     if (net.type === NetInfoStateType.cellular && net.isConnected) {
-      return { chipStatus: "present", carrierName: carrier };
+      return { chipStatus: 'present', carrierName: carrier };
     }
   } catch {
     // ignora
@@ -108,16 +103,16 @@ async function detectChip(): Promise<DetectChipResult> {
 
   // Chip detectado, porém sem serviço GSM → não recebe notificações push.
   if (chipReady && !hasNetworkService) {
-    return { chipStatus: "no-service", carrierName: carrier };
+    return { chipStatus: 'no-service', carrierName: carrier };
   }
 
   // Sem sinal de chip. Se a permissão foi negada, não é possível afirmar que
   // não há chip — reportamos o estado ambíguo para não exibir instrução errada.
   if (permissionDenied) {
-    return { chipStatus: "permission-denied", carrierName: null };
+    return { chipStatus: 'permission-denied', carrierName: null };
   }
 
-  return { chipStatus: "absent", carrierName: null };
+  return { chipStatus: 'absent', carrierName: null };
 }
 
 /**
@@ -129,21 +124,18 @@ async function detectChip(): Promise<DetectChipResult> {
  */
 export function useNotificationStatus(): UseNotificationStatusResult {
   const [pushEnabled, setPushEnabled] = useState(false);
-  const [chipStatus, setChipStatus] = useState<ChipStatus>("unknown");
+  const [chipStatus, setChipStatus] = useState<ChipStatus>('unknown');
   const [carrierName, setCarrierName] = useState<string | null>(null);
-  const [status, setStatus] = useState<NotificationStatus>("checking");
+  const [status, setStatus] = useState<NotificationStatus>('checking');
   const mounted = useRef(true);
   // Token de sequência para descartar resultados de refresh fora de ordem.
   const requestId = useRef(0);
 
   const refresh = useCallback(async () => {
     const currentRequest = ++requestId.current;
-    setStatus("checking");
+    setStatus('checking');
 
-    const [permission, chip] = await Promise.all([
-      checkPushPermission(),
-      detectChip(),
-    ]);
+    const [permission, chip] = await Promise.all([checkPushPermission(), detectChip()]);
 
     // Ignora se desmontado ou se um refresh mais recente já foi disparado.
     if (!mounted.current || currentRequest !== requestId.current) return;
@@ -152,9 +144,7 @@ export function useNotificationStatus(): UseNotificationStatusResult {
     setChipStatus(chip.chipStatus);
     setCarrierName(chip.carrierName);
     // Notificações consideradas ativas quando há chip E permissão de push.
-    setStatus(
-      permission && chip.chipStatus === "present" ? "active" : "inactive",
-    );
+    setStatus(permission && chip.chipStatus === 'present' ? 'active' : 'inactive');
   }, []);
 
   const requestPermission = useCallback(async () => {
@@ -169,12 +159,12 @@ export function useNotificationStatus(): UseNotificationStatusResult {
     const netUnsub = NetInfo.addEventListener((state) => {
       if (!mounted.current) return;
       if (state.type === NetInfoStateType.cellular && state.isConnected) {
-        setChipStatus("present");
+        setChipStatus('present');
       }
     });
 
-    const appStateSub = AppState.addEventListener("change", (next) => {
-      if (next === "active") {
+    const appStateSub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') {
         refresh();
       }
     });
@@ -190,9 +180,9 @@ export function useNotificationStatus(): UseNotificationStatusResult {
     status,
     pushEnabled,
     chipStatus,
-    hasChip: chipStatus === "present",
-    noService: chipStatus === "no-service",
-    phonePermissionDenied: chipStatus === "permission-denied",
+    hasChip: chipStatus === 'present',
+    noService: chipStatus === 'no-service',
+    phonePermissionDenied: chipStatus === 'permission-denied',
     carrierName,
     refresh,
     requestPermission,

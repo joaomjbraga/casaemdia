@@ -1,26 +1,23 @@
-import type { ShoppingItem } from "@/types/models";
-import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
-import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
-import EmptyState from "@/components/common/EmptyState";
-import LoadingSkeleton from "@/components/common/LoadingSkeleton";
-import QuantityEditModal from "@/components/shopping/QuantityEditModal";
-import ShoppingItemCard from "@/components/shopping/ShoppingItemCard";
-import ShoppingListHeader from "@/components/shopping/ShoppingListHeader";
-import ShoppingSectionHeader from "@/components/shopping/ShoppingSectionHeader";
-import Colors from "@/constants/Colors";
-import { DOCK_CLEARANCE } from "@/constants/Layout";
-import { useAuth } from "@/contexts/AuthContext";
-import { useFamily } from "@/contexts/FamilyContext";
-import { useCelebration } from "@/hooks/useCelebration";
-import { LinearGradient } from "expo-linear-gradient";
-import { StatusBar } from "expo-status-bar";
-import * as Haptics from "expo-haptics";
-import React, { useEffect, useRef, useState } from "react";
-import {
-  StyleSheet,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import type { ShoppingItem } from '@/types/models';
+import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
+import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
+import EmptyState from '@/components/common/EmptyState';
+import LoadingSkeleton from '@/components/common/LoadingSkeleton';
+import QuantityEditModal from '@/components/shopping/QuantityEditModal';
+import ShoppingItemCard from '@/components/shopping/ShoppingItemCard';
+import ShoppingListHeader from '@/components/shopping/ShoppingListHeader';
+import ShoppingSectionHeader from '@/components/shopping/ShoppingSectionHeader';
+import Colors from '@/constants/Colors';
+import { DOCK_CLEARANCE } from '@/constants/Layout';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
+import { useCelebration } from '@/hooks/useCelebration';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import * as Haptics from 'expo-haptics';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   clearCompletedShoppingItems,
   createShoppingItem,
@@ -28,8 +25,7 @@ import {
   subscribeToShoppingItems,
   toggleShoppingItem,
   updateShoppingItemQuantity,
-} from "@/services/shopping";
-
+} from '@/services/shopping';
 
 export default function ShoppingList() {
   const { user } = useAuth();
@@ -37,12 +33,12 @@ export default function ShoppingList() {
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
   const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemQty, setNewItemQty] = useState("");
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQty, setNewItemQty] = useState('');
   const [loading, setLoading] = useState(true);
-  const [filterName, setFilterName] = useState("");
+  const [filterName, setFilterName] = useState('');
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
-  const [editQty, setEditQty] = useState("");
+  const [editQty, setEditQty] = useState('');
   const familyRef = useRef(familyId ?? null);
   const [errorItemId, setErrorItemId] = useState<string | null>(null);
 
@@ -60,13 +56,10 @@ export default function ShoppingList() {
       return;
     }
 
-    const unsubscribe = subscribeToShoppingItems(
-      currentFamilyId,
-      (mappedItems) => {
-        setItems(mappedItems as ShoppingItem[]);
-        setLoading(false);
-      },
-    );
+    const unsubscribe = subscribeToShoppingItems(currentFamilyId, (mappedItems) => {
+      setItems(mappedItems as ShoppingItem[]);
+      setLoading(false);
+    });
 
     return () => unsubscribe();
   }, [familyId]);
@@ -90,15 +83,15 @@ export default function ShoppingList() {
       snapshot = prev;
       return [...prev, tempItem];
     });
-    setNewItemName("");
-    setNewItemQty("");
+    setNewItemName('');
+    setNewItemQty('');
 
     try {
       const docId = await createShoppingItem({
         familyId: currentFamilyId,
         name: newItemName.trim(),
         quantity: qty,
-        userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+        userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
         userId: user.uid,
       });
       setItems((prev) =>
@@ -121,7 +114,7 @@ export default function ShoppingList() {
 
   const openEditQuantity = (item: ShoppingItem) => {
     setEditingItem(item);
-    setEditQty(item.quantity ?? "");
+    setEditQty(item.quantity ?? '');
   };
 
   const handleSaveQuantity = async () => {
@@ -137,7 +130,7 @@ export default function ShoppingList() {
       return prev.map((i) => (i.id === item.id ? { ...i, quantity: qty } : i));
     });
     setEditingItem(null);
-    setEditQty("");
+    setEditQty('');
 
     try {
       await updateShoppingItemQuantity({
@@ -145,7 +138,7 @@ export default function ShoppingList() {
         itemId: item.id,
         quantity: qty,
         itemName: item.name,
-        userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+        userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
         userId: user.uid,
       });
     } catch {
@@ -159,8 +152,7 @@ export default function ShoppingList() {
     if (!item || !currentFamilyId) return;
 
     const newDone = !item.done;
-    const willCompleteAll =
-      newDone && totalCount >= 1 && completedCount === totalCount - 1;
+    const willCompleteAll = newDone && totalCount >= 1 && completedCount === totalCount - 1;
     let snapshot: ShoppingItem[] = [];
     setItems((prev) => {
       snapshot = prev;
@@ -181,6 +173,8 @@ export default function ShoppingList() {
             }
           : undefined,
       });
+
+      setErrorItemId(null);
 
       if (newDone) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -209,15 +203,15 @@ export default function ShoppingList() {
         familyId: currentFamilyId,
         itemId: id,
         itemName: deletedItem?.name,
-        userName: user.displayName || user.email?.split("@")[0] || "Alguem",
+        userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
         userId: user.uid,
       });
     } catch {
       setItems(() => snapshot);
       showAlert({
-        title: "Erro",
-        message: "Não foi possível excluir o item.",
-        type: "error",
+        title: 'Erro',
+        message: 'Não foi possível excluir o item.',
+        type: 'error',
       });
     }
   };
@@ -227,11 +221,11 @@ export default function ShoppingList() {
     if (completed.length === 0) return;
 
     showDialog({
-      title: "Limpar Concluídos",
+      title: 'Limpar Concluídos',
       message: `Remover ${completed.length} item(s) concluído(s)?`,
-      type: "danger",
-      confirmText: "Limpar",
-      cancelText: "Cancelar",
+      type: 'danger',
+      confirmText: 'Limpar',
+      cancelText: 'Cancelar',
       onConfirm: async () => {
         const currentFamilyId = familyRef.current;
         if (!currentFamilyId) return;
@@ -247,8 +241,7 @@ export default function ShoppingList() {
           await clearCompletedShoppingItems({
             familyId: currentFamilyId,
             items: completedItems,
-            userName:
-              user?.displayName || user?.email?.split("@")[0] || "Alguem",
+            userName: user?.displayName || user?.email?.split('@')[0] || 'Alguem',
             userId: user?.uid,
           });
         } catch {
@@ -263,9 +256,7 @@ export default function ShoppingList() {
   const pendingCount = totalCount - completedCount;
 
   const baseItems = filterName
-    ? items.filter((item) =>
-        item.name.toLowerCase().includes(filterName.toLowerCase()),
-      )
+    ? items.filter((item) => item.name.toLowerCase().includes(filterName.toLowerCase()))
     : items;
 
   const pendingItems = baseItems.filter((i) => !i.done);
@@ -295,11 +286,9 @@ export default function ShoppingList() {
       iconSize={40}
       iconColor={Colors.light.primary}
       iconBackgroundColor={Colors.light.accentPurpleSurface}
-      title={filterName ? "Nenhum resultado" : "Lista vazia"}
-      subtitle={
-        filterName ? "Tente buscar outro termo" : "Adicione itens à sua lista"
-      }
-      actionLabel={filterName ? undefined : "Adicionar item"}
+      title={filterName ? 'Nenhum resultado' : 'Lista vazia'}
+      subtitle={filterName ? 'Tente buscar outro termo' : 'Adicione itens à sua lista'}
+      actionLabel={filterName ? undefined : 'Adicionar item'}
       onAction={filterName ? undefined : () => {}}
     />
   );
@@ -308,9 +297,16 @@ export default function ShoppingList() {
     return <LoadingSkeleton variant="shopping" />;
   }
 
-  const renderSectionHeader = (label: string, count: number, items: ShoppingItem[], done: boolean) => {
+  const renderSectionHeader = (
+    label: string,
+    count: number,
+    items: ShoppingItem[],
+    done: boolean,
+  ) => {
     const totalPoints = items.reduce((sum, item) => sum + (item.points || 0), 0);
-    return <ShoppingSectionHeader label={label} count={count} totalPoints={totalPoints} done={done} />;
+    return (
+      <ShoppingSectionHeader label={label} count={count} totalPoints={totalPoints} done={done} />
+    );
   };
 
   const renderList = () => {
@@ -322,7 +318,7 @@ export default function ShoppingList() {
     if (pendingItems.length > 0) {
       rows.push(
         <View key="pending-header">
-          {renderSectionHeader("A comprar", pendingItems.length, pendingItems, false)}
+          {renderSectionHeader('A comprar', pendingItems.length, pendingItems, false)}
         </View>,
       );
       pendingItems.forEach((item, idx) =>
@@ -344,7 +340,7 @@ export default function ShoppingList() {
     if (completedItems.length > 0) {
       rows.push(
         <View key="done-header" style={styles.sectionHeaderDone}>
-          {renderSectionHeader("Comprados", completedItems.length, completedItems, true)}
+          {renderSectionHeader('Comprados', completedItems.length, completedItems, true)}
         </View>,
       );
       completedItems.forEach((item, idx) =>
@@ -367,17 +363,13 @@ export default function ShoppingList() {
     return (
       <View style={styles.listWrap}>
         {renderHeader()}
-        {items.length === 0 ? (
-          renderEmpty()
-        ) : (
-          <View style={styles.listContent}>{rows}</View>
-        )}
+        {items.length === 0 ? renderEmpty() : <View style={styles.listContent}>{rows}</View>}
       </View>
     );
   };
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       <StatusBar style="dark" />
 
       <View style={styles.headerSpacer} />
@@ -386,7 +378,7 @@ export default function ShoppingList() {
 
       <QuantityEditModal
         visible={!!editingItem}
-        itemName={editingItem?.name ?? ""}
+        itemName={editingItem?.name ?? ''}
         quantity={editQty}
         onQuantityChange={setEditQty}
         onSave={handleSaveQuantity}
@@ -408,7 +400,7 @@ const styles = StyleSheet.create({
     height: 12,
   },
   headerGradient: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,

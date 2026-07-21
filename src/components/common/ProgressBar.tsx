@@ -1,6 +1,6 @@
-import Colors from "@/constants/Colors";
-import React from "react";
-import { StyleSheet, View } from "react-native";
+import Colors from '@/constants/Colors';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 interface ProgressBarProps {
   progress: number;
@@ -39,11 +39,11 @@ export default function ProgressBar({
 
 const styles = StyleSheet.create({
   track: {
-    overflow: "hidden",
-    width: "100%",
+    overflow: 'hidden',
+    width: '100%',
   },
   fill: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
   },

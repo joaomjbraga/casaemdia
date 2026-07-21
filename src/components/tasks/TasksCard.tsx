@@ -1,18 +1,18 @@
-import type { Task } from "@/types/models";
-import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
-import { useCelebration } from "@/hooks/useCelebration";
-import { useLevelUp } from "@/hooks/useLevelUp";
-import { toast } from "@/lib/toast";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
-import Colors from "@/constants/Colors";
-import EmptyState from "@/components/common/EmptyState";
-import SectionTitle from "@/components/common/SectionTitle";
-import TaskCard from "@/components/tasks/TaskCard";
-import DashboardTaskCard from "@/components/dashboard/TaskCard";
-
+import type { Task } from '@/types/models';
+import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
+import { useCelebration } from '@/hooks/useCelebration';
+import { useLevelUp } from '@/hooks/useLevelUp';
+import { toast } from '@/lib/toast';
+import ZappIcon from '@/components/common/ZappIcon';
+import XPBadge from '@/components/common/XPBadge';
+import * as Haptics from 'expo-haptics';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import Colors from '@/constants/Colors';
+import EmptyState from '@/components/common/EmptyState';
+import SectionTitle from '@/components/common/SectionTitle';
+import TaskCard from '@/components/tasks/TaskCard';
+import DashboardTaskCard from '@/components/dashboard/TaskCard';
 
 interface TasksListProps {
   tasks: Task[];
@@ -24,6 +24,7 @@ interface TasksListProps {
   totalTasks?: number;
   readOnly?: boolean;
   onEmptyAction?: () => void;
+  onTaskPress?: (taskId: string) => void;
 }
 
 export default function TasksList({
@@ -36,6 +37,7 @@ export default function TasksList({
   totalTasks: propTotal,
   readOnly = false,
   onEmptyAction,
+  onTaskPress,
 }: TasksListProps) {
   const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
   const [errorTaskId, setErrorTaskId] = useState<string | null>(null);
@@ -50,10 +52,7 @@ export default function TasksList({
     propProgress ?? (totalCount > 0 ? (completedCount / totalCount) * 100 : 0);
   const isComplete = totalCount > 0 && completedCount === totalCount;
 
-  const totalPoints = useMemo(
-    () => tasks.reduce((sum, t) => sum + t.points, 0),
-    [tasks],
-  );
+  const totalPoints = useMemo(() => tasks.reduce((sum, t) => sum + t.points, 0), [tasks]);
 
   const getLevel = useCallback((points: number) => {
     if (points >= 1000) return 5;
@@ -85,7 +84,7 @@ export default function TasksList({
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-  }, [progressPercentage]);
+  }, [progressPercentage, progressAnim]);
 
   useEffect(() => {
     Animated.timing(checkOpacity, {
@@ -93,12 +92,12 @@ export default function TasksList({
       duration: 260,
       useNativeDriver: true,
     }).start();
-  }, [isComplete]);
+  }, [isComplete, checkOpacity]);
 
   const animatedWidth = progressAnim.interpolate({
     inputRange: [0, 100],
-    outputRange: ["0%", "100%"],
-    extrapolate: "clamp",
+    outputRange: ['0%', '100%'],
+    extrapolate: 'clamp',
   });
 
   const handleToggle = async (taskId: string) => {
@@ -116,7 +115,7 @@ export default function TasksList({
       if (willCompleteAll) celebrate();
     } catch {
       setErrorTaskId(taskId);
-      toast.error("Não foi possível alterar a tarefa.");
+      toast.error('Não foi possível alterar a tarefa.');
     } finally {
       setLoadingTaskId(null);
     }
@@ -130,16 +129,16 @@ export default function TasksList({
     if (!task) return;
 
     showDialog({
-      title: "Excluir Tarefa",
+      title: 'Excluir Tarefa',
       message: `Remover "${task.title}"?`,
-      type: "danger",
-      confirmText: "Excluir",
-      cancelText: "Cancelar",
+      type: 'danger',
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
       onConfirm: async () => {
         try {
           await deleteTask(taskId);
         } catch {
-          toast.error("Não foi possível excluir.");
+          toast.error('Não foi possível excluir.');
         }
       },
     });
@@ -155,6 +154,8 @@ export default function TasksList({
             assignee={task.assignee}
             points={task.points}
             index={index}
+            taskId={task.id}
+            onPress={onTaskPress}
           />
         ) : (
           <TaskCard
@@ -180,7 +181,7 @@ export default function TasksList({
           iconName="checkbox-marked-outline"
           title="Nenhuma tarefa"
           subtitle="Crie tarefas para começar a organizar"
-          actionLabel={readOnly ? undefined : "Nova tarefa"}
+          actionLabel={readOnly ? undefined : 'Nova tarefa'}
           onAction={onEmptyAction}
         />
       </View>
@@ -190,70 +191,72 @@ export default function TasksList({
   return (
     <View style={styles.wrapper}>
       <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <Text style={styles.title}>Tarefas</Text>
-          <Text style={styles.subtitle}>
-            {completedCount}/{totalCount}
-          </Text>
+        <View style={styles.header}>
+          <View style={styles.headerTopRow}>
+            <Text style={styles.title}>Tarefas</Text>
+            <Text style={styles.subtitle}>
+              {completedCount}/{totalCount}
+            </Text>
+          </View>
+
+          <View style={styles.progressRow}>
+            <View style={styles.progressBar}>
+              <Animated.View style={[styles.progressFill, { width: animatedWidth }]} />
+            </View>
+            <Animated.View style={[styles.progressCheck, { opacity: checkOpacity }]}>
+              <ZappIcon name="check" size={12} color={Colors.light.success} />
+            </Animated.View>
+          </View>
         </View>
 
-        <View style={styles.progressRow}>
-          <View style={styles.progressBar}>
-            <Animated.View
-              style={[styles.progressFill, { width: animatedWidth }]}
-            />
-          </View>
-          <Animated.View
-            style={[styles.progressCheck, { opacity: checkOpacity }]}
-          >
-            <MaterialCommunityIcons
-              name="check"
-              size={12}
-              color={Colors.light.success}
-            />
-          </Animated.View>
+        <View style={styles.list}>
+          {!readOnly && pendingTasks.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <SectionTitle
+                  label="Pendentes"
+                  color={Colors.light.text}
+                  fontSize={14}
+                  fontWeight="700"
+                  letterSpacing={-0.2}
+                  uppercase={false}
+                />
+                <XPBadge points={pendingTasks.reduce((sum, t) => sum + t.points, 0)} size="sm" />
+              </View>
+              {renderTaskGroup(pendingTasks)}
+            </View>
+          )}
+
+          {doneTasks.length > 0 && (
+            <View
+              style={[
+                styles.section,
+                !readOnly && pendingTasks.length > 0 && styles.sectionSpacing,
+              ]}
+            >
+              {!readOnly && (
+                <View style={styles.sectionHeader}>
+                  <SectionTitle
+                    label="Concluídas"
+                    color={Colors.light.success}
+                    fontSize={14}
+                    fontWeight="700"
+                    letterSpacing={-0.2}
+                    uppercase={false}
+                  />
+                  <XPBadge
+                    points={doneTasks.reduce((sum, t) => sum + t.points, 0)}
+                    size="sm"
+                    variant="done"
+                  />
+                </View>
+              )}
+              <View style={readOnly ? undefined : styles.sectionBodyDone}>
+                {renderTaskGroup(doneTasks)}
+              </View>
+            </View>
+          )}
         </View>
-      </View>
-
-      <View style={styles.list}>
-        {pendingTasks.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <SectionTitle label="Pendentes" color={Colors.light.text} fontSize={14} fontWeight="700" letterSpacing={-0.2} uppercase={false} />
-              <View style={styles.xpBadge}>
-                <MaterialCommunityIcons name="star" size={12} color={Colors.light.primary} />
-                <Text style={styles.xpText}>
-                  {pendingTasks.reduce((sum, t) => sum + t.points, 0)} XP
-                </Text>
-              </View>
-            </View>
-            {renderTaskGroup(pendingTasks)}
-          </View>
-        )}
-
-        {doneTasks.length > 0 && (
-          <View
-            style={[
-              styles.section,
-              pendingTasks.length > 0 && styles.sectionSpacing,
-            ]}
-          >
-            <View style={styles.sectionHeader}>
-              <SectionTitle label="Concluídas" color={Colors.light.success} fontSize={14} fontWeight="700" letterSpacing={-0.2} uppercase={false} />
-              <View style={[styles.xpBadge, styles.xpBadgeDone]}>
-                <MaterialCommunityIcons name="check" size={12} color={Colors.light.success} />
-                <Text style={styles.xpTextDone}>
-                  {doneTasks.reduce((sum, t) => sum + t.points, 0)} XP
-                </Text>
-              </View>
-            </View>
-            <View style={styles.sectionBodyDone}>
-              {renderTaskGroup(doneTasks)}
-            </View>
-          </View>
-        )}
-      </View>
       </View>
 
       <CelebrationOverlay />
@@ -264,7 +267,7 @@ export default function TasksList({
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: "relative",
+    position: 'relative',
   },
   card: {
     backgroundColor: Colors.light.cardBackground,
@@ -273,8 +276,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    overflow: "hidden",
-    shadowColor: "#000",
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -288,25 +291,25 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.light.border,
   },
   headerTopRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
   title: {
     fontSize: 17,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.text,
     letterSpacing: -0.2,
   },
   subtitle: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.light.mutedText,
   },
   progressRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
   progressBar: {
@@ -314,18 +317,18 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: Colors.light.progressBackground,
     borderRadius: 4,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   progressFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: Colors.light.progressBar,
     borderRadius: 4,
   },
   progressCheck: {
     width: 18,
     height: 18,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     padding: 12,
@@ -337,15 +340,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 10,
     paddingHorizontal: 4,
   },
   xpBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -354,12 +357,12 @@ const styles = StyleSheet.create({
   },
   xpText: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.light.accentPurple,
     letterSpacing: 0.2,
   },
   xpBadgeDone: {
-    backgroundColor: "rgba(88, 204, 2, 0.12)",
+    backgroundColor: 'rgba(88, 204, 2, 0.12)',
   },
   xpTextDone: {
     color: Colors.light.success,

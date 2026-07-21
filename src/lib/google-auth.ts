@@ -1,12 +1,13 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from './firebase';
+import logger from '@/lib/logger';
 
 const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
 export function configureGoogleSignIn() {
   if (!WEB_CLIENT_ID) {
-    console.error("[GoogleAuth] EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID não configurada");
+    logger.error('[GoogleAuth] EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID não configurada');
     return;
   }
   GoogleSignin.configure({

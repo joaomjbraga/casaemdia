@@ -1,13 +1,10 @@
-import IconCircleButton from "@/components/common/IconCircleButton";
-import PrimaryIconButton from "@/components/common/PrimaryIconButton";
-import ProgressBar from "@/components/common/ProgressBar";
-import ScreenHeader from "@/components/common/ScreenHeader";
-import Colors from "@/constants/Colors";
-import React from "react";
-import {
-  StyleSheet,
-  View,
-} from "react-native";
+import IconCircleButton from '@/components/common/IconCircleButton';
+import PrimaryIconButton from '@/components/common/PrimaryIconButton';
+import ProgressBar from '@/components/common/ProgressBar';
+import ScreenHeader from '@/components/common/ScreenHeader';
+import Colors from '@/constants/Colors';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 interface TasksScreenHeaderProps {
   completedTasks: number;

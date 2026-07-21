@@ -1,12 +1,10 @@
-import { auth } from "@/lib/firebase";
-import {
-  configureGoogleSignIn,
-  signInWithGoogle as googleSignIn,
-} from "@/lib/google-auth";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { User, deleteUser, onAuthStateChanged } from "firebase/auth";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import { auth } from '@/lib/firebase';
+import { configureGoogleSignIn, signInWithGoogle as googleSignIn } from '@/lib/google-auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User, deleteUser, onAuthStateChanged } from 'firebase/auth';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import logger from '@/lib/logger';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 interface AuthError {
   message: string;
@@ -33,14 +31,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const CACHE_KEYS = {
-  SYNC_QUEUE: "@sync_queue",
-  USER_PREFS: "@user_preferences",
+  SYNC_QUEUE: '@sync_queue',
+  USER_PREFS: '@user_preferences',
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
 };
@@ -49,12 +47,12 @@ const clearUserData = async (): Promise<void> => {
   try {
     await AsyncStorage.multiRemove([CACHE_KEYS.SYNC_QUEUE, CACHE_KEYS.USER_PREFS]);
     const keys = await AsyncStorage.getAllKeys();
-    const cacheKeys = keys.filter((k) => k.startsWith("@cache_"));
+    const cacheKeys = keys.filter((k) => k.startsWith('@cache_'));
     if (cacheKeys.length > 0) {
       await AsyncStorage.multiRemove(cacheKeys);
     }
   } catch (error) {
-    console.error("Error clearing user data:", error);
+    logger.error('Error clearing user data:', error);
   }
 };
 
@@ -85,7 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         success: true,
       };
     } catch (error: any) {
-      let message = "Erro ao entrar com Google.";
+      let message = 'Erro ao entrar com Google.';
 
       if (error.code) {
         message = translateFirebaseError(error.code);
@@ -108,13 +106,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         await GoogleSignin.signOut();
       } catch (e) {
-        console.warn("Google signOut error (non-blocking):", e);
+        logger.warn('Google signOut error (non-blocking):', e);
       }
       await auth.signOut();
       await clearUserData();
       setUser(null);
     } catch (error) {
-      console.error("SignOut error:", error);
+      logger.error('SignOut error:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -129,7 +127,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch {
       // non-blocking
     }
-    await deleteUser(current);
+    try {
+      await deleteUser(current);
+    } catch (error: any) {
+      if (error?.code === 'auth/requires-recent-login') {
+        throw new Error('É necessário fazer login novamente antes de excluir a conta.');
+      }
+      throw error;
+    }
     await clearUserData();
     setUser(null);
   };
@@ -152,17 +157,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 function translateFirebaseError(code: string): string {
   switch (code) {
-    case "auth/too-many-requests":
-      return "Muitas tentativas. Aguarde alguns minutos.";
-    case "auth/network-request-failed":
-      return "Erro de conexão. Verifique sua internet.";
-    case "auth/operation-not-allowed":
-      return "Login com Google não habilitado. Verifique no Firebase Console.";
-    case "auth/credential-already-in-use":
-      return "Esta conta já está associada a outro método de login.";
-    case "auth/account-exists-with-different-credential":
-      return "Já existe uma conta com este e-mail usando outro método de login.";
+    case 'auth/too-many-requests':
+      return 'Muitas tentativas. Aguarde alguns minutos.';
+    case 'auth/network-request-failed':
+      return 'Erro de conexão. Verifique sua internet.';
+    case 'auth/operation-not-allowed':
+      return 'Login com Google não habilitado. Verifique no Firebase Console.';
+    case 'auth/credential-already-in-use':
+      return 'Esta conta já está associada a outro método de login.';
+    case 'auth/account-exists-with-different-credential':
+      return 'Já existe uma conta com este e-mail usando outro método de login.';
     default:
-      return "Ocorreu um erro. Tente novamente.";
+      return 'Ocorreu um erro. Tente novamente.';
   }
 }

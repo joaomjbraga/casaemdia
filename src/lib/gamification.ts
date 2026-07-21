@@ -4,9 +4,11 @@ import {
   getDoc,
   getDocs,
   increment,
+  runTransaction,
   writeBatch,
-} from "firebase/firestore";
-import { db } from "./firebase";
+} from 'firebase/firestore';
+import { db } from './firebase';
+import logger from '@/lib/logger';
 
 export const SHOPPING_ITEM_POINTS = 3;
 
@@ -16,22 +18,26 @@ interface CompletionOptions {
   shopping?: boolean;
 }
 
-/**
- * Resolve o documento de membro usando o identificador do membro quando possível,
- * com fallback para o nome para manter compatibilidade com dados antigos.
- */
 const findMemberRef = async (familyId: string, memberIdOrName: string) => {
-  const candidateRef = doc(db, "families", familyId, "members", memberIdOrName);
+  if (!memberIdOrName) return null;
+
+  const candidateRef = doc(db, 'families', familyId, 'members', memberIdOrName);
   const candidateSnap = await getDoc(candidateRef);
   if (candidateSnap.exists()) {
     return candidateRef;
   }
 
-  const snap = await getDocs(collection(db, "families", familyId, "members"));
+  const snap = await getDocs(collection(db, 'families', familyId, 'members'));
+  const matches = snap.docs.filter((d) => d.data().name === memberIdOrName);
 
-  const match = snap.docs.find((d) => d.data().name === memberIdOrName);
+  if (matches.length === 1) {
+    return doc(db, 'families', familyId, 'members', matches[0].id);
+  }
 
-  return match ? doc(db, "families", familyId, "members", match.id) : null;
+  logger.warn(
+    `[Gamification] Member "${memberIdOrName}" ambiguous: ${matches.length} matches, skipping`,
+  );
+  return null;
 };
 
 const applyCompletion = async (
@@ -43,20 +49,34 @@ const applyCompletion = async (
   const memberRef = await findMemberRef(familyId, memberIdOrName);
   if (!memberRef) return;
 
-  const batch = writeBatch(db);
-  batch.update(memberRef, {
-    points: increment(options.points * delta),
-    contributions: increment(delta),
-    ...(options.task ? { tasksCompleted: increment(delta) } : {}),
-    ...(options.shopping ? { shoppingCompleted: increment(delta) } : {}),
+  await runTransaction(db, async (transaction) => {
+    const memberSnap = await transaction.get(memberRef);
+    if (!memberSnap.exists()) return;
+
+    const data = memberSnap.data();
+    const currentPoints = data.points ?? 0;
+    const currentContributions = data.contributions ?? 0;
+    const currentTasksCompleted = data.tasksCompleted ?? 0;
+    const currentShoppingCompleted = data.shoppingCompleted ?? 0;
+
+    const newPoints = Math.max(0, currentPoints + options.points * delta);
+    const newContributions = Math.max(0, currentContributions + delta);
+    const newTasksCompleted = options.task
+      ? Math.max(0, currentTasksCompleted + delta)
+      : currentTasksCompleted;
+    const newShoppingCompleted = options.shopping
+      ? Math.max(0, currentShoppingCompleted + delta)
+      : currentShoppingCompleted;
+
+    transaction.update(memberRef, {
+      points: newPoints,
+      contributions: newContributions,
+      ...(options.task ? { tasksCompleted: newTasksCompleted } : {}),
+      ...(options.shopping ? { shoppingCompleted: newShoppingCompleted } : {}),
+    });
   });
-  await batch.commit();
 };
 
-/**
- * Credita pontos/contribuições a um membro quando ele conclui uma atividade.
- * Usa `increment()` para ser seguro contra concorrência/race conditions.
- */
 export const creditCompletion = async (
   familyId: string,
   memberIdOrName: string,
@@ -65,9 +85,6 @@ export const creditCompletion = async (
   await applyCompletion(familyId, memberIdOrName, options, 1);
 };
 
-/**
- * Estorna os pontos/contribuições creditados quando uma atividade é reaberta.
- */
 export const revertCompletion = async (
   familyId: string,
   memberIdOrName: string,
