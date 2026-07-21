@@ -44,6 +44,7 @@ export default function ShoppingList() {
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
   const [editQty, setEditQty] = useState("");
   const familyRef = useRef(familyId ?? null);
+  const [errorItemId, setErrorItemId] = useState<string | null>(null);
 
   const { celebrate, CelebrationOverlay } = useCelebration();
 
@@ -188,6 +189,7 @@ export default function ShoppingList() {
       if (willCompleteAll) celebrate();
     } catch {
       setItems(() => snapshot);
+      setErrorItemId(id);
     }
   };
 
@@ -332,6 +334,7 @@ export default function ShoppingList() {
             onDelete={() => handleDeleteItem(item.id)}
             onEditQuantity={() => openEditQuantity(item)}
             index={idx}
+            error={errorItemId === item.id}
           />,
         ),
       );
@@ -353,6 +356,7 @@ export default function ShoppingList() {
             onDelete={() => handleDeleteItem(item.id)}
             onEditQuantity={() => openEditQuantity(item)}
             index={idx}
+            error={errorItemId === item.id}
           />,
         ),
       );

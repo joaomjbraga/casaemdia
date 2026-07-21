@@ -35,6 +35,7 @@ export default function TasksList({
   readOnly = false,
 }: TasksListProps) {
   const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
+  const [errorTaskId, setErrorTaskId] = useState<string | null>(null);
   const { showDialog } = useConfirmDialog();
   const { celebrate, CelebrationOverlay } = useCelebration();
 
@@ -79,6 +80,7 @@ export default function TasksList({
     const willCompleteAll =
       !!task && !task.done && totalCount >= 1 && completedCount === totalCount - 1;
     setLoadingTaskId(taskId);
+    setErrorTaskId(null);
     try {
       await toggleTask(taskId);
       if (!task?.done) {
@@ -86,6 +88,7 @@ export default function TasksList({
       }
       if (willCompleteAll) celebrate();
     } catch {
+      setErrorTaskId(taskId);
       toast.error("Não foi possível alterar a tarefa.");
     } finally {
       setLoadingTaskId(null);
@@ -136,6 +139,7 @@ export default function TasksList({
             onDelete={() => handleDelete(task.id)}
             isLoading={isTaskLoading(task.id)}
             index={index}
+            error={errorTaskId === task.id}
           />
         )}
         {index < groupTasks.length - 1 && <View style={styles.separator} />}

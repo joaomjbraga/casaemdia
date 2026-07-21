@@ -18,6 +18,7 @@ interface ShoppingItemCardProps {
   onDelete: () => void;
   onEditQuantity: () => void;
   index?: number;
+  error?: boolean;
 }
 
 function getItemIcon(name: string): string {
@@ -92,6 +93,7 @@ export default function ShoppingItemCard({
   onDelete,
   onEditQuantity,
   index = 0,
+  error = false,
 }: ShoppingItemCardProps) {
   const iconName = getItemIcon(name);
   const iconColor = done ? Colors.light.mutedText : getIconColor(name);
@@ -99,6 +101,7 @@ export default function ShoppingItemCard({
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(12)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -119,12 +122,45 @@ export default function ShoppingItemCard({
     ]).start();
   }, [index, opacity, translateY]);
 
+  useEffect(() => {
+    if (error) {
+      Animated.sequence([
+        Animated.timing(translateX, {
+          toValue: 8,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: -8,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: 6,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: -6,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: 0,
+          duration: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [error, translateX]);
+
   return (
     <Animated.View
       style={[
         styles.card,
         done && styles.cardDone,
-        { opacity, transform: [{ translateY }] },
+        error && styles.cardError,
+        { opacity, transform: [{ translateY }, { translateX }] },
       ]}
     >
       <TouchableOpacity
@@ -236,6 +272,9 @@ const styles = StyleSheet.create({
   },
   cardDone: {
     opacity: 0.7,
+  },
+  cardError: {
+    borderLeftColor: Colors.light.danger,
   },
   checkbox: {
     width: 28,

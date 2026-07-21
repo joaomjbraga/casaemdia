@@ -19,6 +19,7 @@ interface TaskCardProps {
   onDelete: () => void;
   isLoading?: boolean;
   index?: number;
+  error?: boolean;
 }
 
 export default function TaskCard({
@@ -30,10 +31,12 @@ export default function TaskCard({
   onDelete,
   isLoading,
   index = 0,
+  error = false,
 }: TaskCardProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(12)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (done) {
@@ -73,12 +76,45 @@ export default function TaskCard({
     ]).start();
   }, [index, opacity, translateY]);
 
+  useEffect(() => {
+    if (error) {
+      Animated.sequence([
+        Animated.timing(translateX, {
+          toValue: 8,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: -8,
+          duration: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: 6,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: -6,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateX, {
+          toValue: 0,
+          duration: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [error, translateX]);
+
   return (
     <Animated.View
       style={[
         styles.card,
         done && styles.cardDone,
-        { transform: [{ scale }], opacity, translateY },
+        error && styles.cardError,
+        { transform: [{ scale }, { translateX }], opacity, translateY },
       ]}
     >
       <TouchableOpacity
@@ -159,6 +195,9 @@ const styles = StyleSheet.create({
   cardDone: {
     borderLeftColor: Colors.light.success,
     opacity: 0.75,
+  },
+  cardError: {
+    borderLeftColor: Colors.light.danger,
   },
   checkbox: {
     width: 28,
