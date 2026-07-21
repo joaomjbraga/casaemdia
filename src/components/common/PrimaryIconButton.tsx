@@ -63,6 +63,11 @@ export default function PrimaryIconButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={style}
+      // @ts-ignore
+      android_ripple={{
+        color: "rgba(255, 255, 255, 0.2)",
+        borderless: true,
+      }}
     >
       <Animated.View
         style={[

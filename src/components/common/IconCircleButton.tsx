@@ -67,6 +67,11 @@ export default function IconCircleButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={style}
+      // @ts-ignore
+      android_ripple={{
+        color: "rgba(0, 0, 0, 0.08)",
+        borderless: true,
+      }}
     >
       <Animated.View
         style={[
