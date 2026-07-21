@@ -23,6 +23,7 @@ interface TasksListProps {
   completedTasks?: number;
   totalTasks?: number;
   readOnly?: boolean;
+  onEmptyAction?: () => void;
 }
 
 export default function TasksList({
@@ -34,6 +35,7 @@ export default function TasksList({
   completedTasks: propCompleted,
   totalTasks: propTotal,
   readOnly = false,
+  onEmptyAction,
 }: TasksListProps) {
   const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
   const [errorTaskId, setErrorTaskId] = useState<string | null>(null);
@@ -177,7 +179,9 @@ export default function TasksList({
         <EmptyState
           iconName="checkbox-marked-outline"
           title="Nenhuma tarefa"
-          subtitle="Crie tarefas para começar"
+          subtitle="Crie tarefas para começar a organizar"
+          actionLabel={readOnly ? undefined : "Nova tarefa"}
+          onAction={onEmptyAction}
         />
       </View>
     );

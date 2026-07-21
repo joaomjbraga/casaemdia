@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
 
@@ -11,16 +11,20 @@ interface EmptyStateProps {
   iconColor?: string;
   iconBackgroundColor?: string;
   containerStyle?: any;
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 export default function EmptyState({
   iconName,
   title,
   subtitle,
-  iconSize = 32,
+  iconSize = 40,
   iconColor = Colors.light.primary,
   iconBackgroundColor = Colors.light.accentPurpleSurface,
   containerStyle,
+  actionLabel,
+  onAction,
 }: EmptyStateProps) {
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -54,6 +58,15 @@ export default function EmptyState({
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
+      {actionLabel && onAction && (
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onAction}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.actionText}>{actionLabel}</Text>
+        </TouchableOpacity>
+      )}
     </Animated.View>
   );
 }
@@ -61,27 +74,49 @@ export default function EmptyState({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    paddingVertical: 32,
-    gap: 10,
+    paddingVertical: 36,
+    gap: 12,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
+    width: 72,
+    height: 72,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: Colors.light.text,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "500",
     color: Colors.light.mutedText,
     textAlign: "center",
+    paddingHorizontal: 24,
+    lineHeight: 20,
+  },
+  actionBtn: {
+    marginTop: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 16,
+    backgroundColor: Colors.light.primary,
+    shadowColor: Colors.light.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  actionText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.light.textWhite,
+    letterSpacing: -0.2,
   },
 });

@@ -299,6 +299,8 @@ export default function ShoppingList() {
       subtitle={
         filterName ? "Tente buscar outro termo" : "Adicione itens à sua lista"
       }
+      actionLabel={filterName ? undefined : "Adicionar item"}
+      onAction={filterName ? undefined : () => {}}
     />
   );
 
