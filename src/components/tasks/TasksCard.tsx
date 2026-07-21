@@ -124,6 +124,7 @@ export default function TasksList({
             done={task.done}
             assignee={task.assignee}
             points={task.points}
+            index={index}
           />
         ) : (
           <TaskCard
@@ -134,6 +135,7 @@ export default function TasksList({
             onToggle={() => handleToggle(task.id)}
             onDelete={() => handleDelete(task.id)}
             isLoading={isTaskLoading(task.id)}
+            index={index}
           />
         )}
         {index < groupTasks.length - 1 && <View style={styles.separator} />}
@@ -184,7 +186,15 @@ export default function TasksList({
       <View style={styles.list}>
         {pendingTasks.length > 0 && (
           <View style={styles.section}>
-          <SectionTitle label="Pendentes" color={Colors.light.mutedText} />
+            <View style={styles.sectionHeader}>
+              <SectionTitle label="Pendentes" color={Colors.light.text} fontSize={14} fontWeight="700" letterSpacing={-0.2} uppercase={false} />
+              <View style={styles.xpBadge}>
+                <MaterialCommunityIcons name="star" size={12} color={Colors.light.primary} />
+                <Text style={styles.xpText}>
+                  {pendingTasks.reduce((sum, t) => sum + t.points, 0)} XP
+                </Text>
+              </View>
+            </View>
             {renderTaskGroup(pendingTasks)}
           </View>
         )}
@@ -196,7 +206,15 @@ export default function TasksList({
               pendingTasks.length > 0 && styles.sectionSpacing,
             ]}
           >
-            <SectionTitle label="Concluídas" color={Colors.light.mutedText} />
+            <View style={styles.sectionHeader}>
+              <SectionTitle label="Concluídas" color={Colors.light.success} fontSize={14} fontWeight="700" letterSpacing={-0.2} uppercase={false} />
+              <View style={[styles.xpBadge, styles.xpBadgeDone]}>
+                <MaterialCommunityIcons name="check" size={12} color={Colors.light.success} />
+                <Text style={styles.xpTextDone}>
+                  {doneTasks.reduce((sum, t) => sum + t.points, 0)} XP
+                </Text>
+              </View>
+            </View>
             <View style={styles.sectionBodyDone}>
               {renderTaskGroup(doneTasks)}
             </View>
@@ -273,12 +291,42 @@ const styles = StyleSheet.create({
   list: {
     padding: 12,
   },
-  section: {},
+  section: {
+    paddingHorizontal: 4,
+  },
   sectionSpacing: {
-    marginTop: 16,
+    marginTop: 20,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    paddingHorizontal: 4,
+  },
+  xpBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: Colors.light.accentPurpleSurface,
+  },
+  xpText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.light.accentPurple,
+    letterSpacing: 0.2,
+  },
+  xpBadgeDone: {
+    backgroundColor: "rgba(88, 204, 2, 0.12)",
+  },
+  xpTextDone: {
+    color: Colors.light.success,
   },
   sectionBodyDone: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
   separator: {
     height: 1,

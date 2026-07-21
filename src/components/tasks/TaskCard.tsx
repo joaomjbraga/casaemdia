@@ -1,12 +1,13 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import {
   Animated,
+  Easing,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
 
 interface TaskCardProps {
@@ -17,6 +18,7 @@ interface TaskCardProps {
   onToggle: () => void;
   onDelete: () => void;
   isLoading?: boolean;
+  index?: number;
 }
 
 export default function TaskCard({
@@ -27,14 +29,17 @@ export default function TaskCard({
   onToggle,
   onDelete,
   isLoading,
+  index = 0,
 }: TaskCardProps) {
   const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
 
   useEffect(() => {
     if (done) {
       Animated.sequence([
         Animated.timing(scale, {
-          toValue: 1.04,
+          toValue: 1.05,
           duration: 120,
           useNativeDriver: true,
         }),
@@ -49,12 +54,31 @@ export default function TaskCard({
     }
   }, [done, scale]);
 
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 260,
+        delay: index * 35,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 260,
+        delay: index * 35,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [index, opacity, translateY]);
+
   return (
     <Animated.View
       style={[
         styles.card,
         done && styles.cardDone,
-        { transform: [{ scale }] },
+        { transform: [{ scale }], opacity, translateY },
       ]}
     >
       <TouchableOpacity
@@ -63,7 +87,7 @@ export default function TaskCard({
         disabled={isLoading}
         activeOpacity={0.8}
       >
-        {done && <MaterialCommunityIcons name="check" size={14} color="#fff" />}
+        {done && <MaterialCommunityIcons name="check" size={18} color="#fff" />}
       </TouchableOpacity>
 
       <View style={styles.content}>
@@ -129,12 +153,12 @@ const styles = StyleSheet.create({
   },
   cardDone: {
     borderLeftColor: Colors.light.success,
-    opacity: 0.7,
+    opacity: 0.75,
   },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: Colors.light.border,
     marginRight: 12,

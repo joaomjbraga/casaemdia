@@ -1,11 +1,12 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import {
   Animated,
+  Easing,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
 
 interface DashboardTaskCardProps {
@@ -13,6 +14,7 @@ interface DashboardTaskCardProps {
   done: boolean;
   assignee: string;
   points: number;
+  index?: number;
 }
 
 export default function DashboardTaskCard({
@@ -20,14 +22,17 @@ export default function DashboardTaskCard({
   done,
   assignee,
   points,
+  index = 0,
 }: DashboardTaskCardProps) {
   const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
 
   useEffect(() => {
     if (done) {
       Animated.sequence([
         Animated.timing(scale, {
-          toValue: 1.04,
+          toValue: 1.05,
           duration: 120,
           useNativeDriver: true,
         }),
@@ -42,12 +47,31 @@ export default function DashboardTaskCard({
     }
   }, [done, scale]);
 
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 260,
+        delay: index * 35,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 260,
+        delay: index * 35,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [index, opacity, translateY]);
+
   return (
     <Animated.View
       style={[
         styles.card,
         done && styles.cardDone,
-        { transform: [{ scale }] },
+        { transform: [{ scale }], opacity, translateY },
       ]}
     >
       <View style={styles.readOnlyIndicator} />
@@ -102,12 +126,12 @@ const styles = StyleSheet.create({
   },
   cardDone: {
     borderLeftColor: Colors.light.success,
-    opacity: 0.7,
+    opacity: 0.75,
   },
   readOnlyIndicator: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: Colors.light.border,
     marginRight: 12,

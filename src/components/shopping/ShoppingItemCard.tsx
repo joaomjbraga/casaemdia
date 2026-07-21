@@ -1,5 +1,13 @@
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Colors from "@/constants/Colors";
 
 interface ShoppingItemCardProps {
@@ -9,6 +17,7 @@ interface ShoppingItemCardProps {
   onToggle: () => void;
   onDelete: () => void;
   onEditQuantity: () => void;
+  index?: number;
 }
 
 function getItemIcon(name: string): string {
@@ -82,18 +91,48 @@ export default function ShoppingItemCard({
   onToggle,
   onDelete,
   onEditQuantity,
+  index = 0,
 }: ShoppingItemCardProps) {
   const iconName = getItemIcon(name);
   const iconColor = done ? Colors.light.mutedText : getIconColor(name);
   const hasQty = !!quantity && quantity.trim().length > 0;
 
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(12)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 260,
+        delay: index * 35,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 260,
+        delay: index * 35,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [index, opacity, translateY]);
+
   return (
-    <View style={[styles.card, done && styles.cardDone]}>
+    <Animated.View
+      style={[
+        styles.card,
+        done && styles.cardDone,
+        { opacity, transform: [{ translateY }] },
+      ]}
+    >
       <TouchableOpacity
         style={[styles.checkbox, done && styles.checkboxDone]}
         onPress={onToggle}
+        activeOpacity={0.8}
       >
-        {done && <MaterialCommunityIcons name="check" size={16} color="#fff" />}
+        {done && <MaterialCommunityIcons name="check" size={18} color="#fff" />}
       </TouchableOpacity>
 
       <View
@@ -174,7 +213,7 @@ export default function ShoppingItemCard({
           />
         </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -191,12 +230,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
   },
   cardDone: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: Colors.light.border,
     marginRight: 12,
@@ -210,7 +249,7 @@ const styles = StyleSheet.create({
   iconBadge: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,

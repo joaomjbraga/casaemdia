@@ -304,9 +304,10 @@ export default function ShoppingList() {
     return <LoadingSkeleton variant="shopping" />;
   }
 
-  const renderSectionHeader = (label: string, count: number) => (
-    <ShoppingSectionHeader label={label} count={count} />
-  );
+  const renderSectionHeader = (label: string, count: number, items: ShoppingItem[], done: boolean) => {
+    const totalPoints = items.reduce((sum, item) => sum + (item.points || 0), 0);
+    return <ShoppingSectionHeader label={label} count={count} totalPoints={totalPoints} done={done} />;
+  };
 
   const renderList = () => {
     if (loading && items.length === 0) {
@@ -317,10 +318,10 @@ export default function ShoppingList() {
     if (pendingItems.length > 0) {
       rows.push(
         <View key="pending-header">
-          {renderSectionHeader("A comprar", pendingItems.length)}
+          {renderSectionHeader("A comprar", pendingItems.length, pendingItems, false)}
         </View>,
       );
-      pendingItems.forEach((item) =>
+      pendingItems.forEach((item, idx) =>
         rows.push(
           <ShoppingItemCard
             key={item.id}
@@ -330,6 +331,7 @@ export default function ShoppingList() {
             onToggle={() => handleToggleItem(item.id)}
             onDelete={() => handleDeleteItem(item.id)}
             onEditQuantity={() => openEditQuantity(item)}
+            index={idx}
           />,
         ),
       );
@@ -337,10 +339,10 @@ export default function ShoppingList() {
     if (completedItems.length > 0) {
       rows.push(
         <View key="done-header" style={styles.sectionHeaderDone}>
-          {renderSectionHeader("Comprados", completedItems.length)}
+          {renderSectionHeader("Comprados", completedItems.length, completedItems, true)}
         </View>,
       );
-      completedItems.forEach((item) =>
+      completedItems.forEach((item, idx) =>
         rows.push(
           <ShoppingItemCard
             key={item.id}
@@ -350,6 +352,7 @@ export default function ShoppingList() {
             onToggle={() => handleToggleItem(item.id)}
             onDelete={() => handleDeleteItem(item.id)}
             onEditQuantity={() => openEditQuantity(item)}
+            index={idx}
           />,
         ),
       );
