@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Colors from "../../constants/Colors";
+import Colors from "@/constants/Colors";
 
 interface ShoppingItemCardProps {
   name: string;
@@ -101,7 +101,7 @@ export default function ShoppingItemCard({
           styles.iconBadge,
           {
             backgroundColor: done
-              ? "rgba(96, 239, 255, 0.08)"
+              ? Colors.light.cardDark
               : `${iconColor}20`,
           },
         ]}
@@ -182,23 +182,23 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: "rgba(22, 27, 34, 0.85)",
-    borderRadius: 16,
-    marginBottom: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: 12,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: "rgba(96, 239, 255, 0.12)",
+    borderColor: Colors.light.border,
   },
   cardDone: {
-    opacity: 0.55,
+    opacity: 0.6,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     borderWidth: 2,
-    borderColor: "rgba(96, 239, 255, 0.3)",
+    borderColor: Colors.light.border,
     marginRight: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -208,9 +208,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.success,
   },
   iconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
-    backgroundColor: "rgba(162, 89, 255, 0.1)",
+    backgroundColor: Colors.light.accentPurpleSurface,
     maxWidth: "100%",
   },
   qtyText: {

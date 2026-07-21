@@ -1,6 +1,6 @@
 const { withAndroidStyles } = require("expo/config-plugins");
 
-const WINDOW_BACKGROUND_COLOR = "#000000";
+const WINDOW_BACKGROUND_COLOR = "#FFFFFF";
 const TARGET_STYLES = ["AppTheme", "Theme.App.SplashScreen"];
 
 const withAndroidWindowBackground = (config) => {

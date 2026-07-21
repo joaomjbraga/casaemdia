@@ -1,9 +1,9 @@
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
-import GrainyGradient from "@/components/shared/ui/grainy-gradient";
-import Colors from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +20,21 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const { signInWithGoogle } = useAuth();
   const { showAlert } = useAlertDialog();
+  const { width: screenWidth } = useWindowDimensions();
+
+  const iconSize = Math.min(Math.round(screenWidth * 0.4), 170);
+  const iconBorderRadius = Math.round(iconSize * 0.22);
+  const titleFontSize = Math.min(Math.round(screenWidth * 0.09), 40);
+  const taglineFontSize = Math.min(Math.round(screenWidth * 0.04), 16);
+
+  const player = useVideoPlayer(
+    require("@/assets/videos/myfamily.mp4"),
+    (p) => {
+      p.loop = true;
+      p.muted = true;
+      p.play();
+    },
+  );
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -48,27 +64,51 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <GrainyGradient
-        colors={["#0A3D38", "#0C2E2B", "#2089af", "#034f58", "#021111"]}
-        amplitude={1.9}
-        intensity={0.1}
-        size={0.3}
-        speed={1.9}
+      <VideoView
+        player={player}
         style={StyleSheet.absoluteFill}
+        contentFit="cover"
+      />
+
+      <LinearGradient
+        colors={["rgba(0,0,0,0.3)", "rgba(0,0,0,0.0)"]}
+        style={styles.topOverlay}
+      />
+
+      <LinearGradient
+        colors={[
+          "rgba(0,0,0,0.0)",
+          "rgba(165, 162, 162, 0.788)",
+          "rgb(255, 255, 255)",
+        ]}
+        style={styles.bottomOverlay}
       />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
           <View style={styles.topSection}>
-            <View style={styles.iconCircle}>
+            <View
+              style={[
+                styles.iconCircle,
+                {
+                  width: iconSize,
+                  height: iconSize,
+                  borderRadius: iconBorderRadius,
+                },
+              ]}
+            >
               <Image
                 source={require("@/assets/images/icon.png")}
-                style={styles.logoImage}
+                style={{ width: iconSize - 10, height: iconSize - 10 }}
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.appName}>Casa em Dia</Text>
-            <Text style={styles.tagline}>Organize sua casa em família</Text>
+            <Text style={[styles.appName, { fontSize: titleFontSize }]}>
+              Casa em Dia
+            </Text>
+            <Text style={[styles.tagline, { fontSize: taglineFontSize }]}>
+              Organize sua casa em família
+            </Text>
           </View>
 
           <View style={styles.bottomSection}>
@@ -79,7 +119,7 @@ export default function LoginScreen() {
               style={styles.googleButton}
             >
               {loading ? (
-                <ActivityIndicator size="small" color={Colors.light.text} />
+                <ActivityIndicator size="small" color="#000000" />
               ) : (
                 <>
                   <Image
@@ -107,6 +147,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  topOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "40%",
+  },
+  bottomOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "55%",
+  },
   safeArea: {
     flex: 1,
   },
@@ -118,64 +172,64 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   topSection: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    paddingTop: 24,
   },
   iconCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 48,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
-  },
-  logoImage: {
-    width: 170,
-    height: 170,
+    marginBottom: 10,
   },
   appName: {
-    fontSize: 34,
     fontWeight: "800",
-    color: Colors.light.text,
-    letterSpacing: -0.6,
+    color: "#FFFFFF",
+    letterSpacing: -0.8,
+    textShadowColor: "rgba(0, 0, 0, 0.25)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   tagline: {
-    fontSize: 15,
-    color: Colors.light.mutedText,
+    color: "rgba(255, 255, 255, 0.85)",
     marginTop: 6,
     fontWeight: "500",
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   bottomSection: {
     width: "100%",
     alignItems: "center",
+    paddingBottom: 16,
   },
   googleButton: {
     width: "100%",
     height: 54,
     borderRadius: 18,
-    backgroundColor: Colors.light.cardDark,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    backgroundColor: "#FFFFFF",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
   googleIcon: {
     width: 28,
     height: 28,
   },
   googleButtonText: {
-    color: Colors.light.text,
+    color: "#000000",
     fontSize: 16,
     fontWeight: "600",
   },
   footer: {
     fontSize: 12,
-    color: Colors.light.mutedText,
+    color: "rgb(5, 5, 5)",
     textAlign: "center",
-    marginTop: 28,
+    marginTop: 20,
     lineHeight: 18,
   },
 });

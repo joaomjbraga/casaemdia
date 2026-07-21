@@ -46,6 +46,7 @@ async function createFamilyForUser(user: User): Promise<FamilyData> {
   setupBatch.set(userDocRef, {
     familyId,
     familyName,
+    email: user.email?.toLowerCase() || "",
     migratedAt: serverTimestamp(),
   }, { merge: true });
   await setupBatch.commit();

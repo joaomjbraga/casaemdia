@@ -1,6 +1,8 @@
+import Colors from "@/constants/Colors";
 import React, { useState, useCallback, useMemo, createContext, useContext, useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, Modal } from "react-native";
+import { Text, Pressable, StyleSheet, Modal } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { dialogStyles } from "./dialogStyles";
 
 type AlertDialogType = "success" | "error" | "info";
 
@@ -55,9 +57,9 @@ export const AlertDialogProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [visible, config.autoClose, config.autoCloseMs]);
 
   const typeConfig = useMemo(() => ({
-    success: { icon: "check-circle-outline" as const, color: "#4CAF50", bgColor: "rgba(76, 175, 80, 0.12)" },
-    error: { icon: "close-circle-outline" as const, color: "#F44336", bgColor: "rgba(244, 67, 54, 0.12)" },
-    info: { icon: "information-outline" as const, color: "#00C2FF", bgColor: "rgba(0, 194, 255, 0.12)" },
+    success: { icon: "check-circle-outline" as const, color: Colors.light.success, bgColor: "rgba(52, 199, 89, 0.12)" },
+    error: { icon: "close-circle-outline" as const, color: Colors.light.danger, bgColor: "rgba(255, 59, 48, 0.12)" },
+    info: { icon: "information-outline" as const, color: Colors.light.info, bgColor: "rgba(90, 200, 250, 0.12)" },
   }), []);
 
   const current = typeConfig[config.type || "success"];
@@ -66,26 +68,29 @@ export const AlertDialogProvider: React.FC<{ children: React.ReactNode }> = ({
     <AlertDialogContext.Provider value={{ showAlert, hideAlert }}>
       {children}
       <Modal visible={visible} transparent animationType="fade" onRequestClose={hideAlert}>
-        <Pressable style={styles.backdrop} onPress={hideAlert}>
-          <Pressable style={styles.dialogContent} onPress={() => {}}>
-            <View style={[styles.iconCircle, { backgroundColor: current.bgColor }]}>
+        <Pressable style={dialogStyles.backdrop} onPress={hideAlert}>
+          <Pressable style={dialogStyles.dialogContent} onPress={() => {}}>
+            <Pressable
+              style={[dialogStyles.iconCircle, { backgroundColor: current.bgColor }]}
+              onPress={hideAlert}
+            >
               <MaterialCommunityIcons name={current.icon} size={36} color={current.color} />
-            </View>
+            </Pressable>
 
-            <Text style={styles.title}>{config.title}</Text>
+            <Text style={dialogStyles.title}>{config.title}</Text>
             {config.message && (
-              <Text style={styles.message}>{config.message}</Text>
+              <Text style={dialogStyles.message}>{config.message}</Text>
             )}
 
             <Pressable
               style={({ pressed }) => [
-                styles.btn,
+                dialogStyles.btn,
                 { backgroundColor: current.color },
-                pressed && styles.btnPressed,
+                pressed && dialogStyles.btnPressed,
               ]}
               onPress={hideAlert}
             >
-              <Text style={styles.btnText}>
+              <Text style={dialogStyles.btnText}>
                 {config.buttonText || "OK"}
               </Text>
             </Pressable>
@@ -95,58 +100,3 @@ export const AlertDialogProvider: React.FC<{ children: React.ReactNode }> = ({
     </AlertDialogContext.Provider>
   );
 };
-
-const styles = StyleSheet.create({
-  dialogContent: {
-    backgroundColor: "#161B22",
-    borderRadius: 24,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    width: "88%",
-    maxWidth: 360,
-  },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: 15,
-    color: "#8B949E",
-    marginBottom: 28,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  btn: {
-    width: "100%",
-    paddingVertical: 16,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  btnText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  btnPressed: {
-    opacity: 0.8,
-  },
-  backdrop: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.7)",
-  },
-});

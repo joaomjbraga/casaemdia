@@ -3,7 +3,6 @@ import { ConfirmDialogProvider } from "@/components/shared/ui/dialog/ConfirmDial
 import { ToastProviderWithViewport } from "@/components/shared/ui/toast";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FamilyProvider } from "@/contexts/FamilyContext";
-import { FamilyMembersProvider } from "@/contexts/FamilyMembersContext";
 import { InvitationProvider } from "@/contexts/InvitationContext";
 import { initializeOneSignal, setUserTags, removeUserTags, addNotificationClickListener, removeNotificationClickListener, checkPushPermission, requestPushPermission } from "@/lib/onesignal";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -50,7 +49,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (Platform.OS === "android") {
-      NavigationBar.setStyle("light");
+      NavigationBar.setStyle("dark");
     }
     initializeOneSignal();
   }, []);
@@ -63,7 +62,6 @@ export default function RootLayout() {
     <AuthProvider>
       <FamilyProvider>
         <InvitationProvider>
-          <FamilyMembersProvider>
             <AlertDialogProvider>
               <ConfirmDialogProvider>
                 <ToastProviderWithViewport>
@@ -71,7 +69,6 @@ export default function RootLayout() {
                 </ToastProviderWithViewport>
               </ConfirmDialogProvider>
             </AlertDialogProvider>
-          </FamilyMembersProvider>
         </InvitationProvider>
       </FamilyProvider>
     </AuthProvider>
@@ -154,7 +151,7 @@ function RootLayoutNav() {
     addNotificationClickListener((data) => {
       const type = data?.type;
       if (type === "new_task" || type === "task_completed") {
-        router.push("/(tabs)/TasksScreen");
+        router.push("/(tabs)/tasks");
       } else if (type === "shopping_added" || type === "shopping_completed") {
         router.push("/(tabs)/shoppinglist");
       }
@@ -178,7 +175,7 @@ function RootLayoutNav() {
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "#000000",
+            backgroundColor: Colors.light.background,
           }}
         >
           <ActivityIndicator size="large" color={Colors.light.primary} />
@@ -199,7 +196,7 @@ function RootLayoutNav() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
           headerShown: false,

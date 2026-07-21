@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
-import DockTabBar from "../../components/DockTabBar";
-import Colors from "../../constants/Colors";
+import DockTabBar from "@/components/navigation/DockTabBar";
+import Colors from "@/constants/Colors";
 
 export default function TabLayout() {
   const colors = Colors.light;
@@ -10,7 +10,7 @@ export default function TabLayout() {
       initialRouteName="index"
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: "#8B949E",
+        tabBarInactiveTintColor: colors.tabIconDefault,
         headerShown: false,
         tabBarStyle: {
           backgroundColor: "transparent",
@@ -30,8 +30,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
-          tabBarLabel: "Dashboard",
+          title: "Início",
+          tabBarLabel: "Início",
         }}
       />
       <Tabs.Screen
@@ -42,7 +42,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="TasksScreen"
+        name="tasks"
         options={{
           title: "Tarefas",
           tabBarLabel: "Tarefas",

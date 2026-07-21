@@ -1,3 +1,4 @@
+import Colors from "@/constants/Colors";
 import { Image, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -34,13 +35,13 @@ export default function Avatar({
   photoURL,
   size = 40,
   borderRadius,
-  borderColor = "rgba(255, 255, 255, 0.15)",
+  borderColor = Colors.light.border,
   borderWidth = 1,
-  backgroundColor = "rgba(255, 255, 255, 0.06)",
+  backgroundColor = Colors.light.cardDark,
   iconName = "account",
   iconSet = "mci",
   iconSize,
-  iconColor = "#FFFFFF",
+  iconColor = Colors.light.primary,
 }: AvatarProps) {
   const radius = borderRadius ?? size / 2;
   const fallbackSize = iconSize ?? Math.round(size * 0.55);

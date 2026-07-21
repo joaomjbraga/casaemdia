@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Colors from "../../constants/Colors";
+import Colors from "@/constants/Colors";
 
 interface TaskCardProps {
   title: string;
@@ -84,28 +84,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: 14,
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderLeftWidth: 4,
+    borderColor: Colors.light.border,
+    borderLeftWidth: 3,
     borderLeftColor: Colors.light.primary,
   },
   cardDone: {
     borderLeftColor: Colors.light.success,
-    opacity: 0.55,
+    opacity: 0.6,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    marginRight: 14,
+    borderColor: Colors.light.border,
+    marginRight: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   checkboxDone: {
     backgroundColor: Colors.light.success,
@@ -117,13 +116,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: Colors.light.text,
     marginBottom: 7,
     lineHeight: 20,
   },
   titleDone: {
     textDecorationLine: "line-through",
-    color: "rgba(255, 255, 255, 0.45)",
+    color: Colors.light.mutedText,
   },
   meta: {
     flexDirection: "row",
@@ -137,7 +136,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: "rgba(255, 255, 255, 0.5)",
+    color: Colors.light.mutedText,
     fontWeight: "500",
   },
   deleteBtn: {

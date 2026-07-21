@@ -55,7 +55,7 @@ export default function LoadingSkeleton({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <View style={styles.container}>
         {variant === "dashboard" ? (
           <>
@@ -96,13 +96,8 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   skeletonBlock: {
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
-    shadowColor: "#000000",
-    shadowOpacity: 0.16,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    borderRadius: 12,
+    backgroundColor: Colors.light.cardDark,
   },
   header: {
     height: 92,

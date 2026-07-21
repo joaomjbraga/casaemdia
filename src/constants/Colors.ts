@@ -1,67 +1,73 @@
-const tintColorLight = "#19B3A6";
+const tintColorLight = "#007AFF";
 
 export default {
   light: {
-    // Base
-    background: "#000000",
-    backgroundSecondary: "#0A1413",
+    background: "#F3F2F9",
+    backgroundSecondary: "#FFFFFF",
 
-    // Text
-    text: "#E6FAF7",
-    textWhite: "#FFFFFF",
-    mutedText: "#8CA3A0",
+    text: "#000000",
+    textWhite: "#000000",
+    mutedText: "#8E8E93",
 
-    // Brand
     primary: tintColorLight,
     tint: tintColorLight,
-    secondary: "#26E0D0",
+    secondary: "#5856D6",
 
-    // Illustrations
-    illustrationPurple: "#7B61FF",
-    illustrationPink: "#E16CA8",
-    illustrationCyan: "#3FE3E0",
-    illustrationYellow: "#FFD166",
-    illustrationOrange: "#FF9D4D",
-    illustrationTeal: "#19B5A6",
+    accentPurple: "#AF52DE",
 
-    // Cards
-    cardBackground: "#0F1E1D",
-    cardDark: "#142725",
-    cardDarkSecondary: "#1A2F2C",
+    illustrationPurple: "#AF52DE",
+    illustrationPink: "#FF2D55",
+    illustrationCyan: "#5AC8FA",
+    illustrationYellow: "#FFCC00",
+    illustrationOrange: "#FF9500",
+    illustrationTeal: "#34C759",
 
-    // Accents
-    accentBlue: "#42B7E4",
-    accentCyan: "#2DD4BF",
-    accentYellow: "#FFC857",
+    cardBackground: "#FFFFFF",
+    cardDark: "#F2F2F7",
+    cardDarkSecondary: "#E5E5EA",
+    cardSurface: "#FFFFFF",
+    cardBorder: "rgba(60, 60, 67, 0.08)",
 
-    // Borders
-    border: "#1E3633",
-    borderLight: "#243F3C",
+    accentBlue: "#007AFF",
+    accentCyan: "#5AC8FA",
+    accentYellow: "#FFCC00",
 
-    // Semantic
-    success: "#2ECC71",
-    danger: "#F26D6D",
-    warning: "#F5B542",
+    border: "rgba(60, 60, 67, 0.08)",
+    borderLight: "rgba(60, 60, 67, 0.04)",
 
-    // Progress
-    progressBar: "#19D3B3",
-    progressBackground: "#142725",
+    inputBackground: "#F2F2F7",
+    inputBorder: "rgba(60, 60, 67, 0.08)",
 
-    // Buttons
-    buttonPrimary: "#19B3A6",
-    buttonSecondary: "#26E0D0",
+    accentPurpleSurface: "rgba(175, 82, 222, 0.08)",
 
-    // Icons
-    iconPrimary: "#19B3A6",
-    iconSecondary: "#42B7E4",
-    iconLight: "#E6FAF7",
+    success: "#34C759",
+    successLight: "#30D158",
+    danger: "#FF3B30",
+    dangerDark: "#FF453A",
+    dangerLight: "#FF6961",
+    warning: "#FF9500",
+    warningLight: "#FFCC00",
+    info: "#5AC8FA",
+    link: "#007AFF",
 
-    // Tabs
-    tabIconDefault: "#6B8481",
+    progressBar: "#007AFF",
+    progressBackground: "#E5E5EA",
+
+    buttonPrimary: "#007AFF",
+    buttonSecondary: "#5856D6",
+
+    iconPrimary: "#007AFF",
+    iconSecondary: "#5856D6",
+    iconLight: "#FFFFFF",
+
+    tabIconDefault: "#8E8E93",
     tabIconSelected: tintColorLight,
 
-    // Gradient
-    gradientStart: "#000000",
-    gradientEnd: "#0A1413",
+    gradientStart: "#FFFFFF",
+    gradientEnd: "#F2F2F7",
+    gradientPurple: "#FFFFFF",
+    gradientDark: "#F2F2F7",
+
+    dialogBackground: "#FFFFFF",
   },
 };

@@ -1,3 +1,4 @@
+import type { FamilyMember } from "@/types/models";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import React, {
   createContext,
@@ -9,24 +10,16 @@ import React, {
 } from "react";
 import { auth, db } from "../lib/firebase";
 import {
-  fetchFamilyMembers,
+  deleteFamilyMemberFromStore,
+  fetchFamilyMembersFromStore,
+} from "../services/family-members";
+import {
   initializeFamilyForUser,
   recoverFamilyAfterRemoval,
   subscribeToFamilyMembers,
 } from "../services/family";
 import { useAuth } from "./AuthContext";
 
-export interface FamilyMember {
-  id: string;
-  name: string;
-  email: string;
-  photoURL: string | null;
-  role: "admin" | "member";
-  points: number;
-  tasksCompleted: number;
-  shoppingCompleted: number;
-  contributions: number;
-}
 
 interface FamilyContextType {
   familyId: string | null;
@@ -44,6 +37,8 @@ interface FamilyContextType {
   /** Cancela a supressão da auto-recuperação (ex.: falha ao excluir conta). */
   cancelIntentionalExit: () => void;
   refreshFamily: () => Promise<void>;
+  deleteFamilyMember: (id: string) => Promise<void>;
+  fetchMembers: () => Promise<void>;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -77,14 +72,44 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
     intentionalExit.current = false;
   }, []);
 
-  const fetchMembers = useCallback(async (fId: string) => {
+  const fetchMembers = useCallback(async (fId?: string) => {
+    const targetFamilyId = fId || familyId;
+    if (!targetFamilyId || !auth.currentUser) return;
     try {
-      const membersList = await fetchFamilyMembers(fId);
+      const membersList = await fetchFamilyMembersFromStore(targetFamilyId);
       setMembers(membersList);
     } catch (error) {
       console.error("Error fetching family members:", error);
     }
-  }, []);
+  }, [familyId]);
+
+  const deleteFamilyMember = useCallback(
+    async (id: string) => {
+      if (!familyId) throw new Error("Família não carregada");
+
+      try {
+        setLoading(true);
+
+        const member = members.find((m) => m.id === id);
+        if (!member) throw new Error("Membro não encontrado.");
+
+        await deleteFamilyMemberFromStore({
+          familyId,
+          memberId: id,
+          memberName: member.name,
+          memberEmail: member.email,
+          familyName,
+        });
+
+        await fetchMembers();
+      } catch (error: any) {
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [familyId, familyName, members, fetchMembers],
+  );
 
   const refreshFamily = useCallback(async () => {
     const uid = auth.currentUser?.uid;
@@ -212,6 +237,8 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({
         beginIntentionalExit,
         cancelIntentionalExit,
         refreshFamily,
+        deleteFamilyMember,
+        fetchMembers,
       }}
     >
       {children}

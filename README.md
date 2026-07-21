@@ -11,7 +11,10 @@ Casa em Dia é um aplicativo mobile para organização doméstica, criado com Re
 - Tarefas com responsáveis, pontos e ranking
 - Lista de compras colaborativa com pontos por item marcado como comprado
 - Notificações push via OneSignal
-- Tema escuro com visual inspirado em glassmorphism e efeitos de fundo
+- Tema claro estilo iOS com visual minimalista
+- Navegação e componentes reestilizados para maior clareza e consistência
+- Cores unificadas e superfícies mais limpas
+- Correções de bugs e inconsistências no tema e tipos
 - Persistência offline nativa via Firestore
 
 ## Arquitetura atual

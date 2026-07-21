@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   increment,
   writeBatch,
@@ -20,12 +21,15 @@ interface CompletionOptions {
  * com fallback para o nome para manter compatibilidade com dados antigos.
  */
 const findMemberRef = async (familyId: string, memberIdOrName: string) => {
+  const candidateRef = doc(db, "families", familyId, "members", memberIdOrName);
+  const candidateSnap = await getDoc(candidateRef);
+  if (candidateSnap.exists()) {
+    return candidateRef;
+  }
+
   const snap = await getDocs(collection(db, "families", familyId, "members"));
 
-  const match = snap.docs.find((d) => {
-    if (d.id === memberIdOrName) return true;
-    return d.data().name === memberIdOrName;
-  });
+  const match = snap.docs.find((d) => d.data().name === memberIdOrName);
 
   return match ? doc(db, "families", familyId, "members", match.id) : null;
 };

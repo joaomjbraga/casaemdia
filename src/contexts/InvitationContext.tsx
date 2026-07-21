@@ -16,17 +16,7 @@ import {
 } from "../services/family";
 import { useAuth } from "./AuthContext";
 import { useFamily } from "./FamilyContext";
-
-export interface Invitation {
-  id: string;
-  familyId: string;
-  familyName: string;
-  fromUserId: string;
-  fromUserName: string;
-  toEmail: string;
-  status: "pending" | "accepted" | "declined";
-  createdAt: any;
-}
+import type { Invitation } from "@/types/models";
 
 interface InvitationContextType {
   pendingInvitations: Invitation[];

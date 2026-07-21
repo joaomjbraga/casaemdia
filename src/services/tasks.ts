@@ -1,3 +1,4 @@
+import type { Task } from "@/types/models";
 import {
   addDoc,
   collection,
@@ -15,15 +16,8 @@ import { db } from "../lib/firebase";
 import { creditCompletion, revertCompletion } from "../lib/gamification";
 import { sendNotificationToFamily } from "../lib/onesignal";
 
-export interface TaskSnapshot {
-  id: string;
-  title: string;
-  done: boolean;
-  assignee: string;
-  assigneeId?: string;
-  points: number;
-  createdAt?: any;
-}
+
+export type TaskSnapshot = Task;
 
 export interface TaskMutationOptions {
   userName?: string;

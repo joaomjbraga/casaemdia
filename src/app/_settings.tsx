@@ -1,10 +1,10 @@
 import Avatar from "@/components/common/Avatar";
+import { Cell, ListSection, SectionLabel } from "@/components/settings/SettingsList";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
-import { Toast } from "@/components/shared/ui/toast";
+import { toast } from "@/lib/toast";
 import Colors from "@/constants/Colors";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { useFamilyMembers } from "@/contexts/FamilyMembersContext";
 import { useInvitations } from "@/contexts/InvitationContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -22,8 +22,6 @@ import {
 } from "react-native";
 import { deleteUserAccountFromFamily } from "../services/account";
 
-const colors = Colors.light;
-
 export default function SettingsScreen() {
   return <SettingsInner />;
 }
@@ -35,13 +33,15 @@ function SettingsInner() {
   const [inviteLoading, setInviteLoading] = useState<boolean>(false);
 
   const {
-    familyMembers,
+    members,
     loading: memberLoading,
     deleteFamilyMember,
-    fetchFamilyMembers,
-  } = useFamilyMembers();
-  const { familyId, familyName, members, beginIntentionalExit, cancelIntentionalExit } =
-    useFamily();
+    fetchMembers,
+    familyId,
+    familyName,
+    beginIntentionalExit,
+    cancelIntentionalExit,
+  } = useFamily();
   const { sendInvitation } = useInvitations();
   const router = useRouter();
   const { user, signOut, deleteAccount } = useAuth();
@@ -55,27 +55,25 @@ function SettingsInner() {
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) {
-      Toast.show("Digite o email do convidado.", { type: "error" });
+      toast.error("Digite o email do convidado.");
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteEmail.trim())) {
-      Toast.show("Email inválido.", { type: "error" });
+      toast.error("Email inválido.");
       return;
     }
     if (inviteEmail.trim().toLowerCase() === user?.email?.toLowerCase()) {
-      Toast.show("Você não pode convidar a si mesmo.", { type: "error" });
+      toast.error("Você não pode convidar a si mesmo.");
       return;
     }
     try {
       setInviteLoading(true);
       await sendInvitation(inviteEmail.trim());
       setInviteEmail("");
-      Toast.show("Convite enviado!", { type: "success" });
+      toast.success("Convite enviado!");
     } catch (error: any) {
-      Toast.show(error.message || "Falha ao enviar convite.", {
-        type: "error",
-      });
+      toast.error(error.message || "Falha ao enviar convite.");
     } finally {
       setInviteLoading(false);
     }
@@ -94,13 +92,10 @@ function SettingsInner() {
           if (!familyId) throw new Error("Família não carregada");
 
           await deleteFamilyMember(memberId);
-          Toast.show(`${memberName} foi removido.`, { type: "success" });
+          toast.success(`${memberName} foi removido.`);
         } catch (error: any) {
           console.error("Erro ao remover membro:", error);
-          Toast.show(
-            error?.message || "Não foi possível remover o membro.",
-            { type: "error" },
-          );
+          toast.error(error?.message || "Não foi possível remover o membro.");
         } finally {
           setDeletingMember(null);
         }
@@ -131,7 +126,7 @@ function SettingsInner() {
         } catch (error) {
           cancelIntentionalExit();
           console.error("Erro ao excluir conta:", error);
-          Toast.show("Falha ao excluir conta.", { type: "error" });
+          toast.error("Falha ao excluir conta.");
         } finally {
           setDeletingAccount(false);
         }
@@ -151,7 +146,7 @@ function SettingsInner() {
           await signOut();
           router.replace("/(auth)/login");
         } catch {
-          Toast.show("Falha ao fazer logout.", { type: "error" });
+          toast.error("Falha ao fazer logout.");
         }
       },
     });
@@ -172,7 +167,7 @@ function SettingsInner() {
             activeOpacity={0.6}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <MaterialCommunityIcons name="chevron-left" size={28} color="#FFFFFF" />
+            <MaterialCommunityIcons name="chevron-left" size={28} color={Colors.light.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Configurações</Text>
           <View style={styles.headerRight} />
@@ -189,10 +184,10 @@ function SettingsInner() {
             photoURL={user?.photoURL}
             size={64}
             borderRadius={20}
-            borderColor="rgba(255, 255, 255, 0.12)"
-            backgroundColor="rgba(255, 255, 255, 0.06)"
+            borderColor={Colors.light.border}
+            backgroundColor={Colors.light.cardDark}
             iconName="account"
-            iconColor="#FFFFFF"
+            iconColor={Colors.light.primary}
             iconSize={32}
           />
           <Text style={styles.profileName} numberOfLines={1}>
@@ -220,7 +215,7 @@ function SettingsInner() {
                   <MaterialCommunityIcons
                     name="email-fast-outline"
                     size={22}
-                    color="#A259FF"
+                    color={Colors.light.accentPurple}
                   />
                   <Text style={styles.inviteTitle}>Convidar por email</Text>
                 </View>
@@ -228,7 +223,7 @@ function SettingsInner() {
                   <MaterialCommunityIcons
                     name="email-outline"
                     size={18}
-                    color={colors.mutedText}
+                    color={Colors.light.mutedText}
                     style={{ marginRight: 8 }}
                   />
                   <TextInput
@@ -236,7 +231,7 @@ function SettingsInner() {
                     value={inviteEmail}
                     onChangeText={setInviteEmail}
                     placeholder="email@exemplo.com"
-                    placeholderTextColor={colors.mutedText}
+                    placeholderTextColor={Colors.light.mutedText}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -252,13 +247,13 @@ function SettingsInner() {
                   activeOpacity={0.7}
                 >
                   {inviteLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={Colors.light.text} />
                   ) : (
                     <>
                       <MaterialCommunityIcons
                         name="send"
                         size={18}
-                        color="#fff"
+                        color={Colors.light.text}
                       />
                       <Text style={styles.primaryBtnText}>Enviar convite</Text>
                     </>
@@ -279,10 +274,10 @@ function SettingsInner() {
                   photoURL={member.photoURL}
                   size={38}
                   borderRadius={12}
-                  borderColor="rgba(255, 255, 255, 0.1)"
-                  backgroundColor="rgba(255, 255, 255, 0.06)"
+                  borderColor={Colors.light.border}
+                  backgroundColor={Colors.light.cardDark}
                   iconName="account"
-                  iconColor="#FFFFFF"
+                  iconColor={Colors.light.primary}
                   iconSize={18}
                 />
                 <View style={styles.memberInfo}>
@@ -311,12 +306,12 @@ function SettingsInner() {
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     {deletingMember === member.id ? (
-                      <ActivityIndicator size={16} color={colors.danger} />
+                      <ActivityIndicator size={16} color={Colors.light.danger} />
                     ) : (
                       <MaterialCommunityIcons
                         name="close"
                         size={20}
-                        color={colors.danger}
+                        color={Colors.light.danger}
                       />
                     )}
                   </TouchableOpacity>
@@ -335,7 +330,7 @@ function SettingsInner() {
                 <MaterialCommunityIcons
                   name="logout-variant"
                   size={20}
-                  color="#FF453A"
+                  color={Colors.light.danger}
                 />
               </View>
               <Text style={[styles.actionText, styles.textRed]}>
@@ -355,11 +350,11 @@ function SettingsInner() {
                 <MaterialCommunityIcons
                   name="account-remove-outline"
                   size={20}
-                  color="#FF453A"
+                  color={Colors.light.danger}
                 />
               </View>
               {deletingAccount ? (
-                <ActivityIndicator size={18} color="#FF453A" />
+                <ActivityIndicator size={18} color={Colors.light.danger} />
               ) : (
                 <Text style={[styles.actionText, styles.textRed]}>
                   Excluir conta
@@ -375,76 +370,16 @@ function SettingsInner() {
   );
 }
 
-function SectionLabel({ text }: { text: string }) {
-  return <Text style={styles.sectionLabel}>{text}</Text>;
-}
-
-function ListSection({ children }: { children: React.ReactNode }) {
-  return <View style={styles.listSection}>{children}</View>;
-}
-
-function Cell({
-  children,
-  first,
-  last,
-  onPress,
-  chevron,
-  disabled,
-}: {
-  children: React.ReactNode;
-  first?: boolean;
-  last?: boolean;
-  onPress?: () => void;
-  chevron?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <View
-      style={[
-        styles.cell,
-        first && styles.cellFirst,
-        last && styles.cellLast,
-        onPress && styles.cellPressable,
-        disabled && styles.cellDisabled,
-      ]}
-    >
-      <TouchableOpacity
-        style={styles.cellTouch}
-        onPress={onPress}
-        disabled={!onPress || disabled}
-        activeOpacity={0.6}
-      >
-        <View
-          style={[
-            styles.cellInner,
-            last && styles.cellInnerLast,
-          ]}
-        >
-          {children}
-          {chevron && (
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={20}
-              color="rgba(255, 255, 255, 0.3)"
-              style={styles.cellChevron}
-            />
-          )}
-        </View>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: Colors.light.background,
   },
   statusBarSpacer: {},
   headerFixed: {
-    backgroundColor: "#0B0B0F",
+    backgroundColor: Colors.light.backgroundSecondary,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomColor: Colors.light.border,
   },
   header: {
     flexDirection: "row",
@@ -462,7 +397,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: Colors.light.text,
   },
   headerRight: { width: 44 },
   content: { flex: 1 },
@@ -471,19 +406,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 16,
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   profileName: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.light.text,
     marginTop: 14,
     letterSpacing: -0.4,
   },
   profileEmail: {
     fontSize: 14,
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: Colors.light.mutedText,
     marginTop: 2,
   },
   rolePill: {
@@ -491,59 +426,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: Colors.light.cardDark,
   },
   rolePillAdmin: {
-    backgroundColor: "rgba(255, 195, 0, 0.14)",
+    backgroundColor: "rgba(255, 204, 0, 0.2)",
   },
   rolePillText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.7)",
+    color: Colors.light.mutedText,
   },
-  rolePillTextAdmin: { color: "#FFC300" },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "rgba(255, 255, 255, 0.5)",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginHorizontal: 20,
-    marginTop: 28,
-    marginBottom: 8,
-  },
-  listSection: {
-    marginHorizontal: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  cell: {
-    backgroundColor: "transparent",
-  },
-  cellPressable: {},
-  cellDisabled: { opacity: 0.5 },
-  cellFirst: {
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-  },
-  cellLast: {
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
-  },
-  cellTouch: { flex: 1 },
-  cellInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    minHeight: 56,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
-  },
-  cellInnerLast: {
-    borderBottomWidth: 0,
-  },
-  cellChevron: { marginLeft: "auto" },
+  rolePillTextAdmin: { color: Colors.light.warning },
   inviteBody: { width: "100%", paddingVertical: 4 },
   inviteRow: {
     flexDirection: "row",
@@ -554,15 +447,15 @@ const styles = StyleSheet.create({
   inviteTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: Colors.light.text,
   },
   inputBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    backgroundColor: Colors.light.inputBackground,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: Colors.light.inputBorder,
     paddingHorizontal: 14,
     marginBottom: 12,
   },
@@ -570,20 +463,20 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: "400",
-    color: "#FFFFFF",
+    color: Colors.light.text,
     paddingVertical: 12,
   },
   primaryBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0A84FF",
+    backgroundColor: Colors.light.primary,
     paddingVertical: 13,
     borderRadius: 12,
     gap: 8,
   },
   btnDisabled: { opacity: 0.5 },
-  primaryBtnText: { fontSize: 15, fontWeight: "600", color: "#fff" },
+  primaryBtnText: { fontSize: 15, fontWeight: "600", color: Colors.light.text },
   memberRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -599,24 +492,24 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#FFFFFF",
+    color: Colors.light.text,
   },
   memberEmail: {
     fontSize: 13,
     fontWeight: "400",
-    color: "rgba(255, 255, 255, 0.45)",
+    color: Colors.light.mutedText,
     marginTop: 1,
   },
   adminBadge: {
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: "rgba(255, 195, 0, 0.14)",
+    backgroundColor: "rgba(255, 204, 0, 0.2)",
   },
   adminBadgeText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#FFC300",
+    color: Colors.light.warning,
   },
   removeBtn: {
     padding: 4,
@@ -636,19 +529,19 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   iconRed: {
-    backgroundColor: "rgba(255, 69, 58, 0.16)",
+    backgroundColor: "rgba(255, 59, 48, 0.12)",
   },
   actionText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#FFFFFF",
+    color: Colors.light.text,
   },
-  textRed: { color: "#FF453A" },
+  textRed: { color: Colors.light.danger },
   footer: {
     textAlign: "center",
     fontSize: 13,
     fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.3)",
+    color: Colors.light.mutedText,
     marginTop: 32,
   },
 });

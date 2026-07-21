@@ -6,15 +6,19 @@
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
     "scheme": "casaemdia",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#FFFFFF"
       },
       "package": "com.joaomjbraga.CasaemDia",
       "permissions": [
-        "android.permission.READ_PHONE_STATE"
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "plugins": [
@@ -31,21 +35,22 @@
         {
           "image": "./src/assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#000000"
+          "backgroundColor": "#FFFFFF"
         }
       ],
       [
         "expo-navigation-bar",
         {
-          "enforceContrast": false,
-          "style": "light"
+          "enforceContrast": true,
+          "style": "dark"
         }
       ],
       [
         "@react-native-google-signin/google-signin/app.plugin.js"
       ],
       "expo-audio",
-      "./plugins/withAndroidWindowBackground.js"
+      "./plugins/withAndroidWindowBackground.js",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
@@ -53,6 +58,9 @@
     "extra": {
       "router": {}
     },
-    "owner": "joaomjbraga"
+    "owner": "joaomjbraga",
+    "ios": {
+      "bundleIdentifier": "com.joaomjbraga.CasaemDia"
+    }
   }
 }

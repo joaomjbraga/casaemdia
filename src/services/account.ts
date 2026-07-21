@@ -54,12 +54,10 @@ export const deleteUserAccountFromFamily = async ({
 
     batch.delete(doc(db, "families", familyId));
   } else {
-    const isOnlyAdmin =
+    const isDeletingLastAdmin =
       otherMembers.length > 0 && !otherMembers.some((m) => m.role === "admin");
-    if (isOnlyAdmin) {
-      const nextAdmin =
-        otherMembers.find((m) => m.role === "admin") ?? otherMembers[0];
-      batch.update(doc(db, "families", familyId, "members", nextAdmin.id), {
+    if (isDeletingLastAdmin) {
+      batch.update(doc(db, "families", familyId, "members", otherMembers[0].id), {
         role: "admin",
       });
     }

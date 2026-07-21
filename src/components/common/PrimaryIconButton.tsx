@@ -43,7 +43,7 @@ export default function PrimaryIconButton({
       <MaterialCommunityIcons
         name={iconName as any}
         size={size * 0.5}
-        color="#FFFFFF"
+        color={Colors.light.text}
       />
     </TouchableOpacity>
   );
@@ -53,10 +53,10 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: "center",
     alignItems: "center",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   disabled: {
     opacity: 0.5,

@@ -1,3 +1,4 @@
+import type { FamilyMember, Invitation } from "@/types/models";
 import {
   addDoc,
   collection,
@@ -20,28 +21,7 @@ import {
 import { db } from "../lib/firebase";
 import { removeUserTags, sendNotificationToEmail } from "../lib/onesignal";
 
-export interface FamilyMemberSnapshot {
-  id: string;
-  name: string;
-  email: string;
-  photoURL: string | null;
-  role: "admin" | "member";
-  points: number;
-  tasksCompleted: number;
-  shoppingCompleted: number;
-  contributions: number;
-}
 
-export interface InvitationSnapshot {
-  id: string;
-  familyId: string;
-  familyName: string;
-  fromUserId: string;
-  fromUserName: string;
-  toEmail: string;
-  status: "pending" | "accepted" | "declined";
-  createdAt: any;
-}
 
 export const fetchFamilyMembers = async (familyId: string) => {
   const q = query(
@@ -60,7 +40,7 @@ export const fetchFamilyMembers = async (familyId: string) => {
     tasksCompleted: d.data().tasksCompleted ?? 0,
     shoppingCompleted: d.data().shoppingCompleted ?? 0,
     contributions: d.data().contributions ?? 0,
-  })) satisfies FamilyMemberSnapshot[];
+  })) satisfies FamilyMember[];
 };
 
 export const initializeFamilyForUser = async (user: any) => {
@@ -96,7 +76,7 @@ export const fetchPendingInvitations = async (email: string) => {
   const snap = await getDocs(q);
   const now = Date.now();
   const expiredIds: string[] = [];
-  const invitations: InvitationSnapshot[] = snap.docs
+  const invitations: Invitation[] = snap.docs
     .map((d) => ({
       id: d.id,
       familyId: d.data().familyId,
@@ -130,7 +110,7 @@ export const sendFamilyInvitation = async (
   familyName: string,
   currentUser: any,
   targetEmail: string,
-  members: FamilyMemberSnapshot[],
+  members: FamilyMember[],
 ) => {
   if (!currentUser) throw new Error("Usuário não autenticado");
 
@@ -153,12 +133,22 @@ export const sendFamilyInvitation = async (
     throw new Error("Este email já é membro da família");
   }
 
+  const normalizedEmail = targetEmail.trim().toLowerCase();
+  const userQ = query(
+    collection(db, "users"),
+    where("email", "==", normalizedEmail),
+  );
+  const userSnap = await getDocs(userQ);
+  if (userSnap.empty) {
+    throw new Error("Este email não possui uma conta no app");
+  }
+
   await addDoc(collection(db, "invitations"), {
     familyId,
     familyName,
     fromUserId: currentUser.uid,
     fromUserName: currentUser.displayName || "Administrador",
-    toEmail: targetEmail.trim().toLowerCase(),
+    toEmail: normalizedEmail,
     status: "pending",
     createdAt: serverTimestamp(),
     expiresAt: Timestamp.fromDate(
@@ -167,7 +157,7 @@ export const sendFamilyInvitation = async (
   });
 
   await sendNotificationToEmail({
-    email: targetEmail.trim().toLowerCase(),
+    email: normalizedEmail,
     title: "Convite de Familia",
     body: `${currentUser.displayName || "Alguem"} te convidou para a familia "${familyName}". Abra o app para aceitar.`,
     data: { type: "invitation" },
@@ -216,6 +206,7 @@ export const acceptFamilyInvitation = async (
     {
       familyId: targetFamilyId,
       familyName: targetFamilyName,
+      email: currentUser.email?.toLowerCase() || "",
       migratedAt: serverTimestamp(),
     },
     { merge: true },

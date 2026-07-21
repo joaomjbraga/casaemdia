@@ -1,3 +1,4 @@
+import type { FamilyMember } from "@/types/models";
 import {
   addDoc,
   collection,
@@ -11,21 +12,10 @@ import {
 import { db } from "../lib/firebase";
 import { sendNotificationToEmail } from "../lib/onesignal";
 
-export interface FamilyMemberSnapshot {
-  id: string;
-  name: string;
-  email: string;
-  photoURL: string | null;
-  role: "admin" | "member";
-  points: number;
-  tasksCompleted: number;
-  shoppingCompleted: number;
-  contributions: number;
-}
 
 export const fetchFamilyMembersFromStore = async (
   familyId: string,
-): Promise<FamilyMemberSnapshot[]> => {
+): Promise<FamilyMember[]> => {
   const q = query(
     collection(db, "families", familyId, "members"),
     orderBy("name", "asc"),
@@ -45,28 +35,6 @@ export const fetchFamilyMembersFromStore = async (
   }));
 };
 
-export const addFamilyMemberToStore = async (
-  familyId: string,
-  name: string,
-) => {
-  const trimmedName = name.trim();
-  const existingQuery = query(
-    collection(db, "families", familyId, "members"),
-    where("name", "==", trimmedName),
-  );
-  const existingSnap = await getDocs(existingQuery);
-  if (!existingSnap.empty) {
-    throw new Error("Já existe um membro com esse nome");
-  }
-
-  await addDoc(collection(db, "families", familyId, "members"), {
-    name: trimmedName,
-    email: "",
-    photoURL: null,
-    role: "member",
-    joinedAt: new Date(),
-  });
-};
 
 export const deleteFamilyMemberFromStore = async ({
   familyId,

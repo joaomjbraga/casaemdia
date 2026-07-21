@@ -1,30 +1,25 @@
+import type { ShoppingItem } from "@/types/models";
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
 import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
+import EmptyState from "@/components/common/EmptyState";
+import LoadingSkeleton from "@/components/common/LoadingSkeleton";
+import QuantityEditModal from "@/components/shopping/QuantityEditModal";
 import ShoppingItemCard from "@/components/shopping/ShoppingItemCard";
+import ShoppingListHeader from "@/components/shopping/ShoppingListHeader";
+import ShoppingSectionHeader from "@/components/shopping/ShoppingSectionHeader";
+import Colors from "@/constants/Colors";
+import { DOCK_CLEARANCE } from "@/constants/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { useCelebration } from "@/hooks/useCelebration";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Modal,
-  StatusBar as RNStatusBar,
   StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import EmptyState from "../../components/common/EmptyState";
-import IconCircleButton from "../../components/common/IconCircleButton";
-import LoadingSkeleton from "../../components/common/LoadingSkeleton";
-import PrimaryIconButton from "../../components/common/PrimaryIconButton";
-import SectionTitle from "../../components/common/SectionTitle";
-import Colors from "../../constants/Colors";
 import {
   clearCompletedShoppingItems,
   createShoppingItem,
@@ -32,15 +27,8 @@ import {
   subscribeToShoppingItems,
   toggleShoppingItem,
   updateShoppingItemQuantity,
-} from "../../services/shopping";
+} from "@/services/shopping";
 
-interface ShoppingItem {
-  id: string;
-  name: string;
-  done: boolean;
-  quantity?: string;
-  points?: number;
-}
 
 export default function ShoppingList() {
   const { user } = useAuth();
@@ -278,106 +266,20 @@ export default function ShoppingList() {
 
   const progress = totalCount > 0 ? completedCount / totalCount : 0;
 
-  const statusBarHeight = RNStatusBar.currentHeight || 24;
-
   const renderHeader = () => (
-    <View>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerIcon}>
-            <MaterialCommunityIcons
-              name="cart-outline"
-              size={24}
-              color="#fff"
-            />
-          </View>
-          <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Lista de Compras</Text>
-            <Text style={styles.headerSubtitle}>
-              {pendingCount} a comprar · {completedCount} comprado
-              {completedCount !== 1 ? "s" : ""}
-            </Text>
-          </View>
-          {completedCount > 0 && (
-            <IconCircleButton
-              iconName="broom"
-              onPress={handleClearCompleted}
-              size={40}
-              backgroundColor="rgba(248, 81, 73, 0.15)"
-              borderColor="rgba(248, 81, 73, 0.3)"
-              iconColor="#FFFFFF"
-            />
-          )}
-        </View>
-
-        <View style={styles.progressWrap}>
-          <View style={styles.progressTrack}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                { width: `${Math.round(progress * 100)}%` },
-              ]}
-            />
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.addSection}>
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="Adicionar item..."
-            placeholderTextColor={Colors.light.mutedText}
-            value={newItemName}
-            onChangeText={setNewItemName}
-            onSubmitEditing={handleAddItem}
-            returnKeyType="done"
-          />
-          <PrimaryIconButton
-            iconName="plus"
-            onPress={handleAddItem}
-            disabled={!newItemName.trim()}
-          />
-        </View>
-
-        <TextInput
-          style={styles.qtyInput}
-          placeholder="Quantidade / observação (opcional) — ex: 2L, marca X"
-          placeholderTextColor={Colors.light.mutedText}
-          value={newItemQty}
-          onChangeText={setNewItemQty}
-          onSubmitEditing={handleAddItem}
-          returnKeyType="done"
-        />
-
-        <View style={styles.filterRow}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={18}
-            color={Colors.light.mutedText}
-          />
-          <TextInput
-            style={styles.filterInput}
-            placeholder="Buscar item..."
-            placeholderTextColor={Colors.light.mutedText}
-            value={filterName}
-            onChangeText={setFilterName}
-          />
-          {filterName ? (
-            <TouchableOpacity
-              onPress={() => setFilterName("")}
-              activeOpacity={0.7}
-            >
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={20}
-                color={Colors.light.mutedText}
-              />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      </View>
-    </View>
+    <ShoppingListHeader
+      pendingCount={pendingCount}
+      completedCount={completedCount}
+      progress={progress}
+      newItemName={newItemName}
+      newItemQty={newItemQty}
+      filterName={filterName}
+      onNewItemNameChange={setNewItemName}
+      onNewItemQtyChange={setNewItemQty}
+      onFilterChange={setFilterName}
+      onAddItem={handleAddItem}
+      onClearCompleted={handleClearCompleted}
+    />
   );
 
   const renderEmpty = () => (
@@ -385,7 +287,7 @@ export default function ShoppingList() {
       iconName="cart-outline"
       iconSize={40}
       iconColor={Colors.light.primary}
-      iconBackgroundColor="rgba(162, 89, 255, 0.12)"
+      iconBackgroundColor={Colors.light.accentPurpleSurface}
       title={filterName ? "Nenhum resultado" : "Lista vazia"}
       subtitle={
         filterName ? "Tente buscar outro termo" : "Adicione itens à sua lista"
@@ -398,19 +300,7 @@ export default function ShoppingList() {
   }
 
   const renderSectionHeader = (label: string, count: number) => (
-    <View style={styles.sectionHeader}>
-      <View style={styles.sectionHeaderLeft}>
-        <View style={styles.sectionDot} />
-        <SectionTitle
-          label={label}
-          color="#FFFFFF"
-          fontSize={15}
-          fontWeight="800"
-          letterSpacing={-0.2}
-        />
-      </View>
-      <Text style={styles.sectionCount}>{count}</Text>
-    </View>
+    <ShoppingSectionHeader label={label} count={count} />
   );
 
   const renderList = () => {
@@ -474,64 +364,20 @@ export default function ShoppingList() {
 
   return (
     <SafeAreaView edges={["top"]} style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
-      <LinearGradient
-        colors={["#1A1033", "#000000"]}
-        style={styles.headerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-
-      <Animated.View
-        style={[styles.statusBarSpacer, { height: statusBarHeight }]}
-      />
+      <View style={styles.headerSpacer} />
 
       {renderList()}
 
-      <Modal
+      <QuantityEditModal
         visible={!!editingItem}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setEditingItem(null)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setEditingItem(null)}
-        >
-          <TouchableOpacity style={styles.modalCard} activeOpacity={1}>
-            <Text style={styles.modalTitle}>{editingItem?.name}</Text>
-            <Text style={styles.modalLabel}>Quantidade / observação</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Ex: 2L, marca X, 500g"
-              placeholderTextColor={Colors.light.mutedText}
-              value={editQty}
-              onChangeText={setEditQty}
-              autoFocus
-              onSubmitEditing={handleSaveQuantity}
-              returnKeyType="done"
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancel}
-                onPress={() => setEditingItem(null)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.modalCancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalSave}
-                onPress={handleSaveQuantity}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.modalSaveText}>Salvar</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+        itemName={editingItem?.name ?? ""}
+        quantity={editQty}
+        onQuantityChange={setEditQty}
+        onSave={handleSaveQuantity}
+        onClose={() => setEditingItem(null)}
+      />
 
       <CelebrationOverlay />
     </SafeAreaView>
@@ -541,9 +387,12 @@ export default function ShoppingList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: Colors.light.background,
   },
   statusBarSpacer: {},
+  headerSpacer: {
+    height: 12,
+  },
   headerGradient: {
     position: "absolute",
     top: 0,
@@ -552,212 +401,15 @@ const styles = StyleSheet.create({
     height: 360,
     opacity: 0.9,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: "rgba(162, 89, 255, 0.18)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-  },
-  headerTexts: {
-    flex: 1,
-    minWidth: 0,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    letterSpacing: -0.6,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "rgba(255, 255, 255, 0.6)",
-    marginTop: 2,
-  },
-  progressWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 18,
-  },
-  progressTrack: {
-    flex: 1,
-    height: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#3FB950",
-    borderRadius: 4,
-  },
-  addSection: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 4,
-  },
-  inputRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  input: {
-    flex: 1,
-    height: 52,
-    backgroundColor: "rgba(13, 17, 23, 0.8)",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: Colors.light.text,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 0.6)",
-  },
-  qtyInput: {
-    backgroundColor: "rgba(13, 17, 23, 0.8)",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 0.6)",
-    paddingHorizontal: 16,
-    height: 52,
-    marginTop: 10,
-    fontSize: 16,
-    color: Colors.light.text,
-    textAlignVertical: "center",
-  },
-  filterRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(13, 17, 23, 0.8)",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 0.6)",
-    paddingHorizontal: 16,
-    marginTop: 12,
-    gap: 8,
-  },
-  filterInput: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: Colors.light.text,
-  },
   listWrap: {
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 140,
+    paddingHorizontal: 16,
+    paddingBottom: DOCK_CLEARANCE,
     paddingTop: 4,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 4,
-  },
-  sectionHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  sectionDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.light.primary,
-  },
-  sectionCount: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.light.mutedText,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
-    overflow: "hidden",
   },
   sectionHeaderDone: {
     marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  modalCard: {
-    width: "100%",
-    backgroundColor: "#161B22",
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "rgba(96, 239, 255, 0.12)",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 14,
-  },
-  modalLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: Colors.light.mutedText,
-    marginBottom: 8,
-  },
-  modalInput: {
-    backgroundColor: "rgba(13, 17, 23, 0.8)",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(48, 54, 61, 0.6)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: Colors.light.text,
-  },
-  modalActions: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 18,
-  },
-  modalCancel: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalCancelText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: Colors.light.text,
-  },
-  modalSave: {
-    flex: 1,
-    backgroundColor: Colors.light.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalSaveText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#fff",
   },
 });

@@ -9,12 +9,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import IconCircleButton from "../../components/common/IconCircleButton";
-import Colors from "../../constants/Colors";
-import { useAuth } from "../../contexts/AuthContext";
-import { useFamily } from "../../contexts/FamilyContext";
-import { useFamilyMembers } from "../../contexts/FamilyMembersContext";
-import { createTask } from "../../services/tasks";
+import IconCircleButton from "@/components/common/IconCircleButton";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFamily } from "@/contexts/FamilyContext";
+import { createTask } from "@/services/tasks";
 
 interface AddTaskFormProps {
   onClose: () => void;
@@ -24,7 +23,7 @@ interface AddTaskFormProps {
 export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
   const { user } = useAuth();
   const { familyId } = useFamily();
-  const { familyMembers } = useFamilyMembers();
+  const { members } = useFamily();
 
   const [title, setTitle] = useState("");
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
@@ -58,7 +57,7 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
       return;
     }
 
-    const assignee = familyMembers.find((m) => m.id === assigneeId);
+    const assignee = members.find((m) => m.id === assigneeId);
     if (!assignee) {
       toast.error("Membro não encontrado.");
       return;
@@ -101,8 +100,8 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
             iconName="arrow-left"
             onPress={onClose}
             size={40}
-            backgroundColor="rgba(255, 255, 255, 0.08)"
-            borderColor="rgba(96, 239, 255, 0.15)"
+            backgroundColor={Colors.light.cardDark}
+            borderColor={Colors.light.border}
             iconColor={Colors.light.text}
           />
           <View>
@@ -130,10 +129,10 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Responsável</Text>
             <View style={styles.membersGrid}>
-              {familyMembers.length === 0 ? (
+              {members.length === 0 ? (
                 <Text style={styles.noMembers}>Nenhum membro cadastrado</Text>
               ) : (
-                familyMembers.map((member) => (
+                members.map((member) => (
                   <TouchableOpacity
                     key={member.id}
                     style={[
@@ -219,11 +218,11 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: Colors.light.background,
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 24,
+    paddingTop: 44,
+    paddingBottom: 20,
     paddingHorizontal: 20,
   },
   headerContent: {
@@ -233,7 +232,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.light.text,
   },
   headerSubtitle: {
     fontSize: 14,
@@ -297,7 +296,7 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   memberNameActive: {
-    color: "#fff",
+    color: Colors.light.text,
   },
   pointsRow: {
     flexDirection: "row",
@@ -358,6 +357,6 @@ const styles = StyleSheet.create({
   submitText: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#fff",
+    color: Colors.light.text,
   },
 });

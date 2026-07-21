@@ -51,7 +51,7 @@ service cloud.firestore {
       allow delete: if signedIn() && (isMember(familyId) || resource.data.createdBy == request.auth.uid);
 
       match /members/{memberId} {
-        allow read: if signedIn() && (isMember(familyId) || resource.data.role == 'admin' && get(/databases/$(database)/documents/families/$(familyId)).data.createdBy == request.auth.uid);
+        allow read: if signedIn() && (isMember(familyId) || get(/databases/$(database)/documents/families/$(familyId)).data.createdBy == request.auth.uid);
         allow create: if signedIn()
           && (isInitialAdmin(familyId, memberId)
             || hasPendingInvitation(familyId, memberId)

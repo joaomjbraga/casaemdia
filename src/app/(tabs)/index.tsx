@@ -1,52 +1,32 @@
 import { useAlertDialog } from "@/components/shared/ui/dialog/AlertDialog";
 import Colors from "@/constants/Colors";
+import { DOCK_CLEARANCE } from "@/constants/Layout";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { useFamilyMembers } from "@/contexts/FamilyMembersContext";
+import type { CoupleStat, Task } from "@/types/models";
+
+import IconCircleButton from "@/components/common/IconCircleButton";
+import LoadingSkeleton from "@/components/common/LoadingSkeleton";
+import Header from "@/components/dashboard/Header";
+import RankingCard from "@/components/dashboard/RankingCard";
+import TasksCard from "@/components/tasks/TasksCard";
 import { useInvitations } from "@/contexts/InvitationContext";
+import {
+  deleteDashboardTask,
+  fetchDashboardTasks,
+  toggleDashboardTask,
+} from "@/services/tasks";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Header from "../../components/Header";
-import RankingCard from "../../components/RankingCard";
-import TasksCard from "../../components/TasksCard";
-import IconCircleButton from "../../components/common/IconCircleButton";
-import LoadingSkeleton from "../../components/common/LoadingSkeleton";
-import {
-  deleteDashboardTask,
-  fetchDashboardTasks,
-  toggleDashboardTask,
-} from "../../services/tasks";
-
-interface Task {
-  id: string;
-  title: string;
-  done: boolean;
-  assignee: string;
-  assigneeId?: string;
-  points: number;
-}
-
-interface CoupleStat {
-  id: string;
-  name: string;
-  points: number;
-  avatar: "person" | "person-outline" | "trophy";
-  tasksCompleted: number;
-  photoURL?: string | null;
-}
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { familyId } = useFamily();
-  const {
-    familyMembers,
-    fetchFamilyMembers,
-    loading: familyMembersLoading,
-  } = useFamilyMembers();
+  const { members, fetchMembers, loading: membersLoading } = useFamily();
   const { pendingInvitations, acceptInvitation, declineInvitation } =
     useInvitations();
   const { showAlert } = useAlertDialog();
@@ -63,7 +43,7 @@ export default function Dashboard() {
 
   const coupleStats = useMemo(() => {
     const stats: { [key: string]: CoupleStat } = {};
-    familyMembers.forEach((member, index) => {
+    members.forEach((member, index) => {
       stats[member.id] = {
         id: member.id,
         name: member.name,
@@ -74,7 +54,7 @@ export default function Dashboard() {
       };
     });
     return stats;
-  }, [familyMembers]);
+  }, [members]);
 
   const fetchTasks = useCallback(async () => {
     if (!familyId) {
@@ -103,9 +83,9 @@ export default function Dashboard() {
     useCallback(() => {
       if (familyId) {
         fetchTasks();
-        fetchFamilyMembers();
+        fetchMembers();
       }
-    }, [familyId, fetchTasks, fetchFamilyMembers]),
+    }, [familyId, fetchTasks, fetchMembers]),
   );
 
   const toggleTask = async (id: string) => {
@@ -183,8 +163,9 @@ export default function Dashboard() {
   };
 
   const isLoading =
-    authLoading || (!familyId && familyMembersLoading) ||
-    (familyId && tasksLoading && tasks.length === 0 && familyMembers.length === 0);
+    authLoading ||
+    (!familyId && membersLoading) ||
+    (familyId && tasksLoading && tasks.length === 0 && members.length === 0);
 
   if (isLoading) {
     return <LoadingSkeleton variant="dashboard" />;
@@ -194,7 +175,7 @@ export default function Dashboard() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: Colors.light.background }]}
     >
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       <Header totalTasks={totalTasks} completedTasks={completedTasks} />
 
@@ -209,7 +190,7 @@ export default function Dashboard() {
               <MaterialCommunityIcons
                 name="account-plus"
                 size={20}
-                color="#A259FF"
+                color={Colors.light.accentPurple}
               />
             </View>
             <View style={styles.inviteInfo}>
@@ -223,17 +204,17 @@ export default function Dashboard() {
                 iconName="check"
                 onPress={() => acceptInvitation(inv.id)}
                 size={36}
-                backgroundColor="rgba(63, 185, 80, 0.2)"
-                borderColor="rgba(63, 185, 80, 0.3)"
-                iconColor="#FFFFFF"
+                backgroundColor="rgba(52, 199, 89, 0.15)"
+                borderColor="rgba(52, 199, 89, 0.3)"
+                iconColor={Colors.light.success}
               />
               <IconCircleButton
                 iconName="close"
                 onPress={() => declineInvitation(inv.id)}
                 size={36}
-                backgroundColor="rgba(248, 81, 73, 0.2)"
-                borderColor="rgba(248, 81, 73, 0.3)"
-                iconColor="#FFFFFF"
+                backgroundColor="rgba(255, 59, 48, 0.15)"
+                borderColor="rgba(255, 59, 48, 0.3)"
+                iconColor={Colors.light.danger}
               />
             </View>
           </View>
@@ -256,6 +237,7 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.light.background,
   },
   scrollView: {
     flex: 1,
@@ -263,25 +245,25 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 140,
+    paddingBottom: DOCK_CLEARANCE,
   },
   inviteBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(162, 89, 255, 0.12)",
+    backgroundColor: Colors.light.accentPurpleSurface,
     borderWidth: 1,
-    borderColor: "rgba(162, 89, 255, 0.25)",
-    borderRadius: 16,
+    borderColor: "rgba(175, 82, 222, 0.15)",
+    borderRadius: 12,
     marginHorizontal: 16,
     marginBottom: 12,
-    padding: 14,
+    padding: 12,
     gap: 12,
   },
   inviteIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "rgba(162, 89, 255, 0.15)",
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(175, 82, 222, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -292,14 +274,14 @@ const styles = StyleSheet.create({
   inviteTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: Colors.light.text,
     letterSpacing: -0.1,
     marginBottom: 2,
   },
   inviteHint: {
     fontSize: 12,
     fontWeight: "500",
-    color: "rgba(96, 239, 255, 0.65)",
+    color: Colors.light.mutedText,
   },
   inviteActions: {
     flexDirection: "row",

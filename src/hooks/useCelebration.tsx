@@ -1,3 +1,4 @@
+import Colors from "@/constants/Colors";
 import { createAudioPlayer } from "expo-audio";
 import type { AudioPlayer } from "expo-audio";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 20,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: Colors.light.text,
     textShadowColor: "rgba(0,0,0,0.5)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
