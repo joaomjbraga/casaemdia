@@ -275,15 +275,20 @@ function RankingItem({
           </View>
 
           <View style={styles.userSection}>
-            <Avatar
-              photoURL={stat.photoURL}
-              size={34}
-              borderRadius={17}
-              iconSet="ion"
-              iconName={stat.avatar}
-              iconColor={Colors.light.iconPrimary}
-              iconSize={18}
-            />
+            <View style={styles.avatarWrap}>
+              <View style={[styles.xpRing, { borderColor: rankColor }]}>
+                <View style={[styles.xpRingFill, { width: `${(stat.points / maxPoints) * 100}%` }]} />
+              </View>
+              <Avatar
+                photoURL={stat.photoURL}
+                size={34}
+                borderRadius={17}
+                iconSet="ion"
+                iconName={stat.avatar}
+                iconColor={Colors.light.iconPrimary}
+                iconSize={18}
+              />
+            </View>
             <View style={styles.userInfo}>
               <View style={styles.userNameRow}>
                 <Text style={styles.userName} numberOfLines={1}>
@@ -466,6 +471,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginRight: 10,
+    gap: 10,
+  },
+  avatarWrap: {
+    position: "relative",
+    width: 34,
+    height: 34,
+  },
+  xpRing: {
+    position: "absolute",
+    top: -3,
+    left: -3,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: Colors.light.border,
+    overflow: "hidden",
+  },
+  xpRingFill: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    height: "100%",
+    backgroundColor: Colors.light.primary,
+    opacity: 0.3,
   },
   userInfo: {
     flex: 1,
