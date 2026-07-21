@@ -14,6 +14,7 @@ import { useFamily } from "@/contexts/FamilyContext";
 import { useCelebration } from "@/hooks/useCelebration";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
@@ -179,6 +180,10 @@ export default function ShoppingList() {
             }
           : undefined,
       });
+
+      if (newDone) {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
 
       if (willCompleteAll) celebrate();
     } catch {

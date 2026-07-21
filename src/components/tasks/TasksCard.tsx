@@ -3,6 +3,7 @@ import { useConfirmDialog } from "@/components/shared/ui/dialog/ConfirmDialog";
 import { useCelebration } from "@/hooks/useCelebration";
 import { toast } from "@/lib/toast";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import Colors from "@/constants/Colors";
@@ -80,6 +81,9 @@ export default function TasksList({
     setLoadingTaskId(taskId);
     try {
       await toggleTask(taskId);
+      if (!task?.done) {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       if (willCompleteAll) celebrate();
     } catch {
       toast.error("Não foi possível alterar a tarefa.");
@@ -246,23 +250,23 @@ const styles = StyleSheet.create({
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
   },
   progressBar: {
     flex: 1,
-    height: 4,
+    height: 8,
     backgroundColor: Colors.light.progressBackground,
-    borderRadius: 2,
+    borderRadius: 4,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
     backgroundColor: Colors.light.progressBar,
-    borderRadius: 2,
+    borderRadius: 4,
   },
   progressCheck: {
-    width: 14,
-    height: 14,
+    width: 18,
+    height: 18,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -65,7 +65,7 @@ export default function ShoppingListHeader({
           <View style={styles.progressWrap}>
             <ProgressBar
               progress={progress}
-              height={6}
+              height={8}
               color={Colors.light.success}
             />
           </View>

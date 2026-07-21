@@ -12,9 +12,9 @@ interface ProgressBarProps {
 
 export default function ProgressBar({
   progress,
-  height = 6,
+  height = 8,
   color = Colors.light.primary,
-  trackColor = Colors.light.cardBorder,
+  trackColor = Colors.light.progressBackground,
   borderRadius,
 }: ProgressBarProps) {
   const radius = borderRadius ?? height / 2;
