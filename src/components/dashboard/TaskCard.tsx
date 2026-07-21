@@ -1,5 +1,11 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Colors from "@/constants/Colors";
 
 interface DashboardTaskCardProps {
@@ -15,8 +21,35 @@ export default function DashboardTaskCard({
   assignee,
   points,
 }: DashboardTaskCardProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (done) {
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.04,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scale, {
+          toValue: 1,
+          useNativeDriver: true,
+          damping: 14,
+          stiffness: 220,
+          mass: 0.8,
+        }),
+      ]).start();
+    }
+  }, [done, scale]);
+
   return (
-    <View style={[styles.card, done && styles.cardDone]}>
+    <Animated.View
+      style={[
+        styles.card,
+        done && styles.cardDone,
+        { transform: [{ scale }] },
+      ]}
+    >
       <View style={styles.readOnlyIndicator} />
 
       <View style={styles.content}>
@@ -49,7 +82,7 @@ export default function DashboardTaskCard({
           </View>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -69,7 +102,7 @@ const styles = StyleSheet.create({
   },
   cardDone: {
     borderLeftColor: Colors.light.success,
-    opacity: 0.6,
+    opacity: 0.7,
   },
   readOnlyIndicator: {
     width: 22,

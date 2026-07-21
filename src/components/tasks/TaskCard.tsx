@@ -1,5 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef } from "react";
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Colors from "@/constants/Colors";
 
 interface TaskCardProps {
@@ -21,12 +28,40 @@ export default function TaskCard({
   onDelete,
   isLoading,
 }: TaskCardProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (done) {
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.04,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scale, {
+          toValue: 1,
+          useNativeDriver: true,
+          damping: 14,
+          stiffness: 220,
+          mass: 0.8,
+        }),
+      ]).start();
+    }
+  }, [done, scale]);
+
   return (
-    <View style={[styles.card, done && styles.cardDone]}>
+    <Animated.View
+      style={[
+        styles.card,
+        done && styles.cardDone,
+        { transform: [{ scale }] },
+      ]}
+    >
       <TouchableOpacity
         style={[styles.checkbox, done && styles.checkboxDone]}
         onPress={onToggle}
         disabled={isLoading}
+        activeOpacity={0.8}
       >
         {done && <MaterialCommunityIcons name="check" size={14} color="#fff" />}
       </TouchableOpacity>
@@ -74,7 +109,7 @@ export default function TaskCard({
           color={Colors.light.mutedText}
         />
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -94,7 +129,7 @@ const styles = StyleSheet.create({
   },
   cardDone: {
     borderLeftColor: Colors.light.success,
-    opacity: 0.6,
+    opacity: 0.7,
   },
   checkbox: {
     width: 22,

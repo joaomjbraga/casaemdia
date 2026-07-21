@@ -1,6 +1,11 @@
-import React from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRef } from "react";
+import {
+  Animated,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Colors from "@/constants/Colors";
 
 interface IconCircleButtonProps {
@@ -24,31 +29,59 @@ export default function IconCircleButton({
   disabled = false,
   style,
 }: IconCircleButtonProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.92,
+      useNativeDriver: true,
+      damping: 12,
+      stiffness: 300,
+      mass: 0.6,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      damping: 12,
+      stiffness: 300,
+      mass: 0.6,
+    }).start();
+  };
+
   const iconSize = size * 0.5;
 
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.7}
-      style={[
-        styles.button,
-        {
-          width: size,
-          height: size,
-          borderRadius: size * 0.5,
-          backgroundColor,
-          borderColor,
-        },
-        disabled && styles.disabled,
-        style,
-      ]}
+      activeOpacity={0.85}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={style}
     >
-      <MaterialCommunityIcons
-        name={iconName as any}
-        size={iconSize}
-        color={iconColor}
-      />
+      <Animated.View
+        style={[
+          styles.button,
+          {
+            width: size,
+            height: size,
+            borderRadius: size * 0.5,
+            backgroundColor,
+            borderColor,
+            transform: [{ scale }],
+          },
+          disabled && styles.disabled,
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={iconName as any}
+          size={iconSize}
+          color={iconColor}
+        />
+      </Animated.View>
     </TouchableOpacity>
   );
 }

@@ -1,5 +1,10 @@
-import React from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { useRef } from "react";
+import {
+  Animated,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
 
@@ -22,29 +27,57 @@ export default function PrimaryIconButton({
   disabled = false,
   style,
 }: PrimaryIconButtonProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.92,
+      useNativeDriver: true,
+      damping: 12,
+      stiffness: 300,
+      mass: 0.6,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      damping: 12,
+      stiffness: 300,
+      mass: 0.6,
+    }).start();
+  };
+
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.8}
-      style={[
-        styles.button,
-        {
-          width: size,
-          height: size,
-          borderRadius: size * 0.32,
-          backgroundColor: color,
-          shadowColor,
-        },
-        disabled && styles.disabled,
-        style,
-      ]}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={style}
     >
-      <MaterialCommunityIcons
-        name={iconName as any}
-        size={size * 0.5}
-        color={Colors.light.text}
-      />
+      <Animated.View
+        style={[
+          styles.button,
+          {
+            width: size,
+            height: size,
+            borderRadius: size * 0.32,
+            backgroundColor: color,
+            shadowColor,
+            transform: [{ scale }],
+          },
+          disabled && styles.disabled,
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={iconName as any}
+          size={size * 0.5}
+          color={Colors.light.text}
+        />
+      </Animated.View>
     </TouchableOpacity>
   );
 }
