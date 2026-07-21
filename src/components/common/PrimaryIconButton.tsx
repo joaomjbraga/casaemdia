@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import {
   Animated,
   StyleSheet,
@@ -6,6 +6,7 @@ import {
   View,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import Colors from "@/constants/Colors";
 
 interface PrimaryIconButtonProps {
@@ -29,7 +30,7 @@ export default function PrimaryIconButton({
 }: PrimaryIconButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     Animated.spring(scale, {
       toValue: 0.92,
       useNativeDriver: true,
@@ -37,9 +38,9 @@ export default function PrimaryIconButton({
       stiffness: 300,
       mass: 0.6,
     }).start();
-  };
+  }, [scale]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
@@ -47,11 +48,16 @@ export default function PrimaryIconButton({
       stiffness: 300,
       mass: 0.6,
     }).start();
-  };
+  }, [scale]);
+
+  const handlePress = useCallback(async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  }, [onPress]);
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled}
       activeOpacity={0.8}
       onPressIn={handlePressIn}

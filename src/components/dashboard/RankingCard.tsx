@@ -145,13 +145,26 @@ const getIcon = (position: number) => {
 const getRankColor = (position: number) => {
   switch (position) {
     case 0:
-      return Colors.light.warningLight;
+      return "#FFD700";
     case 1:
       return "#C0C0C8";
     case 2:
       return "#CD7F32";
     default:
       return Colors.light.mutedText;
+  }
+};
+
+const getRankBgColor = (position: number) => {
+  switch (position) {
+    case 0:
+      return "rgba(255, 215, 0, 0.15)";
+    case 1:
+      return "rgba(192, 192, 200, 0.15)";
+    case 2:
+      return "rgba(205, 127, 50, 0.15)";
+    default:
+      return "transparent";
   }
 };
 
@@ -224,6 +237,7 @@ function RankingItem({
   });
 
   const rankColor = getRankColor(index);
+  const rankBgColor = getRankBgColor(index);
 
   return (
     <TouchableOpacity
@@ -248,11 +262,11 @@ function RankingItem({
           ]}
         >
           <View style={styles.rankSection}>
-            <View style={[styles.rankIcon, { backgroundColor: rankColor }]}>
+            <View style={[styles.rankIcon, { backgroundColor: rankBgColor }]}>
               <MaterialCommunityIcons
                 name={getIcon(index)}
                 size={14}
-                color={Colors.light.iconLight}
+                color={rankColor}
               />
             </View>
             <Text style={[styles.rankText, { color: rankColor }]}>
@@ -434,12 +448,13 @@ const styles = StyleSheet.create({
     minWidth: 30,
   },
   rankIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 3,
+    borderWidth: 1,
   },
   rankText: {
     fontSize: 12,

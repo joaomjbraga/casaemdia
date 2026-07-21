@@ -150,6 +150,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
     borderLeftWidth: 3,
     borderLeftColor: Colors.light.primary,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   cardDone: {
     borderLeftColor: Colors.light.success,

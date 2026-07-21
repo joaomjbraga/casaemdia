@@ -184,7 +184,8 @@ function SettingsInner() {
             photoURL={user?.photoURL}
             size={64}
             borderRadius={20}
-            borderColor={Colors.light.border}
+            borderColor={isAdmin ? Colors.light.accentPurple : Colors.light.border}
+            borderWidth={isAdmin ? 2 : 1}
             backgroundColor={Colors.light.cardDark}
             iconName="account"
             iconColor={Colors.light.primary}
@@ -274,7 +275,8 @@ function SettingsInner() {
                   photoURL={member.photoURL}
                   size={38}
                   borderRadius={12}
-                  borderColor={Colors.light.border}
+                  borderColor={member.role === "admin" ? Colors.light.accentPurple : Colors.light.border}
+                  borderWidth={member.role === "admin" ? 2 : 1}
                   backgroundColor={Colors.light.cardDark}
                   iconName="account"
                   iconColor={Colors.light.primary}

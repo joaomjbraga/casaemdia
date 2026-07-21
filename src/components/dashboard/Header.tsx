@@ -39,11 +39,18 @@ export default function Header({
   const { top: statusBarHeight } = useSafeAreaInsets();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const currentUser = members.find((m) => m.id === user?.uid);
+  const isAdmin = currentUser?.role === "admin";
+
   useEffect(() => {
     if (Platform.OS === "android") {
       StatusBar.setBackgroundColor(Colors.light.backgroundSecondary);
     }
   }, []);
+
+  const avatarBorderColor = isAdmin
+    ? Colors.light.accentPurple
+    : Colors.light.border;
 
   const handleLogout = useCallback(() => {
     showDialog({
@@ -190,7 +197,8 @@ export default function Header({
             photoURL={user?.photoURL}
             size={40}
             borderRadius={12}
-            borderColor={Colors.light.border}
+            borderColor={avatarBorderColor}
+            borderWidth={isAdmin ? 2 : 1}
             backgroundColor={Colors.light.cardDark}
             iconName="account"
             iconColor={Colors.light.primary}
