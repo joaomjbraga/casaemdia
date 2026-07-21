@@ -11,11 +11,7 @@ import Header from "@/components/dashboard/Header";
 import RankingCard from "@/components/dashboard/RankingCard";
 import TasksCard from "@/components/tasks/TasksCard";
 import { useInvitations } from "@/contexts/InvitationContext";
-import {
-  deleteDashboardTask,
-  fetchDashboardTasks,
-  toggleDashboardTask,
-} from "@/services/tasks";
+import { fetchDashboardTasks } from "@/services/tasks";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -88,80 +84,6 @@ export default function Dashboard() {
     }, [familyId, fetchTasks, fetchMembers]),
   );
 
-  const toggleTask = async (id: string) => {
-    if (!familyId) {
-      showAlert({
-        title: "Erro",
-        message: "Família não encontrada.",
-        type: "error",
-      });
-      return;
-    }
-
-    let snapshot: Task[] = [];
-    setTasks((prev) => {
-      snapshot = prev;
-      const task = prev.find((t) => t.id === id);
-      if (!task) return prev;
-      return prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t));
-    });
-    const task = snapshot.find((t) => t.id === id);
-    if (!task) return;
-
-    try {
-      await toggleDashboardTask({
-        familyId,
-        taskId: id,
-        task,
-        options: user
-          ? {
-              userName:
-                user.displayName || user.email?.split("@")[0] || "Alguem",
-              userId: user.uid,
-            }
-          : undefined,
-      });
-    } catch (error) {
-      setTasks(() => snapshot);
-      showAlert({
-        title: "Erro",
-        message: "Não foi possível atualizar a tarefa.",
-        type: "error",
-      });
-    }
-  };
-
-  const deleteTask = async (id: string) => {
-    if (!familyId) {
-      showAlert({
-        title: "Erro",
-        message: "Família não encontrada.",
-        type: "error",
-      });
-      return;
-    }
-
-    let snapshot: Task[] = [];
-    setTasks((prev) => {
-      snapshot = prev;
-      return prev.filter((t) => t.id !== id);
-    });
-
-    try {
-      await deleteDashboardTask({
-        familyId,
-        taskId: id,
-      });
-    } catch (error) {
-      setTasks(() => snapshot);
-      showAlert({
-        title: "Erro",
-        message: "Não foi possível excluir a tarefa.",
-        type: "error",
-      });
-    }
-  };
-
   const isLoading =
     authLoading ||
     (!familyId && membersLoading) ||
@@ -226,8 +148,7 @@ export default function Dashboard() {
           progressPercentage={progressPercentage}
           completedTasks={completedTasks}
           totalTasks={totalTasks}
-          toggleTask={toggleTask}
-          deleteTask={deleteTask}
+          readOnly
         />
       </ScrollView>
     </SafeAreaView>

@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -37,14 +38,6 @@ const buildPieces = (): CelebrationPiece[] =>
 
 const OVERLAY_DURATION = 4200;
 
-/**
- * Hook de comemoração: toca um áudio e exibe uma animação de confete quando
- * todas as tarefas ou compras de uma lista forem concluídas.
- *
- * O disparo é feito manualmente via `celebrate()` (chamado no momento em que
- * a última tarefa/item é marcado como concluído), evitando que o efeito toque
- * ao abrir a tela com a lista já finalizada.
- */
 export function useCelebration() {
   const playerRef = useRef<AudioPlayer | null>(null);
   const [visible, setVisible] = useState(false);
@@ -93,20 +86,22 @@ export function useCelebration() {
   const CelebrationOverlay = useCallback(
     () =>
       visible ? (
-        <Pressable
-          style={styles.overlay}
-          onPress={dismiss}
-          pointerEvents="auto"
-        >
-          {pieces.map((piece) => (
-            <FallingPiece key={piece.id} piece={piece} />
-          ))}
+        <Modal visible transparent animationType="none" statusBarTranslucent>
+          <Pressable
+            style={styles.overlay}
+            onPress={dismiss}
+            pointerEvents="auto"
+          >
+            {pieces.map((piece) => (
+              <FallingPiece key={piece.id} piece={piece} />
+            ))}
 
-          <Animated.View style={styles.badge}>
-            <Text style={styles.badgeEmoji}>🏆</Text>
-            <Text style={styles.badgeText}>Tudo concluído!</Text>
-          </Animated.View>
-        </Pressable>
+            <Animated.View style={styles.badge}>
+              <Text style={styles.badgeEmoji}>🏆</Text>
+              <Text style={styles.badgeText}>Tudo concluído!</Text>
+            </Animated.View>
+          </Pressable>
+        </Modal>
       ) : null,
     [visible, pieces, dismiss],
   );
@@ -169,12 +164,10 @@ function FallingPiece({ piece }: { piece: CelebrationPiece }) {
 
 const styles = StyleSheet.create({
   overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   piece: {
     position: "absolute",

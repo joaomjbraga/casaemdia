@@ -10,7 +10,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#000000"
       },
       "package": "com.joaomjbraga.CasaemDia",
       "permissions": [
@@ -45,9 +45,7 @@
           "style": "dark"
         }
       ],
-      [
-        "@react-native-google-signin/google-signin/app.plugin.js"
-      ],
+      ["@react-native-google-signin/google-signin/app.plugin.js"],
       "expo-audio",
       "./plugins/withAndroidWindowBackground.js",
       "expo-video"

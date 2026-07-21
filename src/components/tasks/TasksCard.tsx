@@ -9,16 +9,18 @@ import Colors from "@/constants/Colors";
 import EmptyState from "@/components/common/EmptyState";
 import SectionTitle from "@/components/common/SectionTitle";
 import TaskCard from "@/components/tasks/TaskCard";
+import DashboardTaskCard from "@/components/dashboard/TaskCard";
 
 
 interface TasksListProps {
   tasks: Task[];
-  toggleTask: (id: string) => Promise<void>;
+  toggleTask?: (id: string) => Promise<void>;
   deleteTask?: (id: string) => Promise<void>;
   maxHeight?: number;
   progressPercentage?: number;
   completedTasks?: number;
   totalTasks?: number;
+  readOnly?: boolean;
 }
 
 export default function TasksList({
@@ -29,6 +31,7 @@ export default function TasksList({
   progressPercentage: propProgress,
   completedTasks: propCompleted,
   totalTasks: propTotal,
+  readOnly = false,
 }: TasksListProps) {
   const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
   const { showDialog } = useConfirmDialog();
@@ -70,7 +73,7 @@ export default function TasksList({
   });
 
   const handleToggle = async (taskId: string) => {
-    if (loadingTaskId === taskId) return;
+    if (loadingTaskId === taskId || !toggleTask) return;
     const task = tasks.find((t) => t.id === taskId);
     const willCompleteAll =
       !!task && !task.done && totalCount >= 1 && completedCount === totalCount - 1;
@@ -111,15 +114,24 @@ export default function TasksList({
   const renderTaskGroup = (groupTasks: Task[]) =>
     groupTasks.map((task, index) => (
       <View key={task.id}>
-        <TaskCard
-          title={task.title}
-          done={task.done}
-          assignee={task.assignee}
-          points={task.points}
-          onToggle={() => handleToggle(task.id)}
-          onDelete={() => handleDelete(task.id)}
-          isLoading={isTaskLoading(task.id)}
-        />
+        {readOnly ? (
+          <DashboardTaskCard
+            title={task.title}
+            done={task.done}
+            assignee={task.assignee}
+            points={task.points}
+          />
+        ) : (
+          <TaskCard
+            title={task.title}
+            done={task.done}
+            assignee={task.assignee}
+            points={task.points}
+            onToggle={() => handleToggle(task.id)}
+            onDelete={() => handleDelete(task.id)}
+            isLoading={isTaskLoading(task.id)}
+          />
+        )}
         {index < groupTasks.length - 1 && <View style={styles.separator} />}
       </View>
     ));
