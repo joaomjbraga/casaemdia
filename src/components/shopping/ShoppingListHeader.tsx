@@ -1,5 +1,4 @@
 import IconCircleButton from '@/components/common/IconCircleButton';
-import PrimaryIconButton from '@/components/common/PrimaryIconButton';
 import ScreenHeader from '@/components/common/ScreenHeader';
 import ZappIcon from '@/components/common/ZappIcon';
 import Colors from '@/constants/Colors';
@@ -63,7 +62,15 @@ export default function ShoppingListHeader({
             onSubmitEditing={onAddItem}
             returnKeyType="done"
           />
-          <PrimaryIconButton iconName="plus" onPress={onAddItem} disabled={!newItemName.trim()} />
+          <IconCircleButton
+            iconName="plus"
+            onPress={onAddItem}
+            size={44}
+            backgroundColor={Colors.light.primary}
+            borderColor={Colors.light.primary}
+            iconColor="#fff"
+            disabled={!newItemName.trim()}
+          />
         </View>
 
         <TextInput

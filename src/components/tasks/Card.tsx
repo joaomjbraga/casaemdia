@@ -1,7 +1,6 @@
 import Colors from '@/constants/Colors';
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import { Shadows } from '@/constants/Colors';
 
 interface CardProps {
   variant?: 'outlined' | 'elevated' | 'flat';
@@ -38,6 +37,10 @@ const styles = StyleSheet.create({
   elevated: {
     borderWidth: 1,
     borderColor: Colors.light.border,
-    ...Shadows.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
 });

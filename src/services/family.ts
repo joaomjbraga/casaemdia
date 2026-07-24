@@ -5,7 +5,6 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   Timestamp,
@@ -17,22 +16,6 @@ import { createNewFamily, migrateOrCreateFamily } from '../lib/family-migration'
 import { db } from '../lib/firebase';
 import { removeUserTags, sendNotificationToEmail } from '../lib/onesignal';
 import logger from '@/lib/logger';
-
-export const fetchFamilyMembers = async (familyId: string) => {
-  const q = query(collection(db, 'families', familyId, 'members'), orderBy('joinedAt', 'asc'));
-  const snap = await getDocs(q);
-
-  return snap.docs.map((d) => {
-    const data = d.data();
-    return {
-      id: d.id,
-      name: data.name,
-      email: data.email ?? '',
-      photoURL: data.photoURL ?? null,
-      role: (data.role ?? 'member') as 'admin' | 'member',
-    };
-  }) satisfies FamilyMember[];
-};
 
 export const initializeFamilyForUser = async (user: any) => {
   return migrateOrCreateFamily(user);

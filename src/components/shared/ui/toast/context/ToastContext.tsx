@@ -36,6 +36,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [expandedToasts, setExpandedToasts] = useState<Set<string>>(new Set());
   const playerRef = useRef<AudioPlayer | null>(null);
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
     try {
@@ -59,6 +60,20 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   }, []);
 
+  const dismiss = useCallback((id: string) => {
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
+    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+    setExpandedToasts((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
+  }, []);
+
   const show = useCallback(
     (content: React.ReactNode | string, options?: ToastOptions): string => {
       const id = Math.random().toString(36).substring(2, 9);
@@ -72,9 +87,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
       setToasts((prevToasts) => [...prevToasts, toast]);
       playSound();
+
+      if (toast.options.duration > 0) {
+        const timer = setTimeout(() => {
+          dismiss(id);
+          toast.options.onClose?.();
+        }, toast.options.duration);
+        timersRef.current.set(id, timer);
+      }
+
       return id;
     },
-    [playSound],
+    [playSound, dismiss],
   );
 
   const update = useCallback(
@@ -97,16 +121,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [],
   );
 
-  const dismiss = useCallback((id: string) => {
-    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
-    setExpandedToasts((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
-    });
-  }, []);
-
   const dismissAll = useCallback(() => {
+    timersRef.current.forEach((timer) => clearTimeout(timer));
+    timersRef.current.clear();
     setToasts([]);
     setExpandedToasts(new Set());
   }, []);
@@ -132,21 +149,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   useEffect(() => {
-    if (toasts.length === 0) return;
-    const timeouts: ReturnType<typeof setTimeout>[] = [];
-    toasts.forEach((toast) => {
-      if (toast.options.duration > 0) {
-        const timeout = setTimeout(() => {
-          dismiss(toast.id);
-          toast.options.onClose?.();
-        }, toast.options.duration);
-        timeouts.push(timeout);
-      }
-    });
     return () => {
-      timeouts.forEach(clearTimeout);
+      timersRef.current.forEach((timer) => clearTimeout(timer));
+      timersRef.current.clear();
     };
-  }, [toasts, dismiss]);
+  }, []);
 
   const value: ToastContextValue = useMemo(
     () => ({

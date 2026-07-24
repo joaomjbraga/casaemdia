@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Colors from '@/constants/Colors';
+import { usePressScale } from '@/hooks/usePressAnimation';
 
 interface Task {
   id: string;
@@ -34,10 +35,10 @@ function TaskRow({
 }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateX = useRef(new Animated.Value(-4)).current;
-  const pressScale = useRef(new Animated.Value(1)).current;
+  const { scale, handlePressIn, handlePressOut } = usePressScale({ pressedValue: 0.99 });
 
   useEffect(() => {
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 260,
@@ -52,26 +53,10 @@ function TaskRow({
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    animation.start();
+    return () => animation.stop();
   }, [index, opacity, translateX]);
-
-  const handlePressIn = () => {
-    Animated.spring(pressScale, {
-      toValue: 0.99,
-      useNativeDriver: true,
-      damping: 20,
-      stiffness: 260,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(pressScale, {
-      toValue: 1,
-      useNativeDriver: true,
-      damping: 20,
-      stiffness: 260,
-    }).start();
-  };
 
   return (
     <TouchableOpacity
@@ -85,7 +70,7 @@ function TaskRow({
         style={[
           styles.row,
           !isLast && styles.rowDivider,
-          { opacity, transform: [{ translateX }, { scale: pressScale }] },
+          { opacity, transform: [{ translateX }, { scale }] },
         ]}
       >
         <View style={[styles.avatar, task.done && styles.avatarDone]}>
@@ -132,7 +117,17 @@ export default function TaskListPanel({ tasks, onPressTask }: TaskListPanelProps
     };
   }, [tasks]);
 
-  let globalIndex = 0;
+  const taskIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    let idx = 0;
+    for (const task of pending) {
+      map.set(task.id, idx++);
+    }
+    for (const task of completed) {
+      map.set(task.id, idx++);
+    }
+    return map;
+  }, [pending, completed]);
 
   return (
     <View style={styles.panel}>
@@ -144,7 +139,7 @@ export default function TaskListPanel({ tasks, onPressTask }: TaskListPanelProps
               <TaskRow
                 key={task.id}
                 task={task}
-                index={globalIndex++}
+                index={taskIndexMap.get(task.id) ?? 0}
                 isLast={i === pending.length - 1}
                 onPress={onPressTask}
               />
@@ -161,7 +156,7 @@ export default function TaskListPanel({ tasks, onPressTask }: TaskListPanelProps
               <TaskRow
                 key={task.id}
                 task={task}
-                index={globalIndex++}
+                index={taskIndexMap.get(task.id) ?? 0}
                 isLast={i === completed.length - 1}
                 onPress={onPressTask}
               />

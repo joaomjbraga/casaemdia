@@ -19,7 +19,6 @@ interface StyledInputProps {
   autoFocus?: boolean;
   onSubmitEditing?: () => void;
   returnKeyType?: 'done' | 'go' | 'next' | 'search' | 'send' | 'none' | 'default' | 'previous';
-  autoFocusDelay?: number;
 }
 
 export default function StyledInput({
@@ -39,7 +38,6 @@ export default function StyledInput({
   autoFocus = false,
   onSubmitEditing,
   returnKeyType = 'done',
-  autoFocusDelay,
 }: StyledInputProps) {
   return (
     <TextInput

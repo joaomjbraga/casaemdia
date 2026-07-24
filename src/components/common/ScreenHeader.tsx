@@ -1,8 +1,7 @@
 import Colors from '@/constants/Colors';
 import ZappIcon from '@/components/common/ZappIcon';
-import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet, Text, useWindowDimensions, View, type ViewStyle } from 'react-native';
+import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ScreenHeaderProps {

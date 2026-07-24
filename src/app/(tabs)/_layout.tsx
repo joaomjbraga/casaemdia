@@ -1,6 +1,6 @@
-import { Tabs } from 'expo-router';
 import DockTabBar from '@/components/navigation/DockTabBar';
 import Colors from '@/constants/Colors';
+import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
   const colors = Colors.light;
@@ -34,18 +34,20 @@ export default function TabLayout() {
           tabBarLabel: 'Início',
         }}
       />
-      <Tabs.Screen
-        name="shoppinglist"
-        options={{
-          title: 'Lista de Compras',
-          tabBarLabel: 'Compras',
-        }}
-      />
+
       <Tabs.Screen
         name="tasks"
         options={{
           title: 'Tarefas',
           tabBarLabel: 'Tarefas',
+        }}
+      />
+
+      <Tabs.Screen
+        name="shoppinglist"
+        options={{
+          title: 'Lista de Compras',
+          tabBarLabel: 'Compras',
         }}
       />
     </Tabs>

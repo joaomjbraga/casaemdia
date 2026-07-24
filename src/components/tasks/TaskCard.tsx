@@ -31,25 +31,28 @@ export default function TaskCard({
   const prevDone = useRef(done);
 
   useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
     if (done && !prevDone.current) {
-      Animated.spring(checkScale, {
+      animation = Animated.spring(checkScale, {
         toValue: 1,
         useNativeDriver: true,
         damping: 22,
         stiffness: 120,
-      }).start();
+      });
     } else if (!done) {
-      Animated.timing(checkScale, {
+      animation = Animated.timing(checkScale, {
         toValue: 0,
         duration: 160,
         useNativeDriver: true,
-      }).start();
+      });
     }
     prevDone.current = done;
+    animation?.start();
+    return () => animation?.stop();
   }, [done, checkScale]);
 
   useEffect(() => {
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 260,
@@ -64,7 +67,9 @@ export default function TaskCard({
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    animation.start();
+    return () => animation.stop();
   }, [index, opacity, translateY]);
 
   useEffect(() => {

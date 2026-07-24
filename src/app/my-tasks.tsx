@@ -5,6 +5,7 @@ import ZappIcon from '@/components/common/ZappIcon';
 import Colors from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
+import { usePressScale } from '@/hooks/usePressAnimation';
 import { subscribeToShoppingItems } from '@/services/shopping';
 import { fetchDashboardTasks } from '@/services/tasks';
 import type { ShoppingItem, Task } from '@/types/models';
@@ -12,7 +13,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
-  Easing,
   ScrollView,
   StyleSheet,
   Text,
@@ -209,25 +209,7 @@ function SegmentButton({
   active: boolean;
   onPress: () => void;
 }) {
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.timing(scale, {
-      toValue: 0.98,
-      duration: 100,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.timing(scale, {
-      toValue: 1,
-      duration: 140,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  };
+  const { scale, handlePressIn, handlePressOut } = usePressScale({ pressedValue: 0.98 });
 
   return (
     <TouchableOpacity
@@ -272,44 +254,26 @@ function TaskRow({
 }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateX = useRef(new Animated.Value(-4)).current;
-  const pressScale = useRef(new Animated.Value(1)).current;
+  const { scale, handlePressIn, handlePressOut } = usePressScale({ pressedValue: 0.99 });
 
   useEffect(() => {
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 260,
         delay: index * 35,
-        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(translateX, {
         toValue: 0,
         duration: 260,
         delay: index * 35,
-        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    animation.start();
+    return () => animation.stop();
   }, [index, opacity, translateX]);
-
-  const handlePressIn = () => {
-    Animated.spring(pressScale, {
-      toValue: 0.99,
-      useNativeDriver: true,
-      damping: 20,
-      stiffness: 260,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(pressScale, {
-      toValue: 1,
-      useNativeDriver: true,
-      damping: 20,
-      stiffness: 260,
-    }).start();
-  };
 
   return (
     <TouchableOpacity
@@ -322,7 +286,7 @@ function TaskRow({
         style={[
           styles.taskRow,
           !isLast && styles.rowDivider,
-          { opacity, transform: [{ translateX }, { scale: pressScale }] },
+          { opacity, transform: [{ translateX }, { scale }] },
         ]}
       >
         <View style={[styles.avatar, done && styles.avatarDone]}>

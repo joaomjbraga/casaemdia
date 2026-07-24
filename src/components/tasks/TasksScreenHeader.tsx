@@ -1,5 +1,4 @@
 import IconCircleButton from '@/components/common/IconCircleButton';
-import PrimaryIconButton from '@/components/common/PrimaryIconButton';
 import ScreenHeader from '@/components/common/ScreenHeader';
 import Colors from '@/constants/Colors';
 import { StyleSheet, View } from 'react-native';
@@ -35,7 +34,14 @@ export default function TasksScreenHeader({
               iconColor={Colors.light.danger}
             />
           )}
-          <PrimaryIconButton iconName="plus" onPress={onAdd} />
+          <IconCircleButton
+            iconName="plus"
+            onPress={onAdd}
+            size={44}
+            backgroundColor={Colors.light.primary}
+            borderColor={Colors.light.primary}
+            iconColor="#fff"
+          />
         </>
       }
       footer={<View style={styles.footerDivider} />}

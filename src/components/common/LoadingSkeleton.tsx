@@ -1,28 +1,12 @@
 import Colors from '@/constants/Colors';
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Animated, StyleSheet, View, type ViewStyle } from 'react-native';
 
-interface LoadingSkeletonProps {
-  variant?: 'dashboard' | 'tasks' | 'shopping';
+interface SkeletonBlockProps {
+  style?: ViewStyle;
 }
 
-const SkeletonBlock = ({ style, opacity }: { style?: object; opacity: Animated.Value }) => {
-  return (
-    <Animated.View
-      style={[
-        styles.skeletonBlock,
-        style,
-        {
-          opacity,
-        },
-      ]}
-    />
-  );
-};
-
-export default function LoadingSkeleton({ variant = 'dashboard' }: LoadingSkeletonProps) {
+export function SkeletonBlock({ style }: SkeletonBlockProps) {
   const opacity = useRef(new Animated.Value(0.72)).current;
 
   useEffect(() => {
@@ -46,46 +30,56 @@ export default function LoadingSkeleton({ variant = 'dashboard' }: LoadingSkelet
   }, [opacity]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
-      <View style={styles.container}>
-        {variant === 'dashboard' ? (
-          <>
-            <SkeletonBlock style={styles.header} opacity={opacity} />
-            <SkeletonBlock style={styles.smallCard} opacity={opacity} />
-            <SkeletonBlock style={styles.card} opacity={opacity} />
-            <SkeletonBlock style={styles.card} opacity={opacity} />
-          </>
-        ) : variant === 'shopping' ? (
-          <>
-            <SkeletonBlock style={styles.header} opacity={opacity} />
-            <SkeletonBlock style={styles.searchBar} opacity={opacity} />
-            <SkeletonBlock style={styles.itemCard} opacity={opacity} />
-            <SkeletonBlock style={styles.itemCard} opacity={opacity} />
-          </>
-        ) : (
-          <>
-            <SkeletonBlock style={styles.header} opacity={opacity} />
-            <SkeletonBlock style={styles.itemCard} opacity={opacity} />
-            <SkeletonBlock style={styles.itemCard} opacity={opacity} />
-          </>
-        )}
-      </View>
-    </SafeAreaView>
+    <Animated.View
+      style={[
+        styles.skeletonBlock,
+        style,
+        { opacity },
+      ]}
+    />
+  );
+}
+
+interface LoadingSkeletonProps {
+  variant?: 'dashboard' | 'tasks' | 'shopping';
+}
+
+export default function LoadingSkeleton({ variant = 'dashboard' }: LoadingSkeletonProps) {
+  return (
+    <View style={styles.container}>
+      {variant === 'dashboard' ? (
+        <>
+          <SkeletonBlock style={styles.header} />
+          <SkeletonBlock style={styles.smallCard} />
+          <SkeletonBlock style={styles.card} />
+          <SkeletonBlock style={styles.card} />
+        </>
+      ) : variant === 'shopping' ? (
+        <>
+          <SkeletonBlock style={styles.header} />
+          <SkeletonBlock style={styles.searchBar} />
+          <SkeletonBlock style={styles.itemCard} />
+          <SkeletonBlock style={styles.itemCard} />
+        </>
+      ) : (
+        <>
+          <SkeletonBlock style={styles.header} />
+          <SkeletonBlock style={styles.itemCard} />
+          <SkeletonBlock style={styles.itemCard} />
+        </>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.light.background,
-  },
   container: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 20,
     paddingBottom: 24,
     gap: 14,
+    backgroundColor: Colors.light.background,
   },
   skeletonBlock: {
     borderRadius: 12,

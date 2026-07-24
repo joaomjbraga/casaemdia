@@ -368,17 +368,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
-  statusBarSpacer: {},
   headerSpacer: {
     height: 12,
-  },
-  headerGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 360,
-    opacity: 0.9,
   },
   listWrap: {
     flex: 1,

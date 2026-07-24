@@ -30,11 +30,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const CACHE_KEYS = {
-  SYNC_QUEUE: '@sync_queue',
-  USER_PREFS: '@user_preferences',
-};
-
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -45,7 +40,6 @@ export const useAuth = () => {
 
 const clearUserData = async (): Promise<void> => {
   try {
-    await AsyncStorage.multiRemove([CACHE_KEYS.SYNC_QUEUE, CACHE_KEYS.USER_PREFS]);
     const keys = await AsyncStorage.getAllKeys();
     const cacheKeys = keys.filter((k) => k.startsWith('@cache_'));
     if (cacheKeys.length > 0) {

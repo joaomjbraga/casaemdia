@@ -82,13 +82,6 @@ export default function Dashboard() {
     [tasks],
   );
 
-  const handleStatsPress = useCallback((filter: 'pending' | 'done') => {
-    router.push({
-      pathname: '/my-tasks',
-      params: { filter },
-    });
-  }, []);
-
   const isLoading =
     authLoading ||
     (!familyId && membersLoading) ||
@@ -102,7 +95,7 @@ export default function Dashboard() {
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.light.background }]}>
       <StatusBar style="dark" />
 
-      <Header onStatsPress={handleStatsPress} />
+      <Header />
 
       <ScrollView
         style={styles.scrollView}

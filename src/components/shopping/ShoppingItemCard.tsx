@@ -95,7 +95,7 @@ export default function ShoppingItemCard({
   const shakeX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 240,
@@ -110,7 +110,9 @@ export default function ShoppingItemCard({
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    animation.start();
+    return () => animation.stop();
   }, [index, opacity, translateX]);
 
   useEffect(() => {

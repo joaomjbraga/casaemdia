@@ -1,6 +1,6 @@
 type LogArgs = Array<unknown>;
 
-const format = (...args: LogArgs) => {
+const format = (...args: LogArgs): string => {
   try {
     return args
       .map((a) => {
@@ -18,23 +18,13 @@ const format = (...args: LogArgs) => {
 };
 
 export const logger = {
-  info: (...args: LogArgs) => console.info.apply(console, args),
-  warn: (...args: LogArgs) => console.warn.apply(console, args),
+  info: (...args: LogArgs) => console.info(format(...args)),
+  warn: (...args: LogArgs) => console.warn(format(...args)),
   debug: (...args: LogArgs) => {
-    if (process.env.NODE_ENV !== 'production') console.debug.apply(console, args);
+    if (process.env.NODE_ENV !== 'production') console.debug(format(...args));
   },
   error: (...args: LogArgs) => {
-    // Central place to attach Sentry/remote logging later
-    try {
-      // keep console output for local debugging
-      console.error.apply(console, args);
-    } catch {}
-    // Could send to remote service asynchronously here
-    try {
-      const payload = format(...args);
-      // placeholder: future integration point
-      void payload;
-    } catch {}
+    console.error(format(...args));
   },
 };
 

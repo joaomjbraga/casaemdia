@@ -4,14 +4,12 @@ import {
   collection,
   deleteDoc,
   doc,
-  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
   query,
   runTransaction,
   Timestamp,
-  updateDoc,
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -19,8 +17,6 @@ import logger from '@/lib/logger';
 import { sendNotificationToFamily } from '../lib/onesignal';
 
 const BATCH_LIMIT = 500;
-
-export type TaskSnapshot = Task;
 
 export interface TaskMutationOptions {
   userName?: string;
@@ -30,7 +26,7 @@ export interface TaskMutationOptions {
 const buildTasksQuery = (familyId: string) =>
   query(collection(db, 'families', familyId, 'tasks'), orderBy('created_at', 'desc'));
 
-const mapTaskSnapshot = (d: any): TaskSnapshot => {
+const mapTask = (d: { id: string; data(): any }): Task => {
   const data = d.data();
   return {
     id: d.id,
@@ -66,7 +62,7 @@ const applyTaskCompletion = async ({
 }: {
   familyId: string;
   taskId: string;
-  task: TaskSnapshot;
+  task: Task;
   newDone: boolean;
   options?: TaskMutationOptions;
 }) => {
@@ -101,11 +97,11 @@ const applyTaskCompletion = async ({
   }
 };
 
-export const subscribeToTasks = (familyId: string, callback: (tasks: TaskSnapshot[]) => void) => {
+export const subscribeToTasks = (familyId: string, callback: (tasks: Task[]) => void) => {
   return onSnapshot(
     buildTasksQuery(familyId),
     (snapshot) => {
-      const data: TaskSnapshot[] = snapshot.docs.map(mapTaskSnapshot);
+      const data: Task[] = snapshot.docs.map(mapTask);
       callback(data);
     },
     (error) => {
@@ -116,7 +112,7 @@ export const subscribeToTasks = (familyId: string, callback: (tasks: TaskSnapsho
 
 export const fetchDashboardTasks = async (familyId: string) => {
   const snapshot = await getDocs(buildTasksQuery(familyId));
-  return snapshot.docs.map(mapTaskSnapshot) satisfies TaskSnapshot[];
+  return snapshot.docs.map(mapTask) satisfies Task[];
 };
 
 export const createTask = async (
@@ -152,26 +148,6 @@ export const createTask = async (
   return ref.id;
 };
 
-export const toggleDashboardTask = async ({
-  familyId,
-  taskId,
-  task,
-  options,
-}: {
-  familyId: string;
-  taskId: string;
-  task: TaskSnapshot;
-  options?: TaskMutationOptions;
-}) => {
-  await applyTaskCompletion({
-    familyId,
-    taskId,
-    task,
-    newDone: !task.done,
-    options,
-  });
-};
-
 export const toggleTaskCompletion = async ({
   familyId,
   taskId,
@@ -181,7 +157,7 @@ export const toggleTaskCompletion = async ({
 }: {
   familyId: string;
   taskId: string;
-  task: TaskSnapshot;
+  task: Task;
   newDone: boolean;
   options?: TaskMutationOptions;
 }) => {
@@ -192,17 +168,6 @@ export const toggleTaskCompletion = async ({
     newDone,
     options,
   });
-};
-
-export const deleteDashboardTask = async ({
-  familyId,
-  taskId,
-}: {
-  familyId: string;
-  taskId: string;
-}) => {
-  const ref = doc(db, 'families', familyId, 'tasks', taskId);
-  await deleteDoc(ref);
 };
 
 export const deleteTask = async ({
@@ -239,7 +204,7 @@ export const deleteAllTasks = async ({
   options,
 }: {
   familyId: string;
-  tasks: TaskSnapshot[];
+  tasks: Task[];
   options?: TaskMutationOptions;
 }) => {
   const ops = tasks.map((task) => ({

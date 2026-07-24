@@ -183,8 +183,9 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         await fetchMembers(result.familyId);
         setWasRemoved(true);
       } catch (error) {
-        recovering = false;
         logger.error('Error recovering from family removal:', error);
+      } finally {
+        recovering = false;
       }
     };
 

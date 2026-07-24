@@ -1,4 +1,4 @@
-import SectionTitle from '@/components/common/SectionTitle';
+import SectionTitle from '@/components/shopping/SectionTitle';
 import Colors from '@/constants/Colors';
 import { StyleSheet, View } from 'react-native';
 

@@ -30,7 +30,7 @@ export default function EmptyState({
   const translateY = useRef(new Animated.Value(10)).current;
 
   useEffect(() => {
-    Animated.parallel([
+    const animation = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 320,
@@ -43,7 +43,9 @@ export default function EmptyState({
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    animation.start();
+    return () => animation.stop();
   }, [opacity, translateY]);
 
   return (

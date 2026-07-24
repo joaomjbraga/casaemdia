@@ -1,14 +1,14 @@
 import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePressScale } from '@/hooks/usePressAnimation';
 
 import Colors from '@/constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
-  Easing,
   Image,
   StyleSheet,
   Text,
@@ -28,25 +28,7 @@ export default function LoginScreen() {
   const titleFontSize = Math.min(Math.round(screenWidth * 0.078), 32);
   const taglineFontSize = Math.min(Math.round(screenWidth * 0.034), 13.5);
 
-  const buttonScale = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.timing(buttonScale, {
-      toValue: 0.98,
-      duration: 100,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.timing(buttonScale, {
-      toValue: 1,
-      duration: 140,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  };
+  const { scale, handlePressIn, handlePressOut } = usePressScale({ pressedValue: 0.98 });
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -110,7 +92,7 @@ export default function LoginScreen() {
               </Text>
             </View>
 
-            <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+            <Animated.View style={{ transform: [{ scale }] }}>
               <TouchableOpacity
                 onPress={handleGoogleLogin}
                 onPressIn={handlePressIn}

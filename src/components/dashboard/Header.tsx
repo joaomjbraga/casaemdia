@@ -6,26 +6,17 @@ import Colors from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { router } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-interface HeaderProps {
-  totalTasks?: number;
-  completedTasks?: number;
-  onStatsPress?: (filter: 'pending' | 'done') => void;
-}
-
-type FilterTab = 'pending' | 'done';
-
-export default function Header({ onStatsPress }: HeaderProps) {
+export default function Header() {
   const { user, signOut } = useAuth();
   const { familyName, members } = useFamily();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
   const { top: statusBarHeight } = useSafeAreaInsets();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [activeTab, setActiveTab] = useState<FilterTab>('pending');
 
   const currentUser = members.find((m) => m.id === user?.uid);
   const isAdmin = currentUser?.role === 'admin';
@@ -60,14 +51,6 @@ export default function Header({ onStatsPress }: HeaderProps) {
   const handleOpenSettings = useCallback(() => {
     router.push('/_settings');
   }, []);
-
-  const handleTabPress = useCallback(
-    (tab: FilterTab) => {
-      setActiveTab(tab);
-      onStatsPress?.(tab);
-    },
-    [onStatsPress],
-  );
 
   const membersCount = members?.length ?? 0;
 
@@ -111,79 +94,7 @@ export default function Header({ onStatsPress }: HeaderProps) {
           />
         </View>
       </View>
-
-      <View style={styles.segmentedControl}>
-        <SegmentButton
-          label="A fazer"
-          icon="clipboard-list-outline"
-          active={activeTab === 'pending'}
-          onPress={() => handleTabPress('pending')}
-        />
-        <SegmentButton
-          label="Concluídas"
-          icon="check-circle-outline"
-          active={activeTab === 'done'}
-          onPress={() => handleTabPress('done')}
-        />
-      </View>
     </View>
-  );
-}
-
-function SegmentButton({
-  label,
-  icon,
-  active,
-  onPress,
-}: {
-  label: string;
-  icon: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.timing(scale, {
-      toValue: 0.98,
-      duration: 100,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.timing(scale, {
-      toValue: 1,
-      duration: 140,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  };
-
-  return (
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={styles.segmentTouchable}
-    >
-      <Animated.View
-        style={[
-          styles.segmentButton,
-          active && styles.segmentButtonActive,
-          { transform: [{ scale }] },
-        ]}
-      >
-        <ZappIcon
-          name={icon as any}
-          size={14}
-          color={active ? Colors.light.text : Colors.light.mutedText}
-        />
-        <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>{label}</Text>
-      </Animated.View>
-    </TouchableOpacity>
   );
 }
 
@@ -250,42 +161,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     flexShrink: 0,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    backgroundColor: Colors.light.cardDark,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: 10,
-    marginHorizontal: 20,
-    marginBottom: 12,
-    padding: 3,
-    gap: 3,
-  },
-  segmentTouchable: {
-    flex: 1,
-  },
-  segmentButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 9,
-    borderRadius: 8,
-  },
-  segmentButtonActive: {
-    backgroundColor: Colors.light.cardBackground,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  segmentLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.light.mutedText,
-    letterSpacing: 0.1,
-  },
-  segmentLabelActive: {
-    color: Colors.light.text,
-    fontWeight: '700',
   },
 });

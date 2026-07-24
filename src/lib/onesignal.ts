@@ -100,14 +100,6 @@ export async function checkPushPermission(): Promise<boolean> {
   }
 }
 
-export async function requestPushPermission(): Promise<boolean> {
-  try {
-    return await OneSignal.Notifications.requestPermission(true);
-  } catch {
-    return false;
-  }
-}
-
 export function setUserTags(familyId: string, userId: string, email?: string): void {
   const tags: Record<string, string> = { familyId, userId, userEmail: email || '' };
   OneSignal.User.addTags(tags);

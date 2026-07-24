@@ -2,7 +2,7 @@ import { AlertDialogProvider, useAlertDialog } from '@/components/shared/ui/dial
 import { ConfirmDialogProvider } from '@/components/shared/ui/dialog/ConfirmDialog';
 import { ToastProviderWithViewport } from '@/components/shared/ui/toast';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { FamilyProvider } from '@/contexts/FamilyContext';
+import { FamilyProvider, useFamily } from '@/contexts/FamilyContext';
 import { InvitationProvider } from '@/contexts/InvitationContext';
 import {
   initializeOneSignal,
@@ -13,7 +13,6 @@ import {
   requestPermissionAfterLogin,
   diagnosePushFailure,
 } from '@/lib/onesignal';
-import { useFamily } from '@/contexts/FamilyContext';
 import { useFonts } from 'expo-font';
 import { NavigationBar } from 'expo-navigation-bar';
 import { Stack, router, useSegments } from 'expo-router';
@@ -173,17 +172,15 @@ function RootLayoutNav() {
 
   if (!initialized || loading || isInitialLoad) {
     return (
-      <SafeAreaProvider>
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={Colors.light.primary} />
-          <Text style={styles.loaderText}>Carregando...</Text>
-        </View>
-      </SafeAreaProvider>
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={Colors.light.primary} />
+        <Text style={styles.loaderText}>Carregando...</Text>
+      </View>
     );
   }
 
   return (
-    <SafeAreaProvider>
+    <>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -243,7 +240,7 @@ function RootLayoutNav() {
           }}
         />
       </Stack>
-    </SafeAreaProvider>
+    </>
   );
 }
 

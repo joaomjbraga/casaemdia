@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { Animated, StyleSheet, TouchableOpacity } from 'react-native';
+import { usePressOpacity } from '@/hooks/usePressAnimation';
+import { StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import ZappIcon from '@/components/common/ZappIcon';
 import Colors from '@/constants/Colors';
 
@@ -11,7 +11,7 @@ interface IconCircleButtonProps {
   borderColor?: string;
   iconColor?: string;
   disabled?: boolean;
-  style?: any;
+  style?: object;
 }
 
 export default function IconCircleButton({
@@ -24,24 +24,7 @@ export default function IconCircleButton({
   disabled = false,
   style,
 }: IconCircleButtonProps) {
-  const opacity = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.timing(opacity, {
-      toValue: 0.55,
-      duration: 100,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
-  };
-
+  const { opacity, handlePressIn, handlePressOut } = usePressOpacity({ pressedValue: 0.55 });
   const iconSize = Math.round(size * 0.45);
 
   return (
