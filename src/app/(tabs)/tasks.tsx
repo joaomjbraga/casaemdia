@@ -1,24 +1,26 @@
-import type { Task } from '@/types/models';
+import EmptyState from '@/components/common/EmptyState';
+import LoadingSkeleton from '@/components/common/LoadingSkeleton';
+import TaskListPanel from '@/components/dashboard/TaskCard';
 import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
 import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
-import { useAuth } from '@/contexts/AuthContext';
-import { useFamily } from '@/contexts/FamilyContext';
-import { StatusBar } from 'expo-status-bar';
-import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import TasksCard from '@/components/tasks/TasksCard';
+
 import TasksScreenHeader from '@/components/tasks/TasksScreenHeader';
-import LoadingSkeleton from '@/components/common/LoadingSkeleton';
 import Colors from '@/constants/Colors';
 import { DOCK_CLEARANCE } from '@/constants/Layout';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
 import {
   deleteAllTasks,
   deleteTask as deleteTaskRecord,
   subscribeToTasks,
   toggleTaskCompletion,
 } from '@/services/tasks';
+import type { Task } from '@/types/models';
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useRef, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TasksScreen() {
   const { user } = useAuth();
@@ -31,10 +33,6 @@ export default function TasksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const tasksRef = useRef<Task[]>([]);
   tasksRef.current = tasks;
-
-  const completedTasks = tasks.filter((t) => t.done).length;
-  const totalTasks = tasks.length;
-  const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   useEffect(() => {
     if (!familyId) {
@@ -115,6 +113,19 @@ export default function TasksScreen() {
     }
   };
 
+  const handleDeletePress = (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+
+    showDialog({
+      title: 'Excluir tarefa',
+      message: task ? `Remover "${task.title}"?` : 'Remover esta tarefa?',
+      type: 'danger',
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
+      onConfirm: () => deleteTask(id),
+    });
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 1000);
@@ -169,9 +180,7 @@ export default function TasksScreen() {
       <View style={styles.headerSpacer} />
 
       <TasksScreenHeader
-        completedTasks={completedTasks}
-        totalTasks={totalTasks}
-        progressPercentage={progressPercentage}
+        hasTasks={tasks.length > 0}
         onDeleteAll={handleDeleteAll}
         onAdd={openAdd}
       />
@@ -189,14 +198,15 @@ export default function TasksScreen() {
           />
         }
       >
-        <TasksCard
-          tasks={tasks}
-          progressPercentage={progressPercentage}
-          completedTasks={completedTasks}
-          totalTasks={totalTasks}
-          toggleTask={toggleTask}
-          deleteTask={deleteTask}
-        />
+        {tasks.length === 0 ? (
+          <EmptyState
+            iconName="checkbox-marked-outline"
+            title="Nenhuma tarefa"
+            subtitle="Toque em adicionar para criar a primeira tarefa"
+          />
+        ) : (
+          <TaskListPanel tasks={tasks} />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -214,6 +224,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
+    paddingHorizontal: 20,
     paddingBottom: DOCK_CLEARANCE,
   },
 });

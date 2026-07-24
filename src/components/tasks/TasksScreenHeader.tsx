@@ -1,23 +1,17 @@
 import IconCircleButton from '@/components/common/IconCircleButton';
 import PrimaryIconButton from '@/components/common/PrimaryIconButton';
-import ProgressBar from '@/components/common/ProgressBar';
 import ScreenHeader from '@/components/common/ScreenHeader';
 import Colors from '@/constants/Colors';
-import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 interface TasksScreenHeaderProps {
-  completedTasks: number;
-  totalTasks: number;
-  progressPercentage: number;
+  hasTasks: boolean;
   onDeleteAll: () => void;
   onAdd: () => void;
 }
 
 export default function TasksScreenHeader({
-  completedTasks,
-  totalTasks,
-  progressPercentage,
+  hasTasks,
   onDeleteAll,
   onAdd,
 }: TasksScreenHeaderProps) {
@@ -25,13 +19,13 @@ export default function TasksScreenHeader({
     <ScreenHeader
       iconName="clipboard-check-outline"
       title="Tarefas"
-      subtitle={`${completedTasks}/${totalTasks} concluídas`}
-      iconBackgroundColor={Colors.light.accentPurpleSurface}
-      iconColor={Colors.light.accentPurple}
+      subtitle="Gerencie as tarefas da família"
+      iconBackgroundColor={`${Colors.light.primary}12`}
+      iconColor={Colors.light.primary}
       subtitleColor={Colors.light.mutedText}
       actions={
         <>
-          {totalTasks > 0 && (
+          {hasTasks && (
             <IconCircleButton
               iconName="delete-outline"
               onPress={onDeleteAll}
@@ -44,21 +38,15 @@ export default function TasksScreenHeader({
           <PrimaryIconButton iconName="plus" onPress={onAdd} />
         </>
       }
-      footer={
-        <View style={styles.progressWrap}>
-          <ProgressBar
-            progress={progressPercentage / 100}
-            height={8}
-            color={Colors.light.progressBar}
-          />
-        </View>
-      }
+      footer={<View style={styles.footerDivider} />}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  progressWrap: {
+  footerDivider: {
     marginTop: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.light.border,
   },
 });

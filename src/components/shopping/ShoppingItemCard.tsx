@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ZappIcon from '@/components/common/ZappIcon';
 import Colors from '@/constants/Colors';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ShoppingItemCardProps {
   name: string;
@@ -11,6 +11,7 @@ interface ShoppingItemCardProps {
   onDelete: () => void;
   onEditQuantity: () => void;
   index?: number;
+  isLast?: boolean;
   error?: boolean;
 }
 
@@ -67,11 +68,11 @@ function getItemIcon(name: string): string {
 
 function getIconColor(name: string): string {
   const lower = name.toLowerCase();
-  if (lower.includes('fruta') || lower.includes('verdura')) return '#4CAF50';
-  if (lower.includes('carne') || lower.includes('frango')) return '#FF5722';
-  if (lower.includes('limpeza')) return '#2196F3';
-  if (lower.includes('remédio')) return '#9C27B0';
-  return '#FF9800';
+  if (lower.includes('fruta') || lower.includes('verdura')) return '#16A34A';
+  if (lower.includes('carne') || lower.includes('frango')) return '#DC2626';
+  if (lower.includes('limpeza')) return '#009394';
+  if (lower.includes('remédio')) return '#7C3AED';
+  return '#D97706';
 }
 
 export default function ShoppingItemCard({
@@ -82,6 +83,7 @@ export default function ShoppingItemCard({
   onDelete,
   onEditQuantity,
   index = 0,
+  isLast = false,
   error = false,
 }: ShoppingItemCardProps) {
   const iconName = getItemIcon(name);
@@ -89,122 +91,73 @@ export default function ShoppingItemCard({
   const hasQty = !!quantity && quantity.trim().length > 0;
 
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(12)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
-  const strikeWidth = useRef(new Animated.Value(done ? 1 : 0)).current;
+  const translateX = useRef(new Animated.Value(-4)).current;
+  const shakeX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 260,
-        delay: index * 35,
+        duration: 240,
+        delay: index * 30,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(translateY, {
+      Animated.timing(translateX, {
         toValue: 0,
-        duration: 260,
-        delay: index * 35,
+        duration: 240,
+        delay: index * 30,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start();
-  }, [index, opacity, translateY]);
-
-  useEffect(() => {
-    Animated.timing(strikeWidth, {
-      toValue: done ? 1 : 0,
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [done, strikeWidth]);
+  }, [index, opacity, translateX]);
 
   useEffect(() => {
     if (error) {
       Animated.sequence([
-        Animated.timing(translateX, {
-          toValue: 8,
-          duration: 60,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateX, {
-          toValue: -8,
-          duration: 60,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateX, {
-          toValue: 6,
-          duration: 50,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateX, {
-          toValue: -6,
-          duration: 50,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateX, {
-          toValue: 0,
-          duration: 40,
-          useNativeDriver: true,
-        }),
+        Animated.timing(shakeX, { toValue: 6, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeX, { toValue: -6, duration: 50, useNativeDriver: true }),
+        Animated.timing(shakeX, { toValue: 4, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeX, { toValue: -4, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeX, { toValue: 0, duration: 30, useNativeDriver: true }),
       ]).start();
     }
-  }, [error, translateX]);
+  }, [error, shakeX]);
 
   return (
     <Animated.View
       style={[
-        styles.card,
-        done && styles.cardDone,
-        error && styles.cardError,
-        { opacity, transform: [{ translateY }, { translateX }] },
+        styles.row,
+        !isLast && styles.rowDivider,
+        error && styles.rowError,
+        { opacity, transform: [{ translateX: Animated.add(translateX, shakeX) }] },
       ]}
     >
       <TouchableOpacity
         style={[styles.checkbox, done && styles.checkboxDone]}
         onPress={onToggle}
-        activeOpacity={0.8}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        {done && <ZappIcon name="check" size={18} color="#fff" />}
+        {done && <ZappIcon name="check" size={13} color="#fff" />}
       </TouchableOpacity>
 
       <View
         style={[
           styles.iconBadge,
-          {
-            backgroundColor: done ? Colors.light.cardDark : `${iconColor}20`,
-          },
+          { backgroundColor: done ? Colors.light.cardDark : `${iconColor}12` },
         ]}
       >
-        <ZappIcon name={iconName} size={20} color={iconColor} />
+        <ZappIcon name={iconName} size={16} color={iconColor} />
       </View>
 
-      <View style={styles.textWrap}>
-        <View style={styles.nameContainer}>
-          <Text style={[styles.name, done && styles.nameDone]}>{name}</Text>
-          {done && (
-            <Animated.View
-              style={[
-                styles.strikeLine,
-                {
-                  width: strikeWidth.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0%', '100%'],
-                  }),
-                },
-              ]}
-            />
-          )}
-        </View>
+      <View style={styles.content}>
+        <Text style={[styles.name, done && styles.nameDone]} numberOfLines={1}>
+          {name}
+        </Text>
         {hasQty && (
-          <TouchableOpacity style={styles.qtyBadge} onPress={onEditQuantity} activeOpacity={0.7}>
-            <ZappIcon
-              name="tag-outline"
-              size={11}
-              color={done ? Colors.light.mutedText : Colors.light.primary}
-            />
+          <TouchableOpacity style={styles.qtyTag} onPress={onEditQuantity} activeOpacity={0.7}>
             <Text style={[styles.qtyText, done && styles.qtyTextDone]} numberOfLines={1}>
               {quantity!.trim()}
             </Text>
@@ -213,17 +166,25 @@ export default function ShoppingItemCard({
       </View>
 
       <View style={styles.actions}>
-        {hasQty ? (
-          <TouchableOpacity style={styles.editBtn} onPress={onEditQuantity} activeOpacity={0.7}>
-            <ZappIcon name="pencil-outline" size={18} color={Colors.light.mutedText} />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.editBtn} onPress={onEditQuantity} activeOpacity={0.7}>
-            <ZappIcon name="tag-plus-outline" size={18} color={Colors.light.mutedText} />
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity style={styles.deleteBtn} onPress={onDelete} activeOpacity={0.7}>
-          <ZappIcon name="close" size={20} color={Colors.light.mutedText} />
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onEditQuantity}
+          activeOpacity={0.7}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <ZappIcon
+            name={hasQty ? 'pencil-outline' : 'tag-plus-outline'}
+            size={15}
+            color={Colors.light.mutedText}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onDelete}
+          activeOpacity={0.7}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <ZappIcon name="trash-can-outline" size={15} color={Colors.light.mutedText} />
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -231,35 +192,26 @@ export default function ShoppingItemCard({
 }
 
 const styles = StyleSheet.create({
-  card: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: Colors.light.cardBackground,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    paddingVertical: 11,
+    paddingHorizontal: 10,
   },
-  cardDone: {
-    opacity: 0.7,
+  rowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
   },
-  cardError: {
-    borderLeftColor: Colors.light.danger,
+  rowError: {
+    backgroundColor: `${Colors.light.danger}08`,
   },
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
     borderColor: Colors.light.border,
-    marginRight: 12,
+    marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -268,67 +220,53 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.success,
   },
   iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 7,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
-  name: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  nameDone: {
-    color: Colors.light.mutedText,
-  },
-  nameContainer: {
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  strikeLine: {
-    position: 'absolute',
-    left: 0,
-    top: '50%',
-    height: 2,
-    backgroundColor: Colors.light.mutedText,
-    borderRadius: 1,
-  },
-  textWrap: {
+  content: {
     flex: 1,
-    minWidth: 0,
     marginRight: 8,
   },
-  qtyBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
+  name: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: Colors.light.text,
+    letterSpacing: -0.1,
+  },
+  nameDone: {
+    textDecorationLine: 'line-through',
+    color: Colors.light.mutedText,
+    fontWeight: '500',
+  },
+  qtyTag: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 6,
     paddingVertical: 2,
-    borderRadius: 8,
-    backgroundColor: Colors.light.accentPurpleSurface,
-    maxWidth: '100%',
+    paddingHorizontal: 7,
   },
   qtyText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
-    color: Colors.light.primary,
+    color: Colors.light.mutedText,
+    letterSpacing: 0.1,
   },
   qtyTextDone: {
     color: Colors.light.mutedText,
+    opacity: 0.7,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
   },
-  editBtn: {
-    padding: 6,
-  },
-  deleteBtn: {
+  actionBtn: {
     padding: 6,
   },
 });

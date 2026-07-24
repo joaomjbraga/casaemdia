@@ -21,7 +21,6 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
 
   const [title, setTitle] = useState('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
-  const [points, setPoints] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -45,12 +44,6 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
       return;
     }
 
-    const pts = parseInt(points);
-    if (!pts || pts <= 0) {
-      toast.error('Defina uma quantidade de pontos.');
-      return;
-    }
-
     const assignee = members.find((m) => m.id === assigneeId);
     if (!assignee) {
       toast.error('Membro não encontrado.');
@@ -65,7 +58,6 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
           title: title.trim(),
           assignee: assignee.name,
           assigneeId: assignee.id,
-          points: pts,
         },
         {
           userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
@@ -140,32 +132,6 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
                   </TouchableOpacity>
                 ))
               )}
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Pontos</Text>
-            <View style={styles.pointsRow}>
-              {[5, 10, 15, 20].map((p) => (
-                <TouchableOpacity
-                  key={p}
-                  style={[styles.pointChip, points === p.toString() && styles.pointChipActive]}
-                  onPress={() => setPoints(p.toString())}
-                >
-                  <Text
-                    style={[styles.pointText, points === p.toString() && styles.pointTextActive]}
-                  >
-                    {p}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-              <StyledInput
-                value={points}
-                onChangeText={setPoints}
-                placeholder="Outro"
-                keyboardType="numeric"
-                style={points ? [styles.pointsInput, styles.pointsInputActive] : styles.pointsInput}
-              />
             </View>
           </View>
 
@@ -255,44 +221,6 @@ const styles = StyleSheet.create({
   },
   memberNameActive: {
     color: Colors.light.text,
-  },
-  pointsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  pointChip: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: Colors.light.cardBackground,
-    borderWidth: 1,
-    borderColor: Colors.light.borderLight,
-  },
-  pointChipActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
-  },
-  pointText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  pointTextActive: {
-    color: '#fff',
-  },
-  pointsInput: {
-    flex: 1,
-    backgroundColor: Colors.light.cardBackground,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: Colors.light.borderLight,
-  },
-  pointsInputActive: {
-    borderColor: Colors.light.primary,
   },
   submitBtn: {
     marginTop: 24,

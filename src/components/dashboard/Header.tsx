@@ -1,53 +1,36 @@
+import IconCircleButton from '@/components/common/IconCircleButton';
+import ZappIcon from '@/components/common/ZappIcon';
 import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
 import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import Colors from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { useNotificationStatus } from '@/hooks/useNotificationStatus';
-import ZappIcon from '@/components/common/ZappIcon';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import IconCircleButton from '@/components/common/IconCircleButton';
-import Avatar from '@/components/common/Avatar';
 
 interface HeaderProps {
-  /** Total de tarefas cadastradas na família. */
   totalTasks?: number;
-  /** Total de tarefas concluídas. */
   completedTasks?: number;
-  /** Callback ao clicar na barra de stats (a fazer / feitas). */
   onStatsPress?: (filter: 'pending' | 'done') => void;
 }
 
-export default function Header({ totalTasks = 0, completedTasks = 0, onStatsPress }: HeaderProps) {
+type FilterTab = 'pending' | 'done';
+
+export default function Header({ onStatsPress }: HeaderProps) {
   const { user, signOut } = useAuth();
   const { familyName, members } = useFamily();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
-  const {
-    status,
-    pushEnabled,
-    hasChip,
-    noService,
-    phonePermissionDenied,
-    carrierName,
-    requestPermission,
-  } = useNotificationStatus();
   const { top: statusBarHeight } = useSafeAreaInsets();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [activeTab, setActiveTab] = useState<FilterTab>('pending');
 
   const currentUser = members.find((m) => m.id === user?.uid);
   const isAdmin = currentUser?.role === 'admin';
 
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      StatusBar.setBackgroundColor(Colors.light.backgroundSecondary);
-    }
-  }, []);
-
-  const avatarBorderColor = isAdmin ? Colors.light.accentPurple : Colors.light.border;
+  const userInitial = (user?.displayName || user?.email || '?')[0].toUpperCase();
 
   const handleLogout = useCallback(() => {
     showDialog({
@@ -78,119 +61,15 @@ export default function Header({ totalTasks = 0, completedTasks = 0, onStatsPres
     router.push('/_settings');
   }, []);
 
-  const handleNotificationBanner = useCallback(async () => {
-    // Só faz sentido pedir a permissão de push quando há chip confirmado.
-    if (hasChip && !pushEnabled) {
-      await requestPermission();
-    }
+  const handleTabPress = useCallback(
+    (tab: FilterTab) => {
+      setActiveTab(tab);
+      onStatsPress?.(tab);
+    },
+    [onStatsPress],
+  );
 
-    if (hasChip) {
-      showAlert({
-        title: 'Ative as notificações',
-        message:
-          `Chip detectado${carrierName ? ` (${carrierName})` : ''}, mas as ` +
-          'notificações estão desativadas.\n\n' +
-          'Permita o envio de notificações nas configurações do sistema para ' +
-          'receber alertas de tarefas e compras da sua família.',
-        type: 'info',
-        buttonText: 'Entendi',
-      });
-      return;
-    }
-
-    if (noService) {
-      showAlert({
-        title: 'Sem serviço de rede móvel',
-        message:
-          `Seu chip${carrierName ? ` (${carrierName})` : ''} está sem sinal ` +
-          '(GSM indisponível).\n\n' +
-          'Sem serviço de rede móvel, o dispositivo não recebe notificações ' +
-          'push do app. Verifique se:\n\n' +
-          '1. O chip está inserido corretamente.\n' +
-          '2. O modo avião está desligado.\n' +
-          '3. Você está em uma área com cobertura.',
-        type: 'info',
-        buttonText: 'Entendi',
-      });
-      return;
-    }
-
-    if (phonePermissionDenied) {
-      showAlert({
-        title: 'Não foi possível verificar o chip',
-        message:
-          'Precisamos da permissão de telefone para confirmar se há um chip ' +
-          'no dispositivo.\n\n' +
-          'Conceda a permissão nas configurações do sistema e verifique se as ' +
-          'notificações estão ativas para receber alertas da sua família.',
-        type: 'info',
-        buttonText: 'Entendi',
-      });
-      return;
-    }
-
-    showAlert({
-      title: 'Chip não detectado',
-      message:
-        'Para receber alertas de tarefas e compras da sua família:\n\n' +
-        '1. Insira um chip (SIM) no dispositivo.\n' +
-        '2. Faça login na sua conta.\n' +
-        '3. Permita o envio de notificações.\n\n' +
-        'Sem um chip, o dispositivo não recebe notificações push do app.',
-      type: 'info',
-      buttonText: 'Entendi',
-    });
-  }, [
-    hasChip,
-    noService,
-    phonePermissionDenied,
-    pushEnabled,
-    carrierName,
-    requestPermission,
-    showAlert,
-  ]);
-
-  const pendingTasks = Math.max(totalTasks - completedTasks, 0);
   const membersCount = members?.length ?? 0;
-
-  const notificationsActive = status === 'active' && pushEnabled && hasChip;
-  const notificationsInactive = status === 'inactive';
-
-  // Texto compacto do status exibido junto ao nome da família.
-  const statusLabel = notificationsActive
-    ? 'Ativo'
-    : noService
-      ? 'Sem sinal'
-      : phonePermissionDenied
-        ? 'Verificar'
-        : !hasChip
-          ? 'Sem chip'
-          : 'Sem alertas';
-
-  // Conteúdo do banner de aviso conforme o estado da detecção.
-  const bannerContent = hasChip
-    ? {
-        icon: 'bell-off-outline' as const,
-        title: 'Notificações desativadas',
-        hint: 'Permita as notificações para receber alertas de tarefas e compras. Toque para ativar.',
-      }
-    : noService
-      ? {
-          icon: 'signal-off' as const,
-          title: 'Sem serviço de rede móvel',
-          hint: 'Seu chip está sem sinal (GSM indisponível). Sem serviço, o dispositivo não recebe notificações. Toque para saber mais.',
-        }
-      : phonePermissionDenied
-        ? {
-            icon: 'sim-off-outline' as const,
-            title: 'Verifique o chip',
-            hint: 'Não foi possível confirmar o chip. Toque para conceder a permissão e ativar as notificações.',
-          }
-        : {
-            icon: 'sim-alert' as const,
-            title: 'Nenhum chip detectado',
-            hint: 'Insira um chip e faça login para receber alertas de tarefas e compras. Toque para saber como.',
-          };
 
   return (
     <View style={styles.container}>
@@ -198,17 +77,9 @@ export default function Header({ totalTasks = 0, completedTasks = 0, onStatsPres
 
       <View style={styles.bar}>
         <View style={styles.brandSection}>
-          <Avatar
-            photoURL={user?.photoURL}
-            size={40}
-            borderRadius={12}
-            borderColor={avatarBorderColor}
-            borderWidth={isAdmin ? 2 : 1}
-            backgroundColor={Colors.light.cardDark}
-            iconName="account"
-            iconColor={Colors.light.primary}
-            iconSize={20}
-          />
+          <View style={styles.userAvatar}>
+            <Text style={styles.userInitial}>{userInitial}</Text>
+          </View>
           <View style={styles.appTitleContainer}>
             <Text style={styles.appName} numberOfLines={1}>
               {familyName || 'Casa em Dia'}
@@ -223,8 +94,8 @@ export default function Header({ totalTasks = 0, completedTasks = 0, onStatsPres
           <IconCircleButton
             iconName="cog-outline"
             onPress={handleOpenSettings}
-            iconColor={Colors.light.primary}
-            size={36}
+            iconColor={Colors.light.mutedText}
+            size={34}
             backgroundColor={Colors.light.cardDark}
             borderColor={Colors.light.border}
           />
@@ -234,56 +105,85 @@ export default function Header({ totalTasks = 0, completedTasks = 0, onStatsPres
             onPress={handleLogout}
             disabled={isLoggingOut}
             iconColor={Colors.light.danger}
-            size={36}
+            size={34}
             backgroundColor={Colors.light.cardDark}
             borderColor={Colors.light.border}
           />
         </View>
       </View>
 
-      {notificationsInactive && (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleNotificationBanner}
-          style={styles.alertBanner}
-        >
-          <View style={styles.alertIcon}>
-            <ZappIcon name={bannerContent.icon} size={18} color={Colors.light.warning} />
-          </View>
-          <View style={styles.alertTextWrap}>
-            <Text style={styles.alertTitle}>{bannerContent.title}</Text>
-            <Text style={styles.alertHint} numberOfLines={2}>
-              {bannerContent.hint}
-            </Text>
-          </View>
-          <ZappIcon name="chevron-right" size={20} color={Colors.light.mutedText} />
-        </TouchableOpacity>
-      )}
-
-      <TouchableOpacity
-        style={styles.statsRow}
-        activeOpacity={0.7}
-        onPress={() => onStatsPress?.('pending')}
-      >
-        <View style={styles.statItem}>
-          <ZappIcon name="clipboard-list-outline" size={16} color={Colors.light.primary} />
-          <Text style={styles.statValue}>{pendingTasks}</Text>
-          <Text style={styles.statText}>a fazer</Text>
-        </View>
-
-        <View style={styles.statDivider} />
-
-        <TouchableOpacity
-          style={styles.statItem}
-          activeOpacity={0.7}
-          onPress={() => onStatsPress?.('done')}
-        >
-          <ZappIcon name="check-circle-outline" size={16} color={Colors.light.success} />
-          <Text style={styles.statValue}>{completedTasks}</Text>
-          <Text style={styles.statText}>feitas</Text>
-        </TouchableOpacity>
-      </TouchableOpacity>
+      <View style={styles.segmentedControl}>
+        <SegmentButton
+          label="A fazer"
+          icon="clipboard-list-outline"
+          active={activeTab === 'pending'}
+          onPress={() => handleTabPress('pending')}
+        />
+        <SegmentButton
+          label="Concluídas"
+          icon="check-circle-outline"
+          active={activeTab === 'done'}
+          onPress={() => handleTabPress('done')}
+        />
+      </View>
     </View>
+  );
+}
+
+function SegmentButton({
+  label,
+  icon,
+  active,
+  onPress,
+}: {
+  label: string;
+  icon: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.timing(scale, {
+      toValue: 0.98,
+      duration: 100,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.timing(scale, {
+      toValue: 1,
+      duration: 140,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={styles.segmentTouchable}
+    >
+      <Animated.View
+        style={[
+          styles.segmentButton,
+          active && styles.segmentButtonActive,
+          { transform: [{ scale }] },
+        ]}
+      >
+        <ZappIcon
+          name={icon as any}
+          size={14}
+          color={active ? Colors.light.text : Colors.light.mutedText}
+        />
+        <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>{label}</Text>
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 
@@ -301,20 +201,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
-    minHeight: 56,
+    paddingTop: 8,
+    paddingBottom: 8,
+    minHeight: 52,
   },
-  body: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
+  userAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: Colors.light.cardDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  userInitial: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.primary,
   },
   brandSection: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     minWidth: 0,
-    gap: 12,
+    gap: 10,
     marginRight: 12,
   },
   appTitleContainer: {
@@ -322,116 +233,59 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   appName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: Colors.light.text,
     letterSpacing: -0.3,
-    marginBottom: 3,
-  },
-  subtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  subtitleDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: Colors.light.border,
-    marginHorizontal: 3,
+    marginBottom: 2,
   },
   appSubtitle: {
     fontSize: 12,
     fontWeight: '500',
     color: Colors.light.mutedText,
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     flexShrink: 0,
   },
-  alertBanner: {
+  segmentedControl: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 149, 0, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.15)',
-    borderRadius: 12,
-    padding: 12,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    gap: 12,
-  },
-  alertIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 149, 0, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  alertTextWrap: {
-    flex: 1,
-    minWidth: 0,
-  },
-  alertTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.light.warning,
-    marginBottom: 2,
-    letterSpacing: -0.1,
-  },
-  alertHint: {
-    fontSize: 11.5,
-    fontWeight: '500',
-    color: Colors.light.mutedText,
-    lineHeight: 15,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: Colors.light.cardDark,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: 10,
     marginHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    marginBottom: 12,
+    padding: 3,
+    gap: 3,
   },
-  statItem: {
+  segmentTouchable: {
+    flex: 1,
+  },
+  segmentButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    flex: 1,
     justifyContent: 'center',
-    minHeight: 24,
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 8,
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.light.text,
-    letterSpacing: -0.4,
-    fontVariant: ['tabular-nums'],
+  segmentButtonActive: {
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
-  statDivider: {
-    width: 1,
-    height: 18,
-    backgroundColor: Colors.light.border,
-    marginHorizontal: 6,
-  },
-  statText: {
-    fontSize: 11,
+  segmentLabel: {
+    fontSize: 12,
     fontWeight: '600',
     color: Colors.light.mutedText,
-    letterSpacing: 0.2,
-    textTransform: 'uppercase',
+    letterSpacing: 0.1,
+  },
+  segmentLabelActive: {
+    color: Colors.light.text,
+    fontWeight: '700',
   },
 });

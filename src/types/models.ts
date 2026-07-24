@@ -4,7 +4,6 @@ export interface Task {
   done: boolean;
   assignee: string;
   assigneeId?: string;
-  points: number;
   createdAt?: any;
 }
 
@@ -14,10 +13,6 @@ export interface FamilyMember {
   email: string;
   photoURL: string | null;
   role: 'admin' | 'member';
-  points: number;
-  tasksCompleted: number;
-  shoppingCompleted: number;
-  contributions: number;
 }
 
 export interface ShoppingItem {
@@ -25,16 +20,6 @@ export interface ShoppingItem {
   name: string;
   done: boolean;
   quantity?: string;
-  points?: number;
-}
-
-export interface CoupleStat {
-  id: string;
-  name: string;
-  points: number;
-  avatar: 'person' | 'person-outline' | 'trophy';
-  tasksCompleted: number;
-  photoURL?: string | null;
 }
 
 export interface Invitation {

@@ -3,19 +3,20 @@ import Colors from '@/constants/Colors';
 import { DOCK_CLEARANCE } from '@/constants/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { CoupleStat, Task } from '@/types/models';
+import type { Task } from '@/types/models';
 
+import EmptyState from '@/components/common/EmptyState';
 import IconCircleButton from '@/components/common/IconCircleButton';
 import LoadingSkeleton from '@/components/common/LoadingSkeleton';
+import ZappIcon from '@/components/common/ZappIcon';
 import Header from '@/components/dashboard/Header';
-import RankingCard from '@/components/dashboard/RankingCard';
-import TasksCard from '@/components/tasks/TasksCard';
+
+import TaskListPanel from '@/components/dashboard/TaskCard';
 import { useInvitations } from '@/contexts/InvitationContext';
 import { fetchDashboardTasks } from '@/services/tasks';
-import ZappIcon from '@/components/common/ZappIcon';
-import { useFocusEffect, router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,27 +28,8 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
 
-  const completedTasks = tasks.filter((task) => task.done).length;
-  const totalTasks = tasks.length;
-  const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-
   const tasksRef = useRef<Task[]>([]);
   tasksRef.current = tasks;
-
-  const coupleStats = useMemo(() => {
-    const stats: { [key: string]: CoupleStat } = {};
-    members.forEach((member, index) => {
-      stats[member.id] = {
-        id: member.id,
-        name: member.name,
-        points: member.points,
-        avatar: index % 2 === 0 ? 'person' : 'person-outline',
-        tasksCompleted: member.tasksCompleted + member.shoppingCompleted,
-        photoURL: member.photoURL,
-      };
-    });
-    return stats;
-  }, [members]);
 
   const fetchTasks = useCallback(async () => {
     if (!familyId) {
@@ -93,7 +75,6 @@ export default function Dashboard() {
           title: task.title,
           assignee: task.assignee,
           assigneeId: task.assigneeId || '',
-          points: String(task.points),
           done: String(task.done),
         },
       });
@@ -121,11 +102,7 @@ export default function Dashboard() {
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.light.background }]}>
       <StatusBar style="dark" />
 
-      <Header
-        totalTasks={totalTasks}
-        completedTasks={completedTasks}
-        onStatsPress={handleStatsPress}
-      />
+      <Header onStatsPress={handleStatsPress} />
 
       <ScrollView
         style={styles.scrollView}
@@ -135,7 +112,7 @@ export default function Dashboard() {
         {pendingInvitations.map((inv) => (
           <View key={inv.id} style={styles.inviteBanner}>
             <View style={styles.inviteIcon}>
-              <ZappIcon name="account-plus" size={20} color={Colors.light.accentPurple} />
+              <ZappIcon name="account-plus" size={20} color={Colors.light.primary} />
             </View>
             <View style={styles.inviteInfo}>
               <Text style={styles.inviteTitle}>Convite de Família</Text>
@@ -164,15 +141,15 @@ export default function Dashboard() {
           </View>
         ))}
 
-        <RankingCard coupleStats={coupleStats} currentUserId={user?.uid} />
-        <TasksCard
-          tasks={tasks}
-          progressPercentage={progressPercentage}
-          completedTasks={completedTasks}
-          totalTasks={totalTasks}
-          readOnly
-          onTaskPress={handleTaskPress}
-        />
+        {tasks.length === 0 ? (
+          <EmptyState
+            iconName="checkbox-marked-outline"
+            title="Nenhuma tarefa"
+            subtitle="As tarefas da família aparecerão aqui"
+          />
+        ) : (
+          <TaskListPanel tasks={tasks} onPressTask={handleTaskPress} />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -194,9 +171,9 @@ const styles = StyleSheet.create({
   inviteBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.accentPurpleSurface,
+    backgroundColor: `${Colors.light.primary}08`,
     borderWidth: 1,
-    borderColor: 'rgba(175, 82, 222, 0.15)',
+    borderColor: `${Colors.light.primary}15`,
     borderRadius: 12,
     marginHorizontal: 16,
     marginBottom: 12,
@@ -207,7 +184,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(175, 82, 222, 0.1)',
+    backgroundColor: `${Colors.light.primary}12`,
     justifyContent: 'center',
     alignItems: 'center',
   },

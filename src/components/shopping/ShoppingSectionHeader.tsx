@@ -1,23 +1,13 @@
 import SectionTitle from '@/components/common/SectionTitle';
-import XPBadge from '@/components/common/XPBadge';
-import Badge from '@/components/common/Badge';
 import Colors from '@/constants/Colors';
-import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 interface ShoppingSectionHeaderProps {
   label: string;
-  count: number;
-  totalPoints?: number;
   done?: boolean;
 }
 
-export default function ShoppingSectionHeader({
-  label,
-  count,
-  totalPoints = 0,
-  done = false,
-}: ShoppingSectionHeaderProps) {
+export default function ShoppingSectionHeader({ label, done = false }: ShoppingSectionHeaderProps) {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
@@ -25,17 +15,11 @@ export default function ShoppingSectionHeader({
         <SectionTitle
           label={label}
           color={done ? Colors.light.success : Colors.light.text}
-          fontSize={15}
-          fontWeight="800"
-          letterSpacing={-0.2}
-          uppercase={false}
+          fontSize={11}
+          fontWeight="700"
+          letterSpacing={1.1}
+          uppercase
         />
-      </View>
-      <View style={styles.badges}>
-        <Badge label={String(count)} variant={done ? 'success' : 'default'} size="sm" />
-        {totalPoints > 0 && (
-          <XPBadge points={totalPoints} size="sm" variant={done ? 'done' : 'default'} />
-        )}
       </View>
     </View>
   );
@@ -46,7 +30,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 4,
   },
   headerLeft: {
@@ -55,17 +39,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: Colors.light.primary,
   },
   dotDone: {
     backgroundColor: Colors.light.success,
-  },
-  badges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
 });

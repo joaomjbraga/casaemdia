@@ -13,12 +13,12 @@ interface BadgeProps {
 }
 
 const VARIANT_COLORS: Record<BadgeVariant, { bg: string; text: string }> = {
-  default: { bg: Colors.light.cardDark, text: Colors.light.mutedText },
-  success: { bg: 'rgba(88, 204, 2, 0.12)', text: Colors.light.success },
-  warning: { bg: 'rgba(255, 149, 0, 0.12)', text: Colors.light.warning },
-  danger: { bg: 'rgba(255, 59, 48, 0.12)', text: Colors.light.danger },
-  purple: { bg: Colors.light.accentPurpleSurface, text: Colors.light.accentPurple },
-  primary: { bg: 'rgba(0, 122, 255, 0.08)', text: Colors.light.primary },
+  default: { bg: '#F1F5F9', text: '#64748B' },
+  success: { bg: 'rgba(22, 163, 74, 0.1)', text: '#16A34A' },
+  warning: { bg: 'rgba(217, 119, 6, 0.1)', text: '#D97706' },
+  danger: { bg: 'rgba(220, 38, 38, 0.1)', text: '#DC2626' },
+  purple: { bg: 'rgba(18, 206, 200, 0.1)', text: '#12cec8' },
+  primary: { bg: 'rgba(0, 147, 148, 0.08)', text: '#009394' },
 };
 
 export default function Badge({ label, variant = 'default', size = 'sm', style }: BadgeProps) {
@@ -39,18 +39,18 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 6,
     alignSelf: 'flex-start',
   },
   badgeMd: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   text: {
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
   textMd: {
     fontSize: 13,

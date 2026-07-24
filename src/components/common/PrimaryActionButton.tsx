@@ -34,14 +34,14 @@ export default function PrimaryActionButton({
     <TouchableOpacity
       style={[styles.btn, { backgroundColor: color }, isDisabled && styles.btnDisabled, style]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.65}
       disabled={isDisabled}
     >
       {loading ? (
         <ActivityIndicator size="small" color="#fff" />
       ) : (
         <>
-          {icon && <ZappIcon name={icon} size={20} color="#fff" />}
+          {icon && <ZappIcon name={icon} size={17} color="#fff" />}
           <Text style={styles.text}>{title}</Text>
         </>
       )}
@@ -54,25 +54,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    borderRadius: 14,
-    paddingVertical: 16,
+    gap: 8,
+    borderRadius: 999,
+    paddingVertical: 14,
     paddingHorizontal: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-    borderBottomWidth: 3,
-    borderBottomColor: 'rgba(0, 0, 0, 0.12)',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   btnDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   text: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#fff',
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
   },
 });

@@ -11,7 +11,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import logger from '@/lib/logger';
-import { creditCompletion, revertCompletion, SHOPPING_ITEM_POINTS } from '../lib/gamification';
 import { sendNotificationToFamily } from '../lib/onesignal';
 
 const BATCH_LIMIT = 500;
@@ -21,7 +20,6 @@ export interface ShoppingItemSnapshot {
   name: string;
   done: boolean;
   quantity?: string;
-  points?: number;
 }
 
 export const subscribeToShoppingItems = (
@@ -40,7 +38,6 @@ export const subscribeToShoppingItems = (
           name: data.title,
           done: data.done,
           quantity: data.quantity ?? '',
-          points: data.points ?? SHOPPING_ITEM_POINTS,
         };
       });
 
@@ -69,7 +66,6 @@ export const createShoppingItem = async ({
     title: name,
     done: false,
     quantity,
-    points: SHOPPING_ITEM_POINTS,
   });
 
   if (userName && userId) {
@@ -149,23 +145,6 @@ export const toggleShoppingItem = async ({
   if (!stateChanged) return;
 
   if (user) {
-    const itemPoints = item.points ?? SHOPPING_ITEM_POINTS;
-    try {
-      if (newDone) {
-        await creditCompletion(familyId, user.uid, {
-          points: itemPoints,
-          shopping: true,
-        });
-      } else {
-        await revertCompletion(familyId, user.uid, {
-          points: itemPoints,
-          shopping: true,
-        });
-      }
-    } catch (error) {
-      logger.error('Erro ao atualizar gamificação (compra):', error);
-    }
-
     const userName = user.displayName || user.email?.split('@')[0] || 'Alguem';
     try {
       await sendNotificationToFamily({

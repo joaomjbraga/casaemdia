@@ -10,7 +10,7 @@ interface CardProps {
   children: React.ReactNode;
 }
 
-export default function Card({ variant = 'outlined', padding = 14, style, children }: CardProps) {
+export default function Card({ variant = 'outlined', padding = 16, style, children }: CardProps) {
   return (
     <View
       style={[
@@ -29,7 +29,7 @@ export default function Card({ variant = 'outlined', padding = 14, style, childr
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.light.cardBackground,
-    borderRadius: 14,
+    borderRadius: 12,
   },
   outlined: {
     borderWidth: 1,
@@ -38,6 +38,6 @@ const styles = StyleSheet.create({
   elevated: {
     borderWidth: 1,
     borderColor: Colors.light.border,
-    ...Shadows.md,
+    ...Shadows.sm,
   },
 });

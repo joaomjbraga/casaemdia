@@ -40,14 +40,14 @@ export function Cell({
         style={styles.cellTouch}
         onPress={onPress}
         disabled={!onPress || disabled}
-        activeOpacity={0.6}
+        activeOpacity={0.5}
       >
         <View style={[styles.cellInner, last && styles.cellInnerLast]}>
           {children}
           {chevron && (
             <ZappIcon
               name="chevron-right"
-              size={20}
+              size={18}
               color={Colors.light.mutedText}
               style={styles.cellChevron}
             />
@@ -60,19 +60,19 @@ export function Cell({
 
 const styles = StyleSheet.create({
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: Colors.light.mutedText,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
     marginHorizontal: 20,
-    marginTop: 28,
-    marginBottom: 8,
+    marginTop: 24,
+    marginBottom: 6,
   },
   listSection: {
     marginHorizontal: 16,
     backgroundColor: Colors.light.cardBackground,
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.light.border,
@@ -83,19 +83,19 @@ const styles = StyleSheet.create({
   cellPressable: {},
   cellDisabled: { opacity: 0.5 },
   cellFirst: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
   },
   cellLast: {
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
   },
   cellTouch: { flex: 1 },
   cellInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    minHeight: 52,
+    paddingHorizontal: 14,
+    minHeight: 48,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.light.border,
   },

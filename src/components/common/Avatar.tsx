@@ -28,7 +28,7 @@ interface AvatarProps {
 /**
  * Avatar de usuário reutilizável: exibe a foto (arredondada/quadrada) com
  * fallback para um ícone quando não houver foto. Substitui a lógica repetida
- * em Header, configurações e RankingCard.
+ * em Header e configurações.
  */
 export default function Avatar({
   photoURL,

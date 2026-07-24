@@ -1,4 +1,4 @@
-const tintColorLight = '#007AFF';
+const tintColorLight = '#009394';
 
 export const Spacing = {
   xs: 4,
@@ -40,100 +40,89 @@ export const Shadows = {
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
     elevation: 1,
   },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   lg: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   button: (color: string) => ({
     shadowColor: color,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 0,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   }),
 } as const;
 
 export default {
   light: {
-    background: '#F3F2F9',
+    background: '#F1F5F9',
     backgroundSecondary: '#FFFFFF',
 
-    text: '#000000',
-    textWhite: '#000000',
-    mutedText: '#8E8E93',
+    text: '#0F172A',
+    textWhite: '#FFFFFF',
+    mutedText: '#64748B',
 
     primary: tintColorLight,
     tint: tintColorLight,
-    secondary: '#5856D6',
-
-    accentPurple: '#AF52DE',
-
-    illustrationPurple: '#AF52DE',
-    illustrationPink: '#FF2D55',
-    illustrationCyan: '#5AC8FA',
-    illustrationYellow: '#FFCC00',
-    illustrationOrange: '#FF9500',
-    illustrationTeal: '#34C759',
+    secondary: '#334155',
 
     cardBackground: '#FFFFFF',
-    cardDark: '#F2F2F7',
-    cardDarkSecondary: '#E5E5EA',
+    cardDark: '#F8FAFC',
+    cardDarkSecondary: '#E2E8F0',
     cardSurface: '#FFFFFF',
-    cardBorder: 'rgba(60, 60, 67, 0.08)',
+    cardBorder: '#E2E8F0',
 
-    accentBlue: '#007AFF',
-    accentCyan: '#5AC8FA',
-    accentYellow: '#FFCC00',
+    accentBlue: '#009394',
+    accentCyan: '#12cec8',
+    accentYellow: '#D97706',
 
-    border: 'rgba(60, 60, 67, 0.08)',
-    borderLight: 'rgba(60, 60, 67, 0.04)',
+    border: '#E2E8F0',
+    borderLight: '#F1F5F9',
 
-    inputBackground: '#F2F2F7',
-    inputBorder: 'rgba(60, 60, 67, 0.08)',
+    inputBackground: '#F8FAFC',
+    inputBorder: '#E2E8F0',
 
-    accentPurpleSurface: 'rgba(175, 82, 222, 0.08)',
+    success: '#16A34A',
+    successLight: '#22C55E',
+    danger: '#DC2626',
+    dangerDark: '#B91C1C',
+    dangerLight: '#EF4444',
+    warning: '#D97706',
+    warningLight: '#F59E0B',
+    info: '#009394',
+    link: '#009394',
 
-    success: '#58cc02',
-    successLight: '#7ed321',
-    danger: '#ff4b4b',
-    dangerDark: '#e63900',
-    dangerLight: '#ff6b6b',
-    warning: '#ff9600',
-    warningLight: '#ffb84d',
-    info: '#1cb0f6',
-    link: '#1cb0f6',
+    progressBar: '#009394',
+    progressBackground: '#E2E8F0',
 
-    progressBar: '#007AFF',
-    progressBackground: '#E5E5EA',
+    buttonPrimary: '#009394',
+    buttonSecondary: '#334155',
 
-    buttonPrimary: '#007AFF',
-    buttonSecondary: '#5856D6',
-
-    iconPrimary: '#007AFF',
-    iconSecondary: '#5856D6',
+    iconPrimary: '#009394',
+    iconSecondary: '#334155',
     iconLight: '#FFFFFF',
 
-    tabIconDefault: '#8E8E93',
+    tabIconDefault: '#94A3B8',
     tabIconSelected: tintColorLight,
 
     gradientStart: '#FFFFFF',
-    gradientEnd: '#F2F2F7',
+    gradientEnd: '#F1F5F9',
     gradientPurple: '#FFFFFF',
-    gradientDark: '#F2F2F7',
+    gradientDark: '#F1F5F9',
 
     dialogBackground: '#FFFFFF',
   },

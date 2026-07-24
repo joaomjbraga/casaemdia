@@ -1,16 +1,12 @@
 import IconCircleButton from '@/components/common/IconCircleButton';
 import PrimaryIconButton from '@/components/common/PrimaryIconButton';
-import ProgressBar from '@/components/common/ProgressBar';
 import ScreenHeader from '@/components/common/ScreenHeader';
-import Colors from '@/constants/Colors';
 import ZappIcon from '@/components/common/ZappIcon';
-import React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Colors from '@/constants/Colors';
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ShoppingListHeaderProps {
-  pendingCount: number;
-  completedCount: number;
-  progress: number;
+  hasCompletedItems: boolean;
   newItemName: string;
   newItemQty: string;
   filterName: string;
@@ -22,9 +18,7 @@ interface ShoppingListHeaderProps {
 }
 
 export default function ShoppingListHeader({
-  pendingCount,
-  completedCount,
-  progress,
+  hasCompletedItems,
   newItemName,
   newItemQty,
   filterName,
@@ -39,12 +33,12 @@ export default function ShoppingListHeader({
       <ScreenHeader
         iconName="cart-outline"
         title="Lista de Compras"
-        subtitle={`${pendingCount} a comprar · ${completedCount} comprado${completedCount !== 1 ? 's' : ''}`}
-        iconBackgroundColor={Colors.light.accentPurpleSurface}
-        iconColor={Colors.light.accentPurple}
+        subtitle="Gerencie os itens da família"
+        iconBackgroundColor={`${Colors.light.primary}12`}
+        iconColor={Colors.light.primary}
         subtitleColor={Colors.light.mutedText}
         actions={
-          completedCount > 0 ? (
+          hasCompletedItems ? (
             <IconCircleButton
               iconName="broom"
               onPress={onClearCompleted}
@@ -55,11 +49,7 @@ export default function ShoppingListHeader({
             />
           ) : undefined
         }
-        footer={
-          <View style={styles.progressWrap}>
-            <ProgressBar progress={progress} height={8} color={Colors.light.success} />
-          </View>
-        }
+        footer={<View style={styles.footerDivider} />}
       />
 
       <View style={styles.addSection}>
@@ -107,8 +97,10 @@ export default function ShoppingListHeader({
 }
 
 const styles = StyleSheet.create({
-  progressWrap: {
+  footerDivider: {
     marginTop: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.light.border,
   },
   addSection: {
     paddingHorizontal: 20,

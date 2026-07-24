@@ -1,15 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ZappIcon from '@/components/common/ZappIcon';
-import XPBadge from '@/components/common/XPBadge';
-import AnimatedCounter from '@/components/common/AnimatedCounter';
 import Colors from '@/constants/Colors';
 
 interface TaskCardProps {
   title: string;
   done: boolean;
   assignee: string;
-  points: number;
   onToggle: () => void;
   onDelete: () => void;
   isLoading?: boolean;
@@ -21,77 +18,49 @@ export default function TaskCard({
   title,
   done,
   assignee,
-  points,
   onToggle,
   onDelete,
   isLoading,
   index = 0,
   error = false,
 }: TaskCardProps) {
-  const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(12)).current;
+  const translateY = useRef(new Animated.Value(6)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const checkScale = useRef(new Animated.Value(done ? 1 : 0)).current;
   const prevDone = useRef(done);
-  const [showXP, setShowXP] = useState(false);
 
   useEffect(() => {
     if (done && !prevDone.current) {
-      setShowXP(true);
-      Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.05,
-          duration: 120,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scale, {
-          toValue: 1,
-          useNativeDriver: true,
-          damping: 14,
-          stiffness: 220,
-          mass: 0.8,
-        }),
-      ]).start();
-
-      Animated.sequence([
-        Animated.spring(checkScale, {
-          toValue: 1.3,
-          useNativeDriver: true,
-          damping: 8,
-          stiffness: 300,
-        }),
-        Animated.spring(checkScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          damping: 12,
-          stiffness: 200,
-        }),
-      ]).start();
-    } else if (!done) {
       Animated.spring(checkScale, {
-        toValue: 0,
+        toValue: 1,
         useNativeDriver: true,
-        damping: 12,
-        stiffness: 200,
+        damping: 22,
+        stiffness: 120,
+      }).start();
+    } else if (!done) {
+      Animated.timing(checkScale, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
       }).start();
     }
     prevDone.current = done;
-  }, [done, scale, checkScale]);
+  }, [done, checkScale]);
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 260,
-        delay: index * 35,
+        delay: index * 30,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(translateY, {
         toValue: 0,
         duration: 260,
-        delay: index * 35,
+        delay: index * 30,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
@@ -101,31 +70,9 @@ export default function TaskCard({
   useEffect(() => {
     if (error) {
       Animated.sequence([
-        Animated.timing(translateX, {
-          toValue: 8,
-          duration: 60,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateX, {
-          toValue: -8,
-          duration: 60,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateX, {
-          toValue: 6,
-          duration: 50,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateX, {
-          toValue: -6,
-          duration: 50,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateX, {
-          toValue: 0,
-          duration: 40,
-          useNativeDriver: true,
-        }),
+        Animated.timing(translateX, { toValue: 5, duration: 50, useNativeDriver: true }),
+        Animated.timing(translateX, { toValue: -5, duration: 50, useNativeDriver: true }),
+        Animated.timing(translateX, { toValue: 0, duration: 40, useNativeDriver: true }),
       ]).start();
     }
   }, [error, translateX]);
@@ -136,20 +83,18 @@ export default function TaskCard({
         styles.card,
         done && styles.cardDone,
         error && styles.cardError,
-        { transform: [{ scale }, { translateX }], opacity, translateY },
+        { transform: [{ translateX }], opacity, translateY },
       ]}
     >
-      <AnimatedCounter value={points} visible={showXP} onDone={() => setShowXP(false)} />
-
       <TouchableOpacity
         style={[styles.checkbox, done && styles.checkboxDone]}
         onPress={onToggle}
         disabled={isLoading}
-        activeOpacity={0.8}
+        activeOpacity={0.6}
       >
         {done && (
           <Animated.View style={{ transform: [{ scale: checkScale }] }}>
-            <ZappIcon name="check" size={18} color="#fff" />
+            <ZappIcon name="check" size={14} color="#fff" />
           </Animated.View>
         )}
       </TouchableOpacity>
@@ -161,21 +106,19 @@ export default function TaskCard({
 
         <View style={styles.meta}>
           <View style={styles.metaItem}>
-            <ZappIcon name="account-outline" size={14} color={Colors.light.mutedText} />
+            <ZappIcon name="account-outline" size={12} color={Colors.light.mutedText} />
             <Text style={styles.metaText}>{assignee}</Text>
           </View>
-
-          <XPBadge points={points} size="sm" />
         </View>
       </View>
 
       <TouchableOpacity
         style={styles.deleteBtn}
         onPress={onDelete}
-        activeOpacity={0.7}
+        activeOpacity={0.5}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <ZappIcon name="close" size={16} color={Colors.light.mutedText} />
+        <ZappIcon name="close" size={14} color={Colors.light.mutedText} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -185,33 +128,25 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     backgroundColor: Colors.light.cardBackground,
-    borderRadius: 12,
-    marginBottom: 8,
+    borderRadius: 10,
+    marginBottom: 6,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.light.primary,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   cardDone: {
-    borderLeftColor: Colors.light.success,
-    opacity: 0.75,
+    opacity: 0.6,
   },
   cardError: {
-    borderLeftColor: Colors.light.danger,
+    borderColor: Colors.light.danger,
   },
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: Colors.light.border,
     marginRight: 12,
     alignItems: 'center',
@@ -225,11 +160,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
     color: Colors.light.text,
-    marginBottom: 7,
-    lineHeight: 20,
+    marginBottom: 4,
+    lineHeight: 19,
   },
   titleDone: {
     textDecorationLine: 'line-through',
@@ -238,7 +173,7 @@ const styles = StyleSheet.create({
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
   },
   metaItem: {
     flexDirection: 'row',
@@ -253,6 +188,6 @@ const styles = StyleSheet.create({
   deleteBtn: {
     padding: 4,
     marginLeft: 4,
-    opacity: 0.6,
+    opacity: 0.5,
   },
 });

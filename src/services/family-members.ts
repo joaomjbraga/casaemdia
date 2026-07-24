@@ -25,10 +25,6 @@ export const fetchFamilyMembersFromStore = async (familyId: string): Promise<Fam
       email: data.email ?? '',
       photoURL: data.photoURL ?? null,
       role: (data.role ?? 'member') as 'admin' | 'member',
-      points: data.points ?? 0,
-      tasksCompleted: data.tasksCompleted ?? 0,
-      shoppingCompleted: data.shoppingCompleted ?? 0,
-      contributions: data.contributions ?? 0,
     };
   });
 };

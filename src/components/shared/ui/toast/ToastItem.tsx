@@ -8,7 +8,6 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
 
 interface ToastItemProps {
@@ -19,13 +18,13 @@ interface ToastItemProps {
 const getBackgroundColor = (type: ToastVariant) => {
   switch (type) {
     case 'success':
-      return '#10B981';
+      return '#16A34A';
     case 'error':
       return '#DC2626';
     case 'warning':
-      return '#F59E0B';
+      return '#D97706';
     case 'info':
-      return '#3B82F6';
+      return '#009394';
     default:
       return '#5ea502';
   }
@@ -50,7 +49,7 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index }) => {
   const { dismiss, expandedToasts, expandToast, collapseToast } = useToast();
   const opacity = useSharedValue<number>(1);
   const translateY = useSharedValue<number>(toast.options.position === 'top' ? -100 : 100);
-  const scale = useSharedValue<number>(0.9);
+  const scale = useSharedValue<number>(0.95);
   const rotateZ = useSharedValue<number>(0);
   const expandHeight = useSharedValue<number>(0);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -97,15 +96,13 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index }) => {
     timeoutsRef.current.push(
       setTimeout(() => {
         translateY.value = withSpring(getStackOffset(), {
-          damping: 25,
-          stiffness: 120,
-          mass: 0.8,
+          damping: 28,
+          stiffness: 100,
           velocity: 0,
         });
         scale.value = withSpring(getStackScale(), {
-          damping: 25,
-          stiffness: 120,
-          mass: 0.8,
+          damping: 28,
+          stiffness: 100,
           velocity: 0,
         });
       }, 200),
@@ -121,7 +118,7 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index }) => {
       duration: 300,
       easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
     });
-    scale.value = withTiming(0.85, {
+    scale.value = withTiming(0.92, {
       duration: 300,
       easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
     });
@@ -147,15 +144,13 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index }) => {
     timeoutsRef.current.push(
       setTimeout(() => {
         translateY.value = withSpring(getStackOffset(), {
-          damping: 28,
-          stiffness: 140,
-          mass: 0.8,
+          damping: 30,
+          stiffness: 100,
           velocity: 0,
         });
         scale.value = withSpring(getStackScale(), {
-          damping: 28,
-          stiffness: 140,
-          mass: 0.8,
+          damping: 30,
+          stiffness: 100,
           velocity: 0,
         });
         rotateZ.value = withTiming(0, {
@@ -177,7 +172,7 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index }) => {
           duration: 400,
           easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
         });
-        scale.value = withTiming(0.95, {
+        scale.value = withTiming(0.97, {
           duration: 400,
           easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
         });
@@ -205,12 +200,12 @@ export const ToastItem: React.FC<ToastItemProps> = ({ toast, index }) => {
   useEffect(() => {
     if (isExpanded && hasExpandedContent) {
       expandHeight.value = withSpring(1, {
-        damping: 20,
+        damping: 28,
         stiffness: 100,
       });
     } else {
       expandHeight.value = withSpring(0, {
-        damping: 20,
+        damping: 28,
         stiffness: 100,
       });
     }
@@ -312,47 +307,44 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     alignSelf: 'center',
     marginVertical: 4,
-    borderRadius: 100,
+    borderRadius: 14,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 6,
   },
   toast: {
     flexDirection: 'column',
-    borderRadius: 12,
+    borderRadius: 14,
   },
   mainContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 14,
   },
   icon: {
     color: '#fff',
-    fontSize: 20,
-    marginRight: 12,
-    fontWeight: 'bold',
+    fontSize: 18,
+    marginRight: 10,
+    fontWeight: '600',
     textAlign: 'center',
-    width: 24,
+    width: 22,
   },
   contentContainer: {
     flex: 1,
   },
   text: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
     lineHeight: 20,
   },
   actionButton: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingVertical: 6,
+    borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginLeft: 12,
   },

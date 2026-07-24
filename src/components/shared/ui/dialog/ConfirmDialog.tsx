@@ -75,8 +75,8 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
   const typeConfig = {
     confirm: {
       icon: 'help-circle-outline' as const,
-      color: Colors.light.accentPurple,
-      bgColor: Colors.light.accentPurpleSurface,
+      color: Colors.light.primary,
+      bgColor: `${Colors.light.primary}12`,
     },
     danger: {
       icon: 'alert-circle-outline' as const,
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   confirmBtn: {
-    backgroundColor: Colors.light.accentPurple,
+    backgroundColor: Colors.light.primary,
   },
   dangerBtn: {
     backgroundColor: Colors.light.danger,

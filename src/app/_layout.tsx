@@ -10,9 +10,8 @@ import {
   removeUserTags,
   addNotificationClickListener,
   removeNotificationClickListener,
-  checkPushPermission,
-  requestPushPermission,
   requestPermissionAfterLogin,
+  diagnosePushFailure,
 } from '@/lib/onesignal';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useFonts } from 'expo-font';
@@ -123,15 +122,12 @@ function RootLayoutNav() {
     if (!initialized || loading || pushWarningShown.current) return;
 
     const timer = setTimeout(async () => {
-      const hasPermission = await checkPushPermission();
-      if (!hasPermission && !pushWarningShown.current) {
+      const diag = await diagnosePushFailure();
+      if (!diag.hasPermission && !pushWarningShown.current) {
         pushWarningShown.current = true;
         showAlert({
           title: 'Notificações desativadas',
-          message:
-            'Seu dispositivo não possui chip ou as notificações foram negadas. ' +
-            'Você não receberá alertas de tarefas e compras. ' +
-            'Para ativar, insira um chip e reabra o app.',
+          message: diag.reason + ' Você não receberá alertas de tarefas e compras.',
           type: 'error',
           buttonText: 'Entendi',
         });

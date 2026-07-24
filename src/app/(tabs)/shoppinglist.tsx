@@ -1,8 +1,7 @@
-import type { ShoppingItem } from '@/types/models';
-import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
-import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import EmptyState from '@/components/common/EmptyState';
 import LoadingSkeleton from '@/components/common/LoadingSkeleton';
+import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
+import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import QuantityEditModal from '@/components/shopping/QuantityEditModal';
 import ShoppingItemCard from '@/components/shopping/ShoppingItemCard';
 import ShoppingListHeader from '@/components/shopping/ShoppingListHeader';
@@ -11,13 +10,6 @@ import Colors from '@/constants/Colors';
 import { DOCK_CLEARANCE } from '@/constants/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { useCelebration } from '@/hooks/useCelebration';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-import * as Haptics from 'expo-haptics';
-import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   clearCompletedShoppingItems,
   createShoppingItem,
@@ -26,6 +18,12 @@ import {
   toggleShoppingItem,
   updateShoppingItemQuantity,
 } from '@/services/shopping';
+import type { ShoppingItem } from '@/types/models';
+import * as Haptics from 'expo-haptics';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ShoppingList() {
   const { user } = useAuth();
@@ -41,8 +39,6 @@ export default function ShoppingList() {
   const [editQty, setEditQty] = useState('');
   const familyRef = useRef(familyId ?? null);
   const [errorItemId, setErrorItemId] = useState<string | null>(null);
-
-  const { celebrate, CelebrationOverlay } = useCelebration();
 
   useEffect(() => {
     familyRef.current = familyId ?? null;
@@ -152,7 +148,6 @@ export default function ShoppingList() {
     if (!item || !currentFamilyId) return;
 
     const newDone = !item.done;
-    const willCompleteAll = newDone && totalCount >= 1 && completedCount === totalCount - 1;
     let snapshot: ShoppingItem[] = [];
     setItems((prev) => {
       snapshot = prev;
@@ -179,8 +174,6 @@ export default function ShoppingList() {
       if (newDone) {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
-
-      if (willCompleteAll) celebrate();
     } catch {
       setItems(() => snapshot);
       setErrorItemId(id);
@@ -251,9 +244,7 @@ export default function ShoppingList() {
     });
   };
 
-  const completedCount = items.filter((i) => i.done).length;
-  const totalCount = items.length;
-  const pendingCount = totalCount - completedCount;
+  const hasCompletedItems = items.some((i) => i.done);
 
   const baseItems = filterName
     ? items.filter((item) => item.name.toLowerCase().includes(filterName.toLowerCase()))
@@ -262,13 +253,9 @@ export default function ShoppingList() {
   const pendingItems = baseItems.filter((i) => !i.done);
   const completedItems = baseItems.filter((i) => i.done);
 
-  const progress = totalCount > 0 ? completedCount / totalCount : 0;
-
   const renderHeader = () => (
     <ShoppingListHeader
-      pendingCount={pendingCount}
-      completedCount={completedCount}
-      progress={progress}
+      hasCompletedItems={hasCompletedItems}
       newItemName={newItemName}
       newItemQty={newItemQty}
       filterName={filterName}
@@ -285,7 +272,7 @@ export default function ShoppingList() {
       iconName="cart-outline"
       iconSize={40}
       iconColor={Colors.light.primary}
-      iconBackgroundColor={Colors.light.accentPurpleSurface}
+      iconBackgroundColor={`${Colors.light.primary}12`}
       title={filterName ? 'Nenhum resultado' : 'Lista vazia'}
       subtitle={filterName ? 'Tente buscar outro termo' : 'Adicione itens à sua lista'}
       actionLabel={filterName ? undefined : 'Adicionar item'}
@@ -297,16 +284,8 @@ export default function ShoppingList() {
     return <LoadingSkeleton variant="shopping" />;
   }
 
-  const renderSectionHeader = (
-    label: string,
-    count: number,
-    items: ShoppingItem[],
-    done: boolean,
-  ) => {
-    const totalPoints = items.reduce((sum, item) => sum + (item.points || 0), 0);
-    return (
-      <ShoppingSectionHeader label={label} count={count} totalPoints={totalPoints} done={done} />
-    );
+  const renderSectionHeader = (label: string) => {
+    return <ShoppingSectionHeader label={label} />;
   };
 
   const renderList = () => {
@@ -316,11 +295,7 @@ export default function ShoppingList() {
 
     const rows: React.ReactElement[] = [];
     if (pendingItems.length > 0) {
-      rows.push(
-        <View key="pending-header">
-          {renderSectionHeader('A comprar', pendingItems.length, pendingItems, false)}
-        </View>,
-      );
+      rows.push(<View key="pending-header">{renderSectionHeader('A comprar')}</View>);
       pendingItems.forEach((item, idx) =>
         rows.push(
           <ShoppingItemCard
@@ -340,7 +315,7 @@ export default function ShoppingList() {
     if (completedItems.length > 0) {
       rows.push(
         <View key="done-header" style={styles.sectionHeaderDone}>
-          {renderSectionHeader('Comprados', completedItems.length, completedItems, true)}
+          {renderSectionHeader('Comprados')}
         </View>,
       );
       completedItems.forEach((item, idx) =>
@@ -361,10 +336,10 @@ export default function ShoppingList() {
     }
 
     return (
-      <View style={styles.listWrap}>
+      <ScrollView style={styles.listWrap} showsVerticalScrollIndicator={false}>
         {renderHeader()}
         {items.length === 0 ? renderEmpty() : <View style={styles.listContent}>{rows}</View>}
-      </View>
+      </ScrollView>
     );
   };
 
@@ -384,8 +359,6 @@ export default function ShoppingList() {
         onSave={handleSaveQuantity}
         onClose={() => setEditingItem(null)}
       />
-
-      <CelebrationOverlay />
     </SafeAreaView>
   );
 }

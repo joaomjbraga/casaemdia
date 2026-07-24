@@ -1,15 +1,14 @@
-import Avatar from '@/components/common/Avatar';
+import ZappIcon from '@/components/common/ZappIcon';
 import { Cell, ListSection, SectionLabel } from '@/components/settings/SettingsList';
 import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
-import logger from '@/lib/logger';
-import { toast } from '@/lib/toast';
 import Colors from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useInvitations } from '@/contexts/InvitationContext';
-import ZappIcon from '@/components/common/ZappIcon';
+import logger from '@/lib/logger';
+import { toast } from '@/lib/toast';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -28,21 +27,13 @@ export default function SettingsScreen() {
 }
 
 function SettingsInner() {
-  const [inviteEmail, setInviteEmail] = useState<string>('');
+  const [inviteEmail, setInviteEmail] = useState('');
   const [deletingMember, setDeletingMember] = useState<string | null>(null);
-  const [deletingAccount, setDeletingAccount] = useState<boolean>(false);
-  const [inviteLoading, setInviteLoading] = useState<boolean>(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(false);
 
-  const {
-    members,
-    loading: memberLoading,
-    deleteFamilyMember,
-    fetchMembers,
-    familyId,
-    familyName,
-    beginIntentionalExit,
-    cancelIntentionalExit,
-  } = useFamily();
+  const { members, deleteFamilyMember, familyId, beginIntentionalExit, cancelIntentionalExit } =
+    useFamily();
   const { sendInvitation } = useInvitations();
   const router = useRouter();
   const { user, signOut, deleteAccount } = useAuth();
@@ -91,7 +82,6 @@ function SettingsInner() {
         try {
           setDeletingMember(memberId);
           if (!familyId) throw new Error('Família não carregada');
-
           await deleteFamilyMember(memberId);
           toast.success(`${memberName} foi removido.`);
         } catch (error: any) {
@@ -116,13 +106,11 @@ function SettingsInner() {
         try {
           setDeletingAccount(true);
           beginIntentionalExit();
-
           await deleteUserAccountFromFamily({
             familyId,
             userId: user.uid,
             deleteAccount,
           });
-
           router.replace('/(auth)/login');
         } catch (error) {
           cancelIntentionalExit();
@@ -165,10 +153,10 @@ function SettingsInner() {
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backBtn}
-            activeOpacity={0.6}
+            activeOpacity={0.5}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <ZappIcon name="chevron-left" size={28} color={Colors.light.primary} />
+            <ZappIcon name="chevron-left" size={24} color={Colors.light.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Configurações</Text>
           <View style={styles.headerRight} />
@@ -180,101 +168,54 @@ function SettingsInner() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.profileBlock}>
-          <Avatar
-            photoURL={user?.photoURL}
-            size={64}
-            borderRadius={20}
-            borderColor={isAdmin ? Colors.light.accentPurple : Colors.light.border}
-            borderWidth={isAdmin ? 2 : 1}
-            backgroundColor={Colors.light.cardDark}
-            iconName="account"
-            iconColor={Colors.light.primary}
-            iconSize={32}
-          />
-          <Text style={styles.profileName} numberOfLines={1}>
-            {user?.displayName || 'Usuário'}
-          </Text>
-          <Text style={styles.profileEmail} numberOfLines={1}>
-            {user?.email}
-          </Text>
-          <View style={[styles.rolePill, isAdmin && styles.rolePillAdmin]}>
-            <Text style={[styles.rolePillText, isAdmin && styles.rolePillTextAdmin]}>
-              {isAdmin ? 'Administrador' : 'Membro'}
-            </Text>
-          </View>
-        </View>
+        {isAdmin && (
+          <>
+            <SectionLabel text="CONVITES" />
+            <ListSection>
+              <Cell first last>
+                <View style={styles.inviteBody}>
+                  <View style={styles.inputBox}>
+                    <TextInput
+                      style={styles.memberInput}
+                      value={inviteEmail}
+                      onChangeText={setInviteEmail}
+                      placeholder="email@exemplo.com"
+                      placeholderTextColor={Colors.light.mutedText}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.sendBtn,
+                        (!inviteEmail.trim() || inviteLoading) && styles.sendBtnDisabled,
+                      ]}
+                      onPress={handleInvite}
+                      disabled={!inviteEmail.trim() || inviteLoading}
+                      activeOpacity={0.5}
+                    >
+                      {inviteLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <ZappIcon name="plus" size={16} color="#fff" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Cell>
+            </ListSection>
+          </>
+        )}
 
-        <SectionLabel text={'Família · ' + familyName} />
+        <SectionLabel text="MEMBROS" />
 
         <ListSection>
-          {isAdmin && (
-            <Cell first last={!members.length}>
-              <View style={styles.inviteBody}>
-                <View style={styles.inviteRow}>
-                  <ZappIcon name="email-fast-outline" size={22} color={Colors.light.accentPurple} />
-                  <Text style={styles.inviteTitle}>Convidar por email</Text>
-                </View>
-                <View style={styles.inputBox}>
-                  <ZappIcon
-                    name="email-outline"
-                    size={18}
-                    color={Colors.light.mutedText}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.memberInput}
-                    value={inviteEmail}
-                    onChangeText={setInviteEmail}
-                    placeholder="email@exemplo.com"
-                    placeholderTextColor={Colors.light.mutedText}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-                <TouchableOpacity
-                  style={[
-                    styles.primaryBtn,
-                    (!inviteEmail.trim() || inviteLoading) && styles.btnDisabled,
-                  ]}
-                  onPress={handleInvite}
-                  disabled={!inviteEmail.trim() || inviteLoading}
-                  activeOpacity={0.7}
-                >
-                  {inviteLoading ? (
-                    <ActivityIndicator size="small" color={Colors.light.text} />
-                  ) : (
-                    <>
-                      <ZappIcon name="send" size={18} color={Colors.light.text} />
-                      <Text style={styles.primaryBtnText}>Enviar convite</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </Cell>
-          )}
-
           {members.map((member, index) => (
-            <Cell
-              key={member.id}
-              first={index === 0 && !isAdmin}
-              last={index === members.length - 1}
-            >
+            <Cell key={member.id} first={index === 0} last={index === members.length - 1}>
               <View style={styles.memberRow}>
-                <Avatar
-                  photoURL={member.photoURL}
-                  size={38}
-                  borderRadius={12}
-                  borderColor={
-                    member.role === 'admin' ? Colors.light.accentPurple : Colors.light.border
-                  }
-                  borderWidth={member.role === 'admin' ? 2 : 1}
-                  backgroundColor={Colors.light.cardDark}
-                  iconName="account"
-                  iconColor={Colors.light.primary}
-                  iconSize={18}
-                />
+                <View style={styles.memberAvatar}>
+                  <Text style={styles.memberInitial}>{(member.name || '?')[0].toUpperCase()}</Text>
+                </View>
                 <View style={styles.memberInfo}>
                   <View style={styles.memberNameRow}>
                     <Text style={styles.memberName} numberOfLines={1}>
@@ -282,7 +223,7 @@ function SettingsInner() {
                     </Text>
                     {member.role === 'admin' && (
                       <View style={styles.adminBadge}>
-                        <Text style={styles.adminBadgeText}>Admin</Text>
+                        <Text style={styles.adminBadgeText}>ADMIN</Text>
                       </View>
                     )}
                   </View>
@@ -297,13 +238,13 @@ function SettingsInner() {
                     onPress={() => handleDeleteMember(member.id, member.name)}
                     disabled={deletingMember === member.id}
                     style={styles.removeBtn}
-                    activeOpacity={0.6}
+                    activeOpacity={0.5}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
                     {deletingMember === member.id ? (
-                      <ActivityIndicator size={16} color={Colors.light.danger} />
+                      <ActivityIndicator size={14} color={Colors.light.danger} />
                     ) : (
-                      <ZappIcon name="close" size={20} color={Colors.light.danger} />
+                      <ZappIcon name="close" size={15} color={Colors.light.mutedText} />
                     )}
                   </TouchableOpacity>
                 )}
@@ -312,32 +253,30 @@ function SettingsInner() {
           ))}
         </ListSection>
 
-        <SectionLabel text="Conta" />
+        <SectionLabel text="CONTA" />
 
         <ListSection>
-          <Cell first last={false} onPress={handleSignOut} chevron>
+          <Cell first onPress={handleSignOut} chevron>
             <View style={styles.actionRow}>
-              <View style={[styles.actionIcon, styles.iconRed]}>
-                <ZappIcon name="logout-variant" size={20} color={Colors.light.danger} />
+              <View style={styles.actionIcon}>
+                <ZappIcon name="logout-variant" size={16} color={Colors.light.danger} />
               </View>
               <Text style={[styles.actionText, styles.textRed]}>Sair da conta</Text>
             </View>
           </Cell>
-          <Cell first={false} last onPress={handleDeleteAccount} chevron disabled={deletingAccount}>
+          <Cell last onPress={handleDeleteAccount} chevron disabled={deletingAccount}>
             <View style={styles.actionRow}>
-              <View style={[styles.actionIcon, styles.iconRed]}>
-                <ZappIcon name="account-remove-outline" size={20} color={Colors.light.danger} />
+              <View style={styles.actionIcon}>
+                <ZappIcon name="account-remove-outline" size={16} color={Colors.light.danger} />
               </View>
               {deletingAccount ? (
-                <ActivityIndicator size={18} color={Colors.light.danger} />
+                <ActivityIndicator size={16} color={Colors.light.danger} />
               ) : (
                 <Text style={[styles.actionText, styles.textRed]}>Excluir conta</Text>
               )}
             </View>
           </Cell>
         </ListSection>
-
-        <Text style={styles.footer}>Casa em Dia</Text>
       </ScrollView>
     </View>
   );
@@ -359,7 +298,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   backBtn: {
     width: 44,
@@ -368,133 +307,99 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.light.text,
+    letterSpacing: -0.2,
   },
   headerRight: { width: 44 },
   content: { flex: 1 },
-  contentContainer: { paddingTop: 8, paddingBottom: 40 },
-  profileBlock: {
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 20,
-  },
-  profileName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginTop: 14,
-    letterSpacing: -0.4,
-  },
-  profileEmail: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.light.mutedText,
-    marginTop: 2,
-  },
-  rolePill: {
-    marginTop: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    backgroundColor: Colors.light.cardDark,
-  },
-  rolePillAdmin: {
-    backgroundColor: 'rgba(255, 204, 0, 0.2)',
-  },
-  rolePillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.light.mutedText,
-  },
-  rolePillTextAdmin: { color: Colors.light.warning },
-  inviteBody: { width: '100%', paddingVertical: 4 },
-  inviteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 12,
-  },
-  inviteTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
+  contentContainer: { paddingTop: 16, paddingBottom: 40 },
+  inviteBody: { width: '100%', paddingVertical: 2 },
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.inputBackground,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.inputBorder,
-    paddingHorizontal: 14,
-    marginBottom: 12,
+    gap: 8,
   },
   memberInput: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '400',
+    fontSize: 14,
+    fontWeight: '500',
     color: Colors.light.text,
-    paddingVertical: 12,
+    backgroundColor: Colors.light.inputBackground,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.light.inputBorder,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  sendBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     backgroundColor: Colors.light.primary,
-    paddingVertical: 14,
-    borderRadius: 24,
-    gap: 8,
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  btnDisabled: { opacity: 0.5 },
-  primaryBtnText: { fontSize: 16, fontWeight: '700', color: Colors.light.text },
+  sendBtnDisabled: {
+    opacity: 0.4,
+  },
   memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     gap: 12,
   },
+  memberAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: Colors.light.cardDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  memberInitial: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: 0.2,
+  },
   memberInfo: { flex: 1, minWidth: 0 },
   memberNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   memberName: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 13.5,
+    fontWeight: '600',
     color: Colors.light.text,
+    letterSpacing: -0.1,
   },
   memberEmail: {
-    fontSize: 13,
-    fontWeight: '400',
+    fontSize: 11,
+    fontWeight: '500',
     color: Colors.light.mutedText,
-    marginTop: 1,
+    marginTop: 2,
   },
   adminBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     borderRadius: 6,
-    backgroundColor: 'rgba(255, 204, 0, 0.2)',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
   },
   adminBadgeText: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '700',
-    color: Colors.light.warning,
+    color: Colors.light.mutedText,
+    letterSpacing: 0.4,
   },
   removeBtn: {
     padding: 4,
-    marginLeft: 8,
+    marginLeft: 4,
   },
   actionRow: {
     flexDirection: 'row',
@@ -502,27 +407,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-  },
-  iconRed: {
-    backgroundColor: 'rgba(255, 59, 48, 0.12)',
+    marginRight: 12,
   },
   actionText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 13.5,
+    fontWeight: '600',
     color: Colors.light.text,
+    letterSpacing: -0.1,
   },
   textRed: { color: Colors.light.danger },
-  footer: {
-    textAlign: 'center',
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.light.mutedText,
-    marginTop: 32,
-  },
 });

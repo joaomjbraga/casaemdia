@@ -2,14 +2,14 @@
 
 # Casa em Dia
 
-Casa em Dia é um aplicativo mobile para organização doméstica, criado com React Native, Expo e Firebase. O projeto concentra tarefas, lista de compras, convites de família, gamificação e notificações em uma experiência colaborativa para o dia a dia.
+Casa em Dia é um aplicativo mobile para organização doméstica, criado com React Native, Expo e Firebase. O projeto concentra tarefas, lista de compras, convites de família e notificações em uma experiência colaborativa para o dia a dia.
 
 ## O que o app faz
 
 - Login com Google via Firebase Auth
 - Gestão de famílias compartilhadas com convites por e-mail
-- Tarefas com responsáveis, pontos e ranking
-- Lista de compras colaborativa com pontos por item marcado como comprado
+- Tarefas com responsáveis
+- Lista de compras colaborativa
 - Notificações push via OneSignal
 - Tema claro estilo iOS com visual minimalista
 - Navegação e componentes reestilizados para maior clareza e consistência
@@ -29,7 +29,7 @@ A base do projeto foi reorganizada para separar responsabilidades entre:
   - shopping.ts
   - family-members.ts
   - account.ts
-- Helpers e integrações em src/lib, incluindo Firebase, gamificação, OneSignal e autenticação Google
+- Helpers e integrações em src/lib, incluindo Firebase, OneSignal e autenticação Google
 
 Essa estrutura ajuda a manter as telas mais enxutas e centraliza as regras de negócio em pontos mais fáceis de manter.
 
@@ -97,7 +97,7 @@ Resumo do fluxo principal:
 - O primeiro login cria a família do usuário, quando necessário
 - O administrador pode convidar membros por e-mail
 - O convite é aceito pelo destinatário e o membro entra na família
-- As operações principais de tarefas, compras, convites e gamificação são persistidas no Firestore
+- As operações principais de tarefas, compras e convites são persistidas no Firestore
 
 ## Notificações push
 

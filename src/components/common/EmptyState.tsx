@@ -19,43 +19,42 @@ export default function EmptyState({
   iconName,
   title,
   subtitle,
-  iconSize = 48,
-  iconColor = Colors.light.primary,
-  iconBackgroundColor = Colors.light.accentPurpleSurface,
+  iconSize = 40,
+  iconColor = Colors.light.mutedText,
+  iconBackgroundColor = '#F1F5F9',
   containerStyle,
   actionLabel,
   onAction,
 }: EmptyStateProps) {
-  const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(10)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scale, {
-        toValue: 1,
-        useNativeDriver: true,
-        damping: 14,
-        stiffness: 180,
-        mass: 0.8,
-      }),
       Animated.timing(opacity, {
         toValue: 1,
         duration: 320,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 320,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
     ]).start();
-  }, [scale, opacity]);
+  }, [opacity, translateY]);
 
   return (
-    <Animated.View style={[styles.container, containerStyle, { opacity, transform: [{ scale }] }]}>
+    <Animated.View style={[styles.container, containerStyle, { opacity, translateY }]}>
       <View style={[styles.iconContainer, { backgroundColor: iconBackgroundColor }]}>
         <ZappIcon name={iconName} size={iconSize} color={iconColor} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
       {actionLabel && onAction && (
-        <TouchableOpacity style={styles.actionBtn} onPress={onAction} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.actionBtn} onPress={onAction} activeOpacity={0.6}>
           <Text style={styles.actionText}>{actionLabel}</Text>
         </TouchableOpacity>
       )}
@@ -66,51 +65,42 @@ export default function EmptyState({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: 36,
-    gap: 12,
+    paddingVertical: 32,
+    gap: 10,
   },
   iconContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
+    width: 72,
+    height: 72,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    marginBottom: 6,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: Colors.light.text,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: Colors.light.mutedText,
     textAlign: 'center',
-    paddingHorizontal: 24,
-    lineHeight: 20,
+    paddingHorizontal: 32,
+    lineHeight: 18,
   },
   actionBtn: {
-    marginTop: 12,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 14,
+    marginTop: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
     backgroundColor: Colors.light.primary,
-    shadowColor: Colors.light.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 0,
-    elevation: 4,
-    borderBottomWidth: 3,
-    borderBottomColor: 'rgba(0, 100, 200, 0.4)',
   },
   actionText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.light.textWhite,
-    letterSpacing: -0.2,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    letterSpacing: -0.1,
   },
 });

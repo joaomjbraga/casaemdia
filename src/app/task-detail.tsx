@@ -10,7 +10,6 @@ import Card from '@/components/common/Card';
 import Badge from '@/components/common/Badge';
 import PrimaryActionButton from '@/components/common/PrimaryActionButton';
 import ZappIcon from '@/components/common/ZappIcon';
-import ProgressRing from '@/components/common/ProgressRing';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
@@ -21,7 +20,6 @@ export default function TaskDetailScreen() {
     title: string;
     assignee: string;
     assigneeId: string;
-    points: string;
     done: string;
   }>();
   const { familyId } = useFamily();
@@ -29,48 +27,38 @@ export default function TaskDetailScreen() {
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
 
-  const scale = useRef(new Animated.Value(0.9)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const contentTranslateY = useRef(new Animated.Value(12)).current;
   const checkScale = useRef(new Animated.Value(0)).current;
 
   const isDone = params.done === 'true';
-  const points = Number(params.points) || 0;
   const isOwner = user?.uid === params.assigneeId;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(scale, {
+      Animated.timing(contentOpacity, {
         toValue: 1,
+        duration: 320,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-        damping: 14,
-        stiffness: 180,
-        mass: 0.8,
       }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 300,
+      Animated.timing(contentTranslateY, {
+        toValue: 0,
+        duration: 320,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start();
 
     if (isDone) {
-      Animated.sequence([
-        Animated.spring(checkScale, {
-          toValue: 1.2,
-          useNativeDriver: true,
-          damping: 8,
-          stiffness: 300,
-        }),
-        Animated.spring(checkScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          damping: 12,
-          stiffness: 200,
-        }),
-      ]).start();
+      Animated.spring(checkScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        damping: 22,
+        stiffness: 120,
+      }).start();
     }
-  }, [scale, opacity, checkScale, isDone]);
+  }, [contentOpacity, contentTranslateY, checkScale, isDone]);
 
   const handleComplete = () => {
     if (!familyId || !params.taskId) return;
@@ -92,7 +80,6 @@ export default function TaskDetailScreen() {
               done: false,
               assignee: params.assignee,
               assigneeId: params.assigneeId,
-              points,
             },
             newDone: true,
             options: {
@@ -117,24 +104,17 @@ export default function TaskDetailScreen() {
     <View style={styles.container}>
       <BackHeader />
 
-      <Animated.View style={[styles.content, { opacity, transform: [{ scale }] }]}>
+      <Animated.View style={[styles.content, { opacity: contentOpacity, transform: [{ translateY: contentTranslateY }] }]}>
         <View style={styles.iconSection}>
-          <ProgressRing
-            size={80}
-            strokeWidth={5}
-            progress={isDone ? 100 : 0}
-            color={isDone ? Colors.light.success : Colors.light.primary}
-          >
-            <View style={[styles.iconCircle, isDone && styles.iconCircleDone]}>
-              <Animated.View style={{ transform: [{ scale: checkScale }] }}>
-                <ZappIcon
-                  name={isDone ? 'check' : 'checkbox-blank-circle-outline'}
-                  size={32}
-                  color={isDone ? '#fff' : Colors.light.mutedText}
-                />
-              </Animated.View>
-            </View>
-          </ProgressRing>
+          <View style={[styles.iconCircle, isDone && styles.iconCircleDone]}>
+            <Animated.View style={{ transform: [{ scale: checkScale }] }}>
+              <ZappIcon
+                name={isDone ? 'check' : 'checkbox-blank-circle-outline'}
+                size={32}
+                color={isDone ? '#fff' : Colors.light.mutedText}
+              />
+            </Animated.View>
+          </View>
         </View>
 
         <Text style={styles.title}>{params.title}</Text>
@@ -154,18 +134,6 @@ export default function TaskDetailScreen() {
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Responsável</Text>
               <Text style={styles.detailValue}>{params.assignee}</Text>
-            </View>
-          </View>
-
-          <View style={styles.detailDivider} />
-
-          <View style={styles.detailRow}>
-            <View style={styles.detailIcon}>
-              <ZappIcon name="star" size={18} color={Colors.light.primary} />
-            </View>
-            <View style={styles.detailContent}>
-              <Text style={styles.detailLabel}>Pontos</Text>
-              <Text style={[styles.detailValue, { color: Colors.light.primary }]}>{points} XP</Text>
             </View>
           </View>
         </Card>
@@ -221,10 +189,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.success,
     borderColor: Colors.light.success,
     shadowColor: Colors.light.success,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   title: {
     fontSize: 22,
@@ -270,11 +238,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.light.text,
     letterSpacing: -0.2,
-  },
-  detailDivider: {
-    height: 1,
-    backgroundColor: Colors.light.border,
-    marginVertical: 16,
   },
   actionBtn: {
     width: '100%',

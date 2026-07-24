@@ -1,5 +1,68 @@
+import * as Cellular from 'expo-cellular';
+import NetInfo, { NetInfoStateType } from '@react-native-community/netinfo';
+import { Platform } from 'react-native';
 import { OneSignal, LogLevel, type NotificationClickEvent } from 'react-native-onesignal';
 import logger from '@/lib/logger';
+
+export interface PushDiagnostic {
+  hasPermission: boolean;
+  chipPresent: boolean;
+  noService: boolean;
+  phonePermissionDenied: boolean;
+  carrierName: string | null;
+  reason: string;
+}
+
+export async function diagnosePushFailure(): Promise<PushDiagnostic> {
+  const hasPermission = await checkPushPermission();
+
+  let chipPresent = false;
+  let noService = false;
+  let phonePermissionDenied = false;
+  let carrierName: string | null = null;
+
+  try {
+    if (Platform.OS === 'android') {
+      let perm = await Cellular.getPermissionsAsync();
+      if (!perm.granted && perm.canAskAgain) {
+        perm = await Cellular.requestPermissionsAsync();
+      }
+      phonePermissionDenied = !perm.granted;
+    }
+
+    const [carrier, mcc, generation] = await Promise.all([
+      Cellular.getCarrierNameAsync().catch(() => null),
+      Cellular.getMobileCountryCodeAsync().catch(() => null),
+      Cellular.getCellularGenerationAsync().catch(() => Cellular.CellularGeneration.UNKNOWN),
+    ]);
+
+    carrierName = carrier && carrier.trim().length > 0 ? carrier : null;
+    chipPresent = !!carrierName || !!(mcc && mcc.trim().length > 0);
+    const hasNetworkService = generation !== Cellular.CellularGeneration.UNKNOWN;
+
+    if (!chipPresent || !hasNetworkService) {
+      try {
+        const net = await NetInfo.fetch();
+        if (net.type === NetInfoStateType.cellular && net.isConnected) {
+          chipPresent = true;
+        }
+      } catch { /* ignore */ }
+    }
+
+    if (chipPresent && !hasNetworkService) {
+      noService = true;
+    }
+  } catch { /* ignore */ }
+
+  let reason = '';
+  if (!hasPermission) reason = 'Permissão de push negada pelo sistema.';
+  else if (phonePermissionDenied) reason = 'Permissão de telefone negada — não é possível detectar chip.';
+  else if (!chipPresent) reason = 'Nenhum chip (SIM) detectado no dispositivo.';
+  else if (noService) reason = 'Chip detectado mas sem serviço de rede móvel.';
+  else reason = 'Permissão de push negada pelo usuário.';
+
+  return { hasPermission, chipPresent, noService, phonePermissionDenied, carrierName, reason };
+}
 
 const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '';
 const ONESIGNAL_REST_API_KEY = process.env.EXPO_PUBLIC_ONESIGNAL_REST_API_KEY || '';

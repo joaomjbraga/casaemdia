@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import AddTaskForm from '@/components/tasks/AddTaskForm';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet } from 'react-native';
 import Colors from '@/constants/Colors';
 
 export default function AddTaskScreen() {

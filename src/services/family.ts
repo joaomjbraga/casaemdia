@@ -30,10 +30,6 @@ export const fetchFamilyMembers = async (familyId: string) => {
       email: data.email ?? '',
       photoURL: data.photoURL ?? null,
       role: (data.role ?? 'member') as 'admin' | 'member',
-      points: data.points ?? 0,
-      tasksCompleted: data.tasksCompleted ?? 0,
-      shoppingCompleted: data.shoppingCompleted ?? 0,
-      contributions: data.contributions ?? 0,
     };
   }) satisfies FamilyMember[];
 };
@@ -63,10 +59,6 @@ export const subscribeToFamilyMembers = (
           email: data.email ?? '',
           photoURL: data.photoURL ?? null,
           role: (data.role ?? 'member') as 'admin' | 'member',
-          points: data.points ?? 0,
-          tasksCompleted: data.tasksCompleted ?? 0,
-          shoppingCompleted: data.shoppingCompleted ?? 0,
-          contributions: data.contributions ?? 0,
         };
       });
       callback(membersList);
@@ -209,18 +201,8 @@ export const acceptFamilyInvitation = async (
   const userRef = doc(db, 'users', uid);
   const batch = writeBatch(db);
 
-  const oldMemberData: Record<string, any> = {};
-
   if (currentFamilyId && currentFamilyId !== targetFamilyId) {
     const oldMemberRef = doc(db, 'families', currentFamilyId, 'members', uid);
-    const oldMemberSnap = await getDoc(oldMemberRef);
-    if (oldMemberSnap.exists()) {
-      const oldData = oldMemberSnap.data();
-      oldMemberData.points = oldData.points ?? 0;
-      oldMemberData.tasksCompleted = oldData.tasksCompleted ?? 0;
-      oldMemberData.shoppingCompleted = oldData.shoppingCompleted ?? 0;
-      oldMemberData.contributions = oldData.contributions ?? 0;
-    }
     batch.delete(oldMemberRef);
   }
 
@@ -231,12 +213,6 @@ export const acceptFamilyInvitation = async (
     role: 'member',
     invitationId,
     joinedAt: serverTimestamp(),
-    ...(oldMemberData.points ? { points: oldMemberData.points } : {}),
-    ...(oldMemberData.tasksCompleted ? { tasksCompleted: oldMemberData.tasksCompleted } : {}),
-    ...(oldMemberData.shoppingCompleted
-      ? { shoppingCompleted: oldMemberData.shoppingCompleted }
-      : {}),
-    ...(oldMemberData.contributions ? { contributions: oldMemberData.contributions } : {}),
   });
 
   batch.set(

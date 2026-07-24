@@ -47,7 +47,6 @@
       ],
       ["@react-native-google-signin/google-signin/app.plugin.js"],
       "expo-audio",
-      "./plugins/withAndroidWindowBackground.js",
       "expo-video"
     ],
     "experiments": {

@@ -16,7 +16,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import logger from '@/lib/logger';
-import { creditCompletion, revertCompletion } from '../lib/gamification';
 import { sendNotificationToFamily } from '../lib/onesignal';
 
 const BATCH_LIMIT = 500;
@@ -39,7 +38,6 @@ const mapTaskSnapshot = (d: any): TaskSnapshot => {
     done: data.done,
     assignee: data.assignee,
     assigneeId: data.assigneeId,
-    points: data.points,
     createdAt: data.created_at,
   };
 };
@@ -87,25 +85,6 @@ const applyTaskCompletion = async ({
 
   if (!stateChanged) return;
 
-  const assigneeId = task.assigneeId || task.assignee;
-  if (!assigneeId) return;
-
-  try {
-    if (newDone) {
-      await creditCompletion(familyId, assigneeId, {
-        points: task.points,
-        task: true,
-      });
-    } else {
-      await revertCompletion(familyId, assigneeId, {
-        points: task.points,
-        task: true,
-      });
-    }
-  } catch (error) {
-    logger.error('Erro ao atualizar gamificação (tarefa):', error);
-  }
-
   if (options?.userName && options.userId) {
     try {
       await sendNotificationToFamily({
@@ -146,7 +125,6 @@ export const createTask = async (
     title: string;
     assignee: string;
     assigneeId: string;
-    points: number;
   },
   options?: TaskMutationOptions,
 ) => {
@@ -154,7 +132,6 @@ export const createTask = async (
     title: payload.title,
     assignee: payload.assignee,
     assigneeId: payload.assigneeId,
-    points: payload.points,
     done: false,
     created_at: Timestamp.now(),
   });

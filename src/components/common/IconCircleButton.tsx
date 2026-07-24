@@ -1,7 +1,6 @@
-import { useCallback, useMemo, useRef } from 'react';
-import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useRef } from 'react';
+import { Animated, StyleSheet, TouchableOpacity } from 'react-native';
 import ZappIcon from '@/components/common/ZappIcon';
-import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/Colors';
 
 interface IconCircleButtonProps {
@@ -19,71 +18,54 @@ export default function IconCircleButton({
   iconName,
   onPress,
   size = 40,
-  backgroundColor = 'rgba(255,255,255,0.06)',
-  borderColor = 'rgba(255,255,255,0.08)',
-  iconColor = Colors.light.text,
+  backgroundColor = 'rgba(0,147,148,0.08)',
+  borderColor = 'rgba(0,147,148,0.12)',
+  iconColor = Colors.light.primary,
   disabled = false,
   style,
 }: IconCircleButtonProps) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = useCallback(() => {
-    Animated.spring(scale, {
-      toValue: 0.92,
+  const handlePressIn = () => {
+    Animated.timing(opacity, {
+      toValue: 0.55,
+      duration: 100,
       useNativeDriver: true,
-      damping: 12,
-      stiffness: 300,
-      mass: 0.6,
     }).start();
-  }, [scale]);
+  };
 
-  const handlePressOut = useCallback(() => {
-    Animated.spring(scale, {
+  const handlePressOut = () => {
+    Animated.timing(opacity, {
       toValue: 1,
+      duration: 150,
       useNativeDriver: true,
-      damping: 12,
-      stiffness: 300,
-      mass: 0.6,
     }).start();
-  }, [scale]);
+  };
 
-  const handlePress = useCallback(async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress();
-  }, [onPress]);
-
-  const iconSize = size * 0.5;
-
-  const animatedButtonStyle = useMemo(
-    () => ({
-      width: size,
-      height: size,
-      borderRadius: size * 0.36,
-      backgroundColor,
-      borderColor,
-      transform: [{ scale }],
-      borderBottomWidth: Math.max(3, size * 0.08),
-      borderBottomColor: 'rgba(0, 0, 0, 0.12)',
-    }),
-    [size, backgroundColor, borderColor, scale],
-  );
+  const iconSize = Math.round(size * 0.45);
 
   return (
     <TouchableOpacity
-      onPress={handlePress}
+      onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.85}
+      activeOpacity={1}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={style}
-      // @ts-ignore
-      android_ripple={{
-        color: 'rgba(0, 0, 0, 0.08)',
-        borderless: true,
-      }}
+      style={[style, { width: size, height: size, borderRadius: size / 2 }]}
     >
       <Animated.View
-        style={[styles.button, styles.button3D, animatedButtonStyle, disabled && styles.disabled]}
+        style={[
+          styles.button,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor,
+            borderColor,
+            opacity,
+          },
+          disabled && styles.disabled,
+        ]}
       >
         <ZappIcon name={iconName} size={iconSize} color={iconColor} />
       </Animated.View>
@@ -95,16 +77,9 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-  },
-  button3D: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.35,
   },
 });
