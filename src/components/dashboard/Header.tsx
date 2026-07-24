@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.light.border,
   },
   statusBarSpacer: {
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.light.backgroundSecondary,
   },
   bar: {
     flexDirection: 'row',
