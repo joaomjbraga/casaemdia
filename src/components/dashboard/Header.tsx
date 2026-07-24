@@ -1,5 +1,4 @@
 import IconCircleButton from '@/components/common/IconCircleButton';
-import ZappIcon from '@/components/common/ZappIcon';
 import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
 import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import Colors from '@/constants/Colors';
@@ -15,13 +14,17 @@ export default function Header() {
   const { familyName, members } = useFamily();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
+
   const { top: statusBarHeight } = useSafeAreaInsets();
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const currentUser = members.find((m) => m.id === user?.uid);
+  const currentUser = members.find((member) => member.id === user?.uid);
   const isAdmin = currentUser?.role === 'admin';
 
   const userInitial = (user?.displayName || user?.email || '?')[0].toUpperCase();
+
+  const membersCount = members.length;
 
   const handleLogout = useCallback(() => {
     showDialog({
@@ -33,9 +36,11 @@ export default function Header() {
       onConfirm: async () => {
         try {
           setIsLoggingOut(true);
+
           await signOut();
+
           router.replace('/(auth)/login');
-        } catch (error) {
+        } catch {
           showAlert({
             title: 'Erro',
             message: 'Não foi possível sair da conta. Tente novamente.',
@@ -52,21 +57,23 @@ export default function Header() {
     router.push('/_settings');
   }, []);
 
-  const membersCount = members?.length ?? 0;
-
   return (
     <View style={styles.container}>
-      <View style={[styles.statusBarSpacer, { height: statusBarHeight }]} />
+      {/* Área da Status Bar */}
+      <View style={{ height: statusBarHeight }} />
 
+      {/* Header */}
       <View style={styles.bar}>
         <View style={styles.brandSection}>
           <View style={styles.userAvatar}>
             <Text style={styles.userInitial}>{userInitial}</Text>
           </View>
+
           <View style={styles.appTitleContainer}>
             <Text style={styles.appName} numberOfLines={1}>
               {familyName || 'Casa em Dia'}
             </Text>
+
             <Text style={styles.appSubtitle}>
               {membersCount} {membersCount === 1 ? 'membro' : 'membros'}
             </Text>
@@ -104,45 +111,47 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.light.border,
   },
-  statusBarSpacer: {
-    backgroundColor: Colors.light.backgroundSecondary,
-  },
+
   bar: {
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 8,
-    minHeight: 52,
+    paddingVertical: 8,
   },
+
+  brandSection: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginRight: 12,
+  },
+
   userAvatar: {
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: Colors.light.cardDark,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: Colors.light.cardDark,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
+
   userInitial: {
     fontSize: 14,
     fontWeight: '600',
     color: Colors.light.primary,
   },
-  brandSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
-    gap: 10,
-    marginRight: 12,
-  },
+
   appTitleContainer: {
     flex: 1,
     minWidth: 0,
   },
+
   appName: {
     fontSize: 16,
     fontWeight: '700',
@@ -150,16 +159,18 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: 2,
   },
+
   appSubtitle: {
     fontSize: 12,
     fontWeight: '500',
     color: Colors.light.mutedText,
     letterSpacing: 0.1,
   },
+
   actions: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    flexShrink: 0,
   },
 });

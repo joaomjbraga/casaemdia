@@ -18,7 +18,6 @@ import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -92,7 +91,7 @@ export default function Dashboard() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: Colors.light.background }]}>
+    <View style={styles.container}>
       <StatusBar style="dark" />
 
       <Header />
@@ -144,7 +143,7 @@ export default function Dashboard() {
           <TaskListPanel tasks={tasks} onPressTask={handleTaskPress} />
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

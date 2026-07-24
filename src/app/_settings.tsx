@@ -11,15 +11,14 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Platform,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { deleteUserAccountFromFamily } from '../services/account';
 
 export default function SettingsScreen() {
@@ -141,9 +140,7 @@ function SettingsInner() {
     });
   };
 
-  const statusBarHeight = useMemo(() => {
-    return StatusBar.currentHeight || (Platform.OS === 'ios' ? 44 : 24);
-  }, []);
+  const { top: statusBarHeight } = useSafeAreaInsets();
 
   return (
     <View style={styles.root}>
