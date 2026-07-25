@@ -22,6 +22,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+type ChatListItem =
+  | { id: string; type: 'date'; label: string }
+  | { id: string; type: 'message'; message: ChatMessage };
+
 export default function ChatScreen() {
   const { user } = useAuth();
   const { familyId, members } = useFamily();
@@ -30,13 +34,13 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
-  const flatListRef = useRef<FlatList<ChatMessage>>(null);
+  const flatListRef = useRef<FlatList<ChatListItem>>(null);
 
   const { top, bottom } = useSafeAreaInsets();
   const listBottomPadding = Math.max(24, bottom + 24);
 
-  const groupedMessages = useMemo(() => {
-    const groups: Array<{ id: string; type: 'date' | 'message'; label?: string; message?: ChatMessage }> = [];
+  const groupedMessages = useMemo<ChatListItem[]>(() => {
+    const groups: ChatListItem[] = [];
     let currentDateKey = '';
 
     messages.forEach((message) => {

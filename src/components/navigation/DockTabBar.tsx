@@ -1,4 +1,5 @@
 import ZappIcon from '@/components/common/ZappIcon';
+import { usePathname } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs';
 import React, { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -12,12 +13,14 @@ const ICON_MAP: Record<string, string> = {
   shoppinglist: 'cart',
   tasks: 'checkbox-marked',
   index: 'home-variant',
+  chat: 'chat-outline',
 };
 
 const LABEL_MAP: Record<string, string> = {
   shoppinglist: 'Compras',
   tasks: 'Tarefas',
   index: 'Início',
+  chat: 'Chat',
 };
 
 function DockItem({
@@ -33,9 +36,12 @@ function DockItem({
 }) {
   const bgOpacity = useSharedValue(0);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(0, 147, 148, ${bgOpacity.value * 0.08})`,
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    const alpha = Math.max(0.000001, Math.min(0.08, bgOpacity.value * 0.08));
+    return {
+      backgroundColor: `rgba(0, 147, 148, ${alpha.toFixed(6)})`,
+    };
+  });
 
   const handlePressIn = useCallback(() => {
     bgOpacity.value = withTiming(1, { duration: 120 });
@@ -71,7 +77,15 @@ function DockItem({
 }
 
 export default function DockTabBar({ state, navigation }: BottomTabBarProps) {
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
+
+  const normalizedPath = pathname.replace(/\/+$/, '');
+  const isChatRoute = normalizedPath === '/chat' || normalizedPath === '/(tabs)/chat';
+
+  if (isChatRoute) {
+    return null;
+  }
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom + 16 }]}>

@@ -75,7 +75,7 @@ export default function ShoppingListHeader({
 
         <TextInput
           style={styles.qtyInput}
-          placeholder="Quantidade / observação (opcional) — ex: 2L, marca X"
+          placeholder="observação (opcional)"
           placeholderTextColor={Colors.light.mutedText}
           value={newItemQty}
           onChangeText={onNewItemQtyChange}

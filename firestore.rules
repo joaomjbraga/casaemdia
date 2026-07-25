@@ -72,6 +72,18 @@ service cloud.firestore {
       match /shopping_list/{itemId} {
         allow read, write: if isMember(familyId);
       }
+
+      match /chat/{messageId} {
+        allow read: if signedIn() && (
+          isMember(familyId)
+          || get(/databases/$(database)/documents/families/$(familyId)).data.createdBy == request.auth.uid
+        );
+        allow create: if signedIn() && (
+          isMember(familyId)
+          || get(/databases/$(database)/documents/families/$(familyId)).data.createdBy == request.auth.uid
+        ) && request.resource.data.sender_id == request.auth.uid;
+        allow update, delete: if false;
+      }
     }
 
     match /invitations/{invitationId} {

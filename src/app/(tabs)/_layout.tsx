@@ -50,6 +50,14 @@ export default function TabLayout() {
           tabBarLabel: 'Compras',
         }}
       />
+
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+          tabBarLabel: 'Chat',
+        }}
+      />
     </Tabs>
   );
 }
