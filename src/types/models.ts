@@ -22,6 +22,14 @@ export interface ShoppingItem {
   quantity?: string;
 }
 
+export interface ChatAttachment {
+  url: string;
+  type: 'image' | 'audio' | 'file';
+  name?: string;
+  mimeType?: string;
+  publicId?: string;
+}
+
 export interface ChatMessage {
   id: string;
   text: string;
@@ -29,6 +37,7 @@ export interface ChatMessage {
   senderName: string;
   createdAt: any;
   status?: 'sending' | 'sent' | 'error';
+  attachment?: ChatAttachment;
 }
 
 export interface Invitation {

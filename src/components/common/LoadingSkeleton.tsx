@@ -29,15 +29,7 @@ export function SkeletonBlock({ style }: SkeletonBlockProps) {
     return () => animation.stop();
   }, [opacity]);
 
-  return (
-    <Animated.View
-      style={[
-        styles.skeletonBlock,
-        style,
-        { opacity },
-      ]}
-    />
-  );
+  return <Animated.View style={[styles.skeletonBlock, style, { opacity }]} />;
 }
 
 interface LoadingSkeletonProps {

@@ -80,10 +80,7 @@ function TaskRow({
         </View>
 
         <View style={styles.rowContent}>
-          <Text
-            style={[styles.rowTitle, task.done && styles.rowTitleDone]}
-            numberOfLines={1}
-          >
+          <Text style={[styles.rowTitle, task.done && styles.rowTitleDone]} numberOfLines={1}>
             {task.title}
           </Text>
           <Text style={styles.rowAssignee} numberOfLines={1}>

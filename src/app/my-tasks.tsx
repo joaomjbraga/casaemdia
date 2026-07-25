@@ -11,14 +11,7 @@ import { fetchDashboardTasks } from '@/services/tasks';
 import type { ShoppingItem, Task } from '@/types/models';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type FilterKey = 'pending' | 'done';
 

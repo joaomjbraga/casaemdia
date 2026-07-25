@@ -1,6 +1,13 @@
 import Colors from '@/constants/Colors';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ZappIcon from '@/components/common/ZappIcon';
 
@@ -8,14 +15,24 @@ interface ChatInputProps {
   onSend: (text: string) => void;
   disabled?: boolean;
   bottomInset?: number;
-  quickActions?: Array<{ label: string; value: string }>;
+  onPickImage?: () => void;
+  onPickAudio?: () => void;
+  onToggleAudioRecording?: () => void;
+  onPickCamera?: () => void;
+  uploading?: boolean;
+  isRecordingAudio?: boolean;
 }
 
 export default function ChatInput({
   onSend,
   disabled,
   bottomInset = 0,
-  quickActions = [],
+  onPickImage,
+  onPickAudio,
+  onToggleAudioRecording,
+  onPickCamera,
+  uploading = false,
+  isRecordingAudio = false,
 }: ChatInputProps) {
   const [text, setText] = useState('');
   const { bottom } = useSafeAreaInsets();
@@ -28,22 +45,44 @@ export default function ChatInput({
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(12, bottom + 8, bottomInset + 8) }] }>
-      {quickActions.length > 0 ? (
-        <View style={styles.quickActionsRow}>
-          {quickActions.map((action) => (
+    <View style={[styles.container, { paddingBottom: Math.max(12, bottom + 8, bottomInset + 8) }]}>
+      <View style={styles.inputRow} pointerEvents="box-none">
+        <View style={styles.actionsGroup}>
+          {onPickCamera ? (
             <TouchableOpacity
-              key={action.label}
-              style={styles.quickActionChip}
-              onPress={() => setText((current) => `${current}${current ? '\n' : ''}${action.value}`)}
+              style={styles.iconButton}
+              onPress={onPickCamera}
+              disabled={disabled || uploading}
               activeOpacity={0.8}
             >
-              <Text style={styles.quickActionText}>{action.label}</Text>
+              <ZappIcon name="camera" size={18} color={Colors.light.primary} />
             </TouchableOpacity>
-          ))}
+          ) : null}
+          {onPickImage ? (
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={onPickImage}
+              disabled={disabled || uploading}
+              activeOpacity={0.8}
+            >
+              <ZappIcon name="image-outline" size={18} color={Colors.light.primary} />
+            </TouchableOpacity>
+          ) : null}
+          {onPickAudio ? (
+            <TouchableOpacity
+              style={[styles.iconButton, isRecordingAudio && styles.iconButtonActive]}
+              onPress={onToggleAudioRecording || onPickAudio}
+              disabled={disabled || uploading}
+              activeOpacity={0.8}
+            >
+              <ZappIcon
+                name={isRecordingAudio ? 'microphone' : 'microphone-outline'}
+                size={18}
+                color={isRecordingAudio ? '#fff' : Colors.light.primary}
+              />
+            </TouchableOpacity>
+          ) : null}
         </View>
-      ) : null}
-      <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
           value={text}
@@ -52,14 +91,22 @@ export default function ChatInput({
           placeholderTextColor={Colors.light.mutedText}
           multiline
           maxLength={500}
+          pointerEvents="auto"
         />
         <TouchableOpacity
-          style={[styles.sendBtn, (!text.trim() || disabled) && styles.sendBtnDisabled]}
+          style={[
+            styles.sendBtn,
+            (!text.trim() || disabled || uploading) && styles.sendBtnDisabled,
+          ]}
           onPress={handleSend}
-          disabled={!text.trim() || disabled}
+          disabled={!text.trim() || disabled || uploading}
           activeOpacity={0.7}
         >
-          <ZappIcon name="send" size={18} color="#fff" />
+          {uploading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <ZappIcon name="send" size={18} color="#fff" />
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -74,27 +121,27 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.light.border,
   },
-  quickActionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
-  },
-  quickActionChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: `${Colors.light.primary}12`,
-  },
-  quickActionText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.light.primary,
-  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
+    pointerEvents: 'box-none',
+  },
+  actionsGroup: {
+    flexDirection: 'row',
+    gap: 6,
+    marginRight: 2,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: `${Colors.light.primary}12`,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconButtonActive: {
+    backgroundColor: Colors.light.primary,
   },
   input: {
     flex: 1,
@@ -110,6 +157,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: Colors.light.text,
     lineHeight: 20,
+    pointerEvents: 'auto',
   },
   sendBtn: {
     width: 40,

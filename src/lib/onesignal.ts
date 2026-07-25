@@ -46,17 +46,22 @@ export async function diagnosePushFailure(): Promise<PushDiagnostic> {
         if (net.type === NetInfoStateType.cellular && net.isConnected) {
           chipPresent = true;
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     if (chipPresent && !hasNetworkService) {
       noService = true;
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   let reason = '';
   if (!hasPermission) reason = 'Permissão de push negada pelo sistema.';
-  else if (phonePermissionDenied) reason = 'Permissão de telefone negada — não é possível detectar chip.';
+  else if (phonePermissionDenied)
+    reason = 'Permissão de telefone negada — não é possível detectar chip.';
   else if (!chipPresent) reason = 'Nenhum chip (SIM) detectado no dispositivo.';
   else if (noService) reason = 'Chip detectado mas sem serviço de rede móvel.';
   else reason = 'Permissão de push negada pelo usuário.';

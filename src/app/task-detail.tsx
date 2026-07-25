@@ -104,7 +104,12 @@ export default function TaskDetailScreen() {
     <View style={styles.container}>
       <BackHeader />
 
-      <Animated.View style={[styles.content, { opacity: contentOpacity, transform: [{ translateY: contentTranslateY }] }]}>
+      <Animated.View
+        style={[
+          styles.content,
+          { opacity: contentOpacity, transform: [{ translateY: contentTranslateY }] },
+        ]}
+      >
         <View style={styles.iconSection}>
           <View style={[styles.iconCircle, isDone && styles.iconCircleDone]}>
             <Animated.View style={{ transform: [{ scale: checkScale }] }}>

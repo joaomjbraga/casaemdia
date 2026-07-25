@@ -18,7 +18,11 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.CAMERA"
       ]
     },
     "plugins": [
@@ -47,7 +51,9 @@
       ],
       ["@react-native-google-signin/google-signin/app.plugin.js"],
       "expo-audio",
-      "expo-video"
+      "expo-video",
+      "expo-image",
+      "expo-camera"
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,12 +1,20 @@
-import type { ChatMessage } from '@/types/models';
+import type { ChatAttachment, ChatMessage } from '@/types/models';
 import {
   addDoc,
   collection,
+  deleteDoc,
+  deleteField,
+  doc,
+  getDoc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
   query,
+  setDoc,
   Timestamp,
+  updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import logger from '@/lib/logger';
@@ -46,12 +54,23 @@ export const subscribeToMessages = (
       (snapshot) => {
         const messages: ChatMessage[] = snapshot.docs.map((doc) => {
           const data = doc.data();
+          const attachment = data.attachment
+            ? {
+                url: data.attachment.url,
+                type: data.attachment.type,
+                name: data.attachment.name,
+                mimeType: data.attachment.mimeType,
+                publicId: data.attachment.publicId,
+              }
+            : undefined;
+
           return {
             id: doc.id,
             text: data.text,
             senderId: data.sender_id,
             senderName: data.sender_name,
             createdAt: data.created_at,
+            attachment,
           };
         });
         callback(messages.reverse());
@@ -81,17 +100,28 @@ export const sendMessage = async ({
   text,
   senderId,
   senderName,
+  attachment,
 }: {
   familyId: string;
   text: string;
   senderId: string;
   senderName: string;
+  attachment?: ChatAttachment;
 }) => {
   await addDoc(collection(db, 'families', familyId, 'chat'), {
     text,
     sender_id: senderId,
     sender_name: senderName,
     created_at: Timestamp.now(),
+    attachment: attachment
+      ? {
+          url: attachment.url,
+          type: attachment.type,
+          name: attachment.name,
+          mimeType: attachment.mimeType,
+          publicId: attachment.publicId,
+        }
+      : null,
   });
 
   try {
@@ -105,4 +135,44 @@ export const sendMessage = async ({
   } catch (error) {
     logger.error('Erro ao enviar notificação (chat):', error);
   }
+};
+
+export const deleteChatMessage = async (familyId: string, messageId: string) => {
+  await deleteDoc(doc(db, 'families', familyId, 'chat', messageId));
+};
+
+export const clearChatMessages = async (familyId: string) => {
+  const snapshot = await getDoc(doc(db, 'families', familyId));
+  const today = new Date().toDateString();
+  const lastClearedAt = snapshot.data()?.chatClearedAt?.toDate?.()?.toDateString();
+
+  if (lastClearedAt === today) {
+    return { cleared: false, reason: 'already_cleared_today', publicIds: [] };
+  }
+
+  const messagesRef = collection(db, 'families', familyId, 'chat');
+  const messagesSnapshot = await getDocs(messagesRef);
+
+  const batch = writeBatch(db);
+  const publicIds: string[] = [];
+
+  messagesSnapshot.docs.forEach((messageDoc) => {
+    const data = messageDoc.data();
+    const attachment = data.attachment as ChatAttachment | undefined;
+    const publicId = attachment?.publicId;
+    if (publicId) {
+      publicIds.push(publicId);
+    }
+    batch.delete(messageDoc.ref);
+  });
+
+  if (messagesSnapshot.size > 0) {
+    await batch.commit();
+  }
+
+  await updateDoc(doc(db, 'families', familyId), {
+    chatClearedAt: Timestamp.now(),
+  });
+
+  return { cleared: true, count: messagesSnapshot.size, publicIds };
 };

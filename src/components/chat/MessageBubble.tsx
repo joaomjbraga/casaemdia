@@ -1,10 +1,16 @@
+import { useCallback, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import Colors from '@/constants/Colors';
 import type { ChatMessage } from '@/types/models';
-import { StyleSheet, Text, View } from 'react-native';
+import logger from '@/lib/logger';
+import AudioPlayer from './AudioPlayer';
+import ImageViewer from './ImageViewer';
 
 interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
+  onDelete?: (messageId: string) => void;
 }
 
 function formatTime(timestamp: any): string {
@@ -13,7 +19,10 @@ function formatTime(timestamp: any): string {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
+export default function MessageBubble({ message, isOwn, onDelete }: MessageBubbleProps) {
+  const [imageError, setImageError] = useState(false);
+  const [viewerUri, setViewerUri] = useState<string | null>(null);
+
   const statusLabel =
     message.status === 'sending'
       ? 'Enviando...'
@@ -21,18 +30,72 @@ export default function MessageBubble({ message, isOwn }: MessageBubbleProps) {
         ? 'Erro ao enviar'
         : null;
 
+  logger.debug('[MessageBubble] render', {
+    id: message.id,
+    status: message.status,
+    hasAttachment: !!message.attachment,
+    attachmentType: message.attachment?.type,
+    attachmentUrl: message.attachment?.url,
+  });
+
+  const openImageViewer = useCallback((url: string) => {
+    setViewerUri(url);
+  }, []);
+  const closeImageViewer = useCallback(() => {
+    setViewerUri(null);
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    onDelete?.(message.id);
+  }, [message.id, onDelete]);
+
   return (
     <View style={[styles.row, isOwn && styles.rowOwn]}>
       <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
         {!isOwn && <Text style={styles.senderName}>{message.senderName}</Text>}
-        <Text style={[styles.messageText, isOwn && styles.messageTextOwn]}>{message.text}</Text>
+        {message.attachment?.type === 'image' && message.attachment.url ? (
+          imageError ? (
+            <View style={[styles.attachmentImage, styles.attachmentImagePlaceholder]}>
+              <Text style={styles.attachmentPlaceholderText}>Imagem indisponível</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => openImageViewer(message.attachment!.url!)}
+            >
+              <Image
+                source={{ uri: message.attachment.url }}
+                style={styles.attachmentImage}
+                contentFit="cover"
+                onError={() => setImageError(true)}
+              />
+            </TouchableOpacity>
+          )
+        ) : null}
+        {message.attachment?.type === 'audio' && message.attachment.url ? (
+          <View style={styles.attachmentAudioContainer}>
+            <AudioPlayer uri={message.attachment.url} name={message.attachment.name} />
+          </View>
+        ) : null}
+        {message.text ? (
+          <Text style={[styles.messageText, isOwn && styles.messageTextOwn]}>{message.text}</Text>
+        ) : null}
         <View style={styles.footerRow}>
-          <Text style={[styles.time, isOwn && styles.timeOwn]}>{formatTime(message.createdAt)}</Text>
+          <Text style={[styles.time, isOwn && styles.timeOwn]}>
+            {formatTime(message.createdAt)}
+          </Text>
+          {isOwn && onDelete ? (
+            <TouchableOpacity onPress={handleDelete} activeOpacity={0.7}>
+              <Text style={[styles.deleteText, isOwn && styles.deleteTextOwn]}>Excluir</Text>
+            </TouchableOpacity>
+          ) : null}
           {statusLabel ? (
             <Text style={[styles.statusText, isOwn && styles.statusTextOwn]}>{statusLabel}</Text>
           ) : null}
         </View>
       </View>
+
+      <ImageViewer visible={!!viewerUri} uri={viewerUri ?? ''} onClose={closeImageViewer} />
     </View>
   );
 }
@@ -69,6 +132,31 @@ const styles = StyleSheet.create({
     color: Colors.light.primary,
     marginBottom: 2,
   },
+  attachmentImage: {
+    width: 220,
+    height: 180,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: Colors.light.inputBackground,
+  },
+  attachmentImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  attachmentPlaceholderText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.mutedText,
+    textAlign: 'center',
+    paddingHorizontal: 12,
+  },
+  attachmentAudioContainer: {
+    marginBottom: 8,
+    backgroundColor: `${Colors.light.primary}16`,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   messageText: {
     fontSize: 15,
     fontWeight: '400',
@@ -94,6 +182,14 @@ const styles = StyleSheet.create({
   },
   timeOwn: {
     color: 'rgba(255,255,255,0.7)',
+  },
+  deleteText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#b91c1c',
+  },
+  deleteTextOwn: {
+    color: 'rgba(255,255,255,0.85)',
   },
   statusText: {
     fontSize: 10,
