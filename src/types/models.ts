@@ -22,6 +22,15 @@ export interface ShoppingItem {
   quantity?: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  text: string;
+  senderId: string;
+  senderName: string;
+  createdAt: any;
+  status?: 'sending' | 'sent' | 'error';
+}
+
 export interface Invitation {
   id: string;
   familyId: string;
