@@ -6,6 +6,7 @@ import QuantityEditModal from '@/components/shopping/QuantityEditModal';
 import ShoppingItemCard from '@/components/shopping/ShoppingItemCard';
 import ShoppingListHeader from '@/components/shopping/ShoppingListHeader';
 import ShoppingSectionHeader from '@/components/shopping/ShoppingSectionHeader';
+import { FamilyRelationLabels } from '@/constants/FamilyRelationLabels';
 import Colors from '@/constants/Colors';
 import { DOCK_CLEARANCE } from '@/constants/Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -395,7 +396,12 @@ export default function ShoppingList() {
                     <Text style={styles.memberInitial}>{(member.name || '?')[0].toUpperCase()}</Text>
                   </View>
                   <View style={styles.memberInfo}>
-                    <Text style={styles.memberName}>{member.name}</Text>
+                    <View style={styles.memberNameRow}>
+                      <Text style={styles.memberName}>{member.name}</Text>
+                      {member.familyRelation && (
+                        <Text style={styles.memberRelation}>{FamilyRelationLabels[member.familyRelation as keyof typeof FamilyRelationLabels]}</Text>
+                      )}
+                    </View>
                     <Text style={styles.memberEmail}>{member.email}</Text>
                   </View>
                   {newItemAssigneeId === member.id && (
@@ -499,11 +505,26 @@ const styles = StyleSheet.create({
   memberInfo: {
     flex: 1,
   },
+  memberNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   memberName: {
     fontSize: 14,
     fontWeight: '600',
     color: Colors.light.text,
     letterSpacing: -0.1,
+  },
+  memberRelation: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.light.mutedText,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   memberEmail: {
     fontSize: 12,
