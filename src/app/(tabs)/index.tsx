@@ -164,38 +164,6 @@ export default function Dashboard() {
           </View>
         ))}
 
-        {pendingInvitations.map((inv) => (
-          <View key={inv.id} style={styles.inviteBanner}>
-            <View style={styles.inviteIcon}>
-              <ZappIcon name="account-plus" size={20} color={Colors.light.primary} />
-            </View>
-            <View style={styles.inviteInfo}>
-              <Text style={styles.inviteTitle}>Convite de Família</Text>
-              <Text style={styles.inviteHint}>
-                {inv.fromUserName} convidou você para "{inv.familyName}"
-              </Text>
-            </View>
-            <View style={styles.inviteActions}>
-              <IconCircleButton
-                iconName="check"
-                onPress={() => acceptInvitation(inv.id)}
-                size={36}
-                backgroundColor="rgba(52, 199, 89, 0.15)"
-                borderColor="rgba(52, 199, 89, 0.3)"
-                iconColor={Colors.light.success}
-              />
-              <IconCircleButton
-                iconName="close"
-                onPress={() => declineInvitation(inv.id)}
-                size={36}
-                backgroundColor="rgba(255, 59, 48, 0.15)"
-                borderColor="rgba(255, 59, 48, 0.3)"
-                iconColor={Colors.light.danger}
-              />
-            </View>
-          </View>
-        ))}
-
         {tasks.length === 0 && !hasShopping ? (
           <EmptyState
             iconName="checkbox-marked-outline"

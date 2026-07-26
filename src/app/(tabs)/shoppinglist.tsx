@@ -43,6 +43,7 @@ export default function ShoppingList() {
   const [showAssigneePicker, setShowAssigneePicker] = useState(false);
   const familyRef = useRef(familyId ?? null);
   const [errorItemId, setErrorItemId] = useState<string | null>(null);
+  const nameInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     familyRef.current = familyId ?? null;
@@ -66,6 +67,10 @@ export default function ShoppingList() {
 
     return () => unsubscribe();
   }, [familyId]);
+
+  const openAdd = () => {
+    nameInputRef.current?.focus();
+  };
 
   const handleAddItem = async () => {
     if (!newItemName.trim()) return;
@@ -276,6 +281,7 @@ export default function ShoppingList() {
         onClearCompleted={handleClearCompleted}
         onOpenAssigneePicker={() => setShowAssigneePicker(true)}
         assigneeName={assignee?.name}
+        nameInputRef={nameInputRef}
       />
     );
   };
@@ -289,7 +295,7 @@ export default function ShoppingList() {
       title={filterName ? 'Nenhum resultado' : 'Lista vazia'}
       subtitle={filterName ? 'Tente buscar outro termo' : 'Adicione itens à sua lista'}
       actionLabel={filterName ? undefined : 'Adicionar item'}
-      onAction={filterName ? undefined : () => {}}
+      onAction={filterName ? undefined : openAdd}
     />
   );
 

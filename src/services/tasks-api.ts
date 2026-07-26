@@ -39,6 +39,10 @@ export const subscribeToTasksApi = (familyId: string, callback: (tasks: Task[] |
   });
 
   return () => {
+    socket.off('task:created');
+    socket.off('task:updated');
+    socket.off('task:deleted');
+    socket.off('task:cleared');
     socket.emit('family:leave', { familyId });
   };
 };

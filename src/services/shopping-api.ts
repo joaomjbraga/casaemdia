@@ -43,6 +43,11 @@ export const subscribeToShoppingApi = (familyId: string, callback: (items: Shopp
   });
 
   return () => {
+    socket.off('shopping:created');
+    socket.off('shopping:updated');
+    socket.off('shopping:toggled');
+    socket.off('shopping:deleted');
+    socket.off('shopping:cleared');
     socket.emit('family:leave', { familyId });
   };
 };

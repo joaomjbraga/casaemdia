@@ -106,7 +106,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     async (memberId: string, familyRelation: string | null) => {
       if (!familyId) return;
 
-      const token = await require('@react-native-async-storage/async-storage').default.getItem('authToken');
+      const token = await require('@react-native-async-storage/async-storage').default.getItem('token');
       if (!token) {
         throw new Error('Token de autenticação não encontrado.');
       }

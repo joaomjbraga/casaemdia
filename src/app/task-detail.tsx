@@ -37,8 +37,12 @@ export default function TaskDetailScreen() {
     () => members.find((m) => m.userId === backendUserId)?.id,
     [members, backendUserId],
   );
+  const assigneeMember = useMemo(
+    () => members.find((m) => m.id === params.assigneeId) ?? null,
+    [members, params.assigneeId],
+  );
   const isOwner = currentMemberId === params.assigneeId;
-  const canComplete = !isDone && !!backendUserId && (!!currentMemberId || familyReady);
+  const canComplete = !isDone && !!backendUserId && !!currentMemberId && familyReady;
   const showOwnerAction = canComplete && (isOwner || !params.assigneeId);
 
   useEffect(() => {
@@ -146,7 +150,11 @@ export default function TaskDetailScreen() {
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Responsável</Text>
               <Text style={styles.detailValue}>{params.assignee}</Text>
-              <Text style={styles.detailSub}>({params.assigneeId ? FamilyRelationLabels[params.assigneeId as keyof typeof FamilyRelationLabels] ?? '' : ''})</Text>
+              {assigneeMember?.familyRelation && (
+                <Text style={styles.detailSub}>
+                  {FamilyRelationLabels[assigneeMember.familyRelation as keyof typeof FamilyRelationLabels]}
+                </Text>
+              )}
             </View>
           </View>
         </Card>

@@ -38,6 +38,9 @@ export const subscribeToChatApi = (familyId: string, callback: any) => {
   });
 
   return () => {
+    socket.off('chat:created');
+    socket.off('chat:deleted');
+    socket.off('chat:cleared');
     socket.emit('family:leave', { familyId });
   };
 };

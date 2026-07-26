@@ -16,6 +16,7 @@ interface ShoppingListHeaderProps {
   onClearCompleted: () => void;
   onOpenAssigneePicker?: () => void;
   assigneeName?: string;
+  nameInputRef?: React.Ref<TextInput>;
 }
 
 export default function ShoppingListHeader({
@@ -30,6 +31,7 @@ export default function ShoppingListHeader({
   onClearCompleted,
   onOpenAssigneePicker,
   assigneeName,
+  nameInputRef,
 }: ShoppingListHeaderProps) {
   return (
     <View>
@@ -58,6 +60,7 @@ export default function ShoppingListHeader({
       <View style={styles.addSection}>
         <View style={styles.inputRow}>
           <TextInput
+            ref={nameInputRef}
             style={styles.input}
             placeholder="Adicionar item..."
             placeholderTextColor={Colors.light.mutedText}
