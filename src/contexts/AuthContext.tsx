@@ -1,7 +1,7 @@
 import { auth } from '@/lib/firebase';
 import { configureGoogleSignIn, signInWithGoogle as googleSignIn } from '@/lib/google-auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { User, deleteUser, onAuthStateChanged } from 'firebase/auth';
+import { storageGet, storageGetAllKeys, storageMultiRemove, storageRemove, storageSet } from '@/lib/storage';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import logger from '@/lib/logger';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -54,10 +54,10 @@ export const useAuth = () => {
 
 const clearUserData = async (): Promise<void> => {
   try {
-    const keys = await ReactNativeAsyncStorage.getAllKeys();
+    const keys = await storageGetAllKeys();
     const cacheKeys = keys.filter((k) => k.startsWith('@cache_'));
     if (cacheKeys.length > 0) {
-      await ReactNativeAsyncStorage.multiRemove(cacheKeys);
+      await storageMultiRemove(cacheKeys);
     }
   } catch (error) {
     logger.error('Error clearing user data:', error);
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const restoreSession = async () => {
       try {
-        const storedToken = await ReactNativeAsyncStorage.getItem('token');
+        const storedToken = await storageGet('token');
         if (!isMounted) return;
 
         if (storedToken) {
@@ -122,8 +122,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           throw new Error('Token não recebido do backend');
         }
 
-        await ReactNativeAsyncStorage.setItem('token', authResponse.token);
-        const stored = await ReactNativeAsyncStorage.getItem('token');
+        await storageSet('token', authResponse.token);
+        const stored = await storageGet('token');
         logger.info('[AuthProvider] Token stored length', { length: stored?.length ?? 0, storedPrefix: stored?.slice(0, 20) });
 
         // keep token in memory to avoid AsyncStorage race
@@ -184,7 +184,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch {}
       setBackendUserId(null);
       setIsTokenReady(false);
-      await ReactNativeAsyncStorage.removeItem('token');
+      await storageRemove('token');
       await clearUserData();
       setUser(null);
     } catch (error) {
@@ -215,7 +215,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthToken(null);
     } catch {}
     setBackendUserId(null);
-    await ReactNativeAsyncStorage.removeItem('token');
+    await storageRemove('token');
     await clearUserData();
     setUser(null);
   };

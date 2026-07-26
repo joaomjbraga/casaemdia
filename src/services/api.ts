@@ -1,8 +1,16 @@
 
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { getEnv } from '@/lib/env';
+import { storageGet, storageRemove, storageSet } from '@/lib/storage';
 
-const API_BASE = getEnv('EXPO_PUBLIC_API_URL', 'http://192.168.0.103:3333');
+function getDefaultApiBase() {
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:3333';
+  }
+  return 'http://localhost:3333';
+}
+
+const API_BASE = getEnv('EXPO_PUBLIC_API_URL', getDefaultApiBase());
 
 import logger from '@/lib/logger';
 
@@ -18,7 +26,7 @@ export function setAuthToken(token: string | null) {
 async function resolveToken(): Promise<string | null> {
   if (inMemoryToken) return inMemoryToken;
   try {
-    const stored = await ReactNativeAsyncStorage.getItem('token');
+    const stored = await storageGet('token');
     if (stored) {
       inMemoryToken = stored;
       return stored;
@@ -32,13 +40,13 @@ async function resolveToken(): Promise<string | null> {
 async function request(path: string, options: RequestInit = {}, retries = 2) {
   const token = await resolveToken();
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
+  const headers = new Headers(options.headers || {});
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   let lastError: Error | null = null;
@@ -60,7 +68,7 @@ async function request(path: string, options: RequestInit = {}, retries = 2) {
         try {
           setAuthToken(null);
         } catch {}
-        await ReactNativeAsyncStorage.removeItem('token');
+        await storageRemove('token');
         throw new Error('Sessão expirada');
       }
 

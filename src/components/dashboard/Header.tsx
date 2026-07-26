@@ -2,6 +2,7 @@ import IconCircleButton from '@/components/common/IconCircleButton';
 import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
 import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import Colors from '@/constants/Colors';
+import { FamilyRelationLabels } from '@/constants/FamilyRelationLabels';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { router } from 'expo-router';
@@ -21,6 +22,9 @@ export default function Header() {
 
   const currentUser = members.find((member) => member.userId === backendUserId);
   const isAdmin = currentUser?.role === 'admin';
+  const currentUserRelationLabel = currentUser?.familyRelation
+    ? FamilyRelationLabels[currentUser.familyRelation as keyof typeof FamilyRelationLabels]
+    : null;
 
   const userInitial = (user?.displayName || user?.email || '?')[0].toUpperCase();
 
@@ -77,6 +81,11 @@ export default function Header() {
             <Text style={styles.appSubtitle}>
               {membersCount} {membersCount === 1 ? 'membro' : 'membros'}
             </Text>
+            {currentUserRelationLabel ? (
+              <Text style={styles.appRelation} numberOfLines={1}>
+                Você: {currentUserRelationLabel}
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -164,6 +173,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: Colors.light.mutedText,
+    letterSpacing: 0.1,
+  },
+
+  appRelation: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.primary,
     letterSpacing: 0.1,
   },
 

@@ -36,6 +36,7 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
   const [sentInvitations, setSentInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(false);
+  const isRefreshingRef = useRef(false);
 
   const familyIdRef = useRef(familyId);
   familyIdRef.current = familyId;
@@ -45,6 +46,30 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const isTokenReadyRef = useRef(isTokenReady);
   isTokenReadyRef.current = isTokenReady;
+
+  const refreshInvitations = useCallback(async () => {
+    if (isRefreshingRef.current) return;
+
+    const email = userEmailRef.current;
+    const familyId = familyIdRef.current;
+    if (!email || !familyId || !isTokenReadyRef.current) return;
+
+    isRefreshingRef.current = true;
+
+    try {
+      const [{ invitations: pending }, sent] = await Promise.all([
+        fetchPendingInvitationsService(email),
+        fetchSentInvitationsService(familyId),
+      ]);
+
+      setPendingInvitations(pending as Invitation[]);
+      setSentInvitations(sent as Invitation[]);
+    } catch (error) {
+      logger.error('Error refreshing invitations:', error);
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, []);
 
   const fetchPendingInvitations = useCallback(async () => {
     const email = userEmailRef.current;
@@ -73,16 +98,14 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const email = user?.email;
     if (!email || !isTokenReady) return;
 
-    fetchPendingInvitations();
-    fetchSentInvitations();
+    refreshInvitations();
 
     const interval = setInterval(() => {
-      fetchPendingInvitations();
-      fetchSentInvitations();
-    }, 30000);
+      refreshInvitations();
+    }, 60000);
 
     return () => clearInterval(interval);
-  }, [user?.email, isTokenReady, fetchPendingInvitations, fetchSentInvitations]);
+  }, [user?.email, isTokenReady, refreshInvitations]);
 
   const sendInvitation = useCallback(
     async (email: string) => {
@@ -92,12 +115,12 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLoading(true);
       try {
         await sendFamilyInvitation(familyId, familyName, user, email);
-        await fetchSentInvitations();
+        await refreshInvitations();
       } finally {
         setLoading(false);
       }
     },
-    [familyId, familyName, user, isTokenReady, fetchSentInvitations],
+    [familyId, familyName, user, isTokenReady, refreshInvitations],
   );
 
   const acceptInvitation = useCallback(
@@ -107,13 +130,12 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLoading(true);
       try {
         await acceptFamilyInvitation(invitationId, user, familyId, refreshFamily);
-        await fetchPendingInvitations();
-        await fetchSentInvitations();
+        await refreshInvitations();
       } finally {
         setLoading(false);
       }
     },
-    [user, familyId, refreshFamily, isTokenReady, fetchPendingInvitations, fetchSentInvitations],
+    [user, familyId, refreshFamily, isTokenReady, refreshInvitations],
   );
 
   const declineInvitation = useCallback(
@@ -121,12 +143,12 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLoading(true);
       try {
         await declineFamilyInvitation(invitationId);
-        await fetchPendingInvitations();
+        await refreshInvitations();
       } finally {
         setLoading(false);
       }
     },
-    [fetchPendingInvitations],
+    [refreshInvitations],
   );
 
   return (

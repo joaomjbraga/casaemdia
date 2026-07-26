@@ -9,6 +9,7 @@ import ImageViewer from './ImageViewer';
 interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
+  relationLabel?: string | null;
   onDelete?: (messageId: string) => void;
 }
 
@@ -18,7 +19,7 @@ function formatTime(timestamp: any): string {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function MessageBubble({ message, isOwn, onDelete }: MessageBubbleProps) {
+export default function MessageBubble({ message, isOwn, relationLabel, onDelete }: MessageBubbleProps) {
   const [imageError, setImageError] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
@@ -40,10 +41,18 @@ export default function MessageBubble({ message, isOwn, onDelete }: MessageBubbl
     onDelete?.(message.id);
   }, [message.id, onDelete]);
 
+  const senderLine = isOwn
+    ? relationLabel
+      ? `Você • ${relationLabel}`
+      : 'Você'
+    : relationLabel
+      ? `${message.senderName || 'Usuário'} • ${relationLabel}`
+      : message.senderName || 'Usuário';
+
   return (
     <View style={[styles.row, isOwn && styles.rowOwn]}>
       <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
-        {!isOwn && <Text style={styles.senderName}>{message.senderName}</Text>}
+        <Text style={styles.senderName}>{senderLine}</Text>
         {message.attachment?.type === 'image' && message.attachment.url ? (
           imageError ? (
             <View style={[styles.attachmentImage, styles.attachmentImagePlaceholder]}>

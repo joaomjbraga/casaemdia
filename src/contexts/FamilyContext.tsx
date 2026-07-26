@@ -12,6 +12,7 @@ import {
 } from '../services/family';
 import { updateFamilyMemberRelationApi } from '../services/family-api';
 import logger from '@/lib/logger';
+import { storageGet, storageRemove, storageSet } from '@/lib/storage';
 
 interface FamilyContextType {
   familyId: string | null;
@@ -49,6 +50,33 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [initialized, setInitialized] = useState(false);
   const [wasRemoved, setWasRemoved] = useState(false);
   const intentionalExit = useRef(false);
+  const hasRestoredCachedFamilyRef = useRef(false);
+  const hasTriggeredStartupRevalidationRef = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const restoreCachedFamily = async () => {
+      try {
+        const cachedId = await storageGet('last_family_id');
+        const cachedName = await storageGet('last_family_name');
+
+        if (!mounted || !cachedId) return;
+
+        hasRestoredCachedFamilyRef.current = true;
+        setFamilyId(cachedId);
+        setFamilyName(cachedName ?? 'Minha Família');
+      } catch (error) {
+        logger.warn('Error restoring cached family:', error);
+      }
+    };
+
+    restoreCachedFamily();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const acknowledgeRemoval = useCallback(() => setWasRemoved(false), []);
   const beginIntentionalExit = useCallback(() => {
@@ -68,7 +96,12 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         const membersList = await fetchFamilyMembersFromStore(targetFamilyId);
         setMembers(membersList);
-      } catch (error) {
+      } catch (error: any) {
+        const message = error?.message ?? String(error ?? '');
+        if (message.includes('Usuário não pertence a nenhuma família') || message.includes('Você não é membro desta família')) {
+          setMembers([]);
+          return;
+        }
         logger.error('Error fetching family members:', error);
       }
     },
@@ -118,10 +151,43 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [familyId, fetchMembers],
   );
 
-  const refreshFamily = useCallback(async () => {
+  useEffect(() => {
     if (!familyId) return;
-    await fetchMembers(familyId);
-  }, [familyId, fetchMembers]);
+
+    const persistFamily = async () => {
+      try {
+        await storageSet('last_family_id', familyId);
+        await storageSet('last_family_name', familyName);
+      } catch (error) {
+        logger.warn('Error persisting family state:', error);
+      }
+    };
+
+    persistFamily();
+  }, [familyId, familyName]);
+
+  const refreshFamily = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const result = await initializeFamilyForUser(user, { allowCreateIfMissing: false });
+      if (!result) {
+        setFamilyId(null);
+        setFamilyName('Minha Família');
+        setMembers([]);
+        return;
+      }
+
+      setFamilyId(result.familyId);
+      setFamilyName(result.familyName);
+      await fetchMembers(result.familyId);
+    } catch (error) {
+      logger.error('Error refreshing family:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, fetchMembers]);
 
   useEffect(() => {
     if (!authInitialized || !user || !isTokenReady) {
@@ -131,6 +197,8 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setMembers([]);
         setLoading(false);
         setInitialized(true);
+        storageRemove('last_family_id').catch(() => undefined);
+        storageRemove('last_family_name').catch(() => undefined);
       }
       return;
     }
@@ -139,6 +207,16 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         setLoading(true);
         const result = await initializeFamilyForUser(user);
+        if (!result) {
+          if (!hasRestoredCachedFamilyRef.current) {
+            setFamilyId(null);
+            setFamilyName('Minha Família');
+            setMembers([]);
+          }
+          return;
+        }
+
+        hasRestoredCachedFamilyRef.current = true;
         setFamilyId(result.familyId);
         setFamilyName(result.familyName);
       } catch (error) {
@@ -149,6 +227,18 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
 
+    if (!hasTriggeredStartupRevalidationRef.current) {
+      hasTriggeredStartupRevalidationRef.current = true;
+      init();
+
+      const revalidateTimer = setTimeout(() => {
+        if (!hasRestoredCachedFamilyRef.current) return;
+        init().catch(() => undefined);
+      }, 2500);
+
+      return () => clearTimeout(revalidateTimer);
+    }
+
     init();
   }, [user, authInitialized, isTokenReady]);
 
@@ -157,13 +247,23 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     let mounted = true;
 
+    const hydrateMembers = async () => {
+      try {
+        await fetchMembers(familyId);
+      } catch (error) {
+        logger.warn('Error hydrating family members on startup:', error);
+      }
+    };
+
+    hydrateMembers();
+
     subscribeToFamilyMembers(familyId, (membersList) => {
       if (mounted) {
         setMembers(membersList);
       }
     }).then(() => {
       if (mounted) {
-        fetchMembers();
+        fetchMembers(familyId);
       }
     });
 

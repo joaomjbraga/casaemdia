@@ -213,6 +213,15 @@ function RootLayoutNav() {
             animation: 'slide_from_right',
           }}
         />
+
+        <Stack.Screen
+          name="shopping-detail"
+          options={{
+            headerShown: false,
+            gestureEnabled: true,
+            animation: 'slide_from_right',
+          }}
+        />
       </Stack>
     </>
   );

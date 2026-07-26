@@ -20,7 +20,11 @@ interface FamilyResult {
   familyName: string;
 }
 
-export const initializeFamilyForUser = async (user: User): Promise<FamilyResult> => {
+export const initializeFamilyForUser = async (
+  user: User,
+  options: { allowCreateIfMissing?: boolean } = {},
+): Promise<FamilyResult | null> => {
+  const { allowCreateIfMissing = false } = options;
   const profile = {
     email: user.email ?? '',
     name: user.displayName ?? user.email?.split('@')[0] ?? 'Usuário',
@@ -35,8 +39,19 @@ export const initializeFamilyForUser = async (user: User): Promise<FamilyResult>
         familyName: existing.family.name ?? 'Minha Família',
       };
     }
-  } catch {
-    // no existing family, create new
+  } catch (error: any) {
+    const message = error?.message ?? String(error ?? '');
+    if (message.includes('Usuário não pertence a nenhuma família')) {
+      if (!allowCreateIfMissing) {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  if (!allowCreateIfMissing) {
+    return null;
   }
 
   const created = await createFamilyApi(profile.name);
@@ -46,9 +61,9 @@ export const initializeFamilyForUser = async (user: User): Promise<FamilyResult>
   };
 };
 
-export const recoverFamilyAfterRemoval = async (currentUser: User): Promise<FamilyResult> => {
+export const recoverFamilyAfterRemoval = async (currentUser: User): Promise<FamilyResult | null> => {
   removeUserTags();
-  return initializeFamilyForUser(currentUser);
+  return initializeFamilyForUser(currentUser, { allowCreateIfMissing: true });
 };
 
 export const subscribeToFamilyMembers = (

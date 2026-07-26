@@ -5,6 +5,7 @@ import EmptyState from '@/components/common/EmptyState';
 import LoadingSkeleton from '@/components/common/LoadingSkeleton';
 import ZappIcon from '@/components/common/ZappIcon';
 import Colors from '@/constants/Colors';
+import { FamilyRelationLabels } from '@/constants/FamilyRelationLabels';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -73,6 +74,9 @@ export default function ChatScreen() {
     [members, backendUserId],
   );
   const isAdmin = currentUserMember?.role === 'admin';
+  const currentUserRelationLabel = currentUserMember?.familyRelation
+    ? FamilyRelationLabels[currentUserMember.familyRelation as keyof typeof FamilyRelationLabels]
+    : null;
 
   const groupedMessages = useMemo<ChatListItem[]>(() => {
     const groups: ChatListItem[] = [];
@@ -473,7 +477,14 @@ export default function ChatScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
             <ZappIcon name="arrow-left" size={20} color={Colors.light.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chat</Text>
+          <View style={styles.headerTitleArea}>
+            <Text style={styles.headerTitle}>Chat</Text>
+            {currentUserRelationLabel ? (
+              <Text style={styles.headerRelation} numberOfLines={1}>
+                Você: {currentUserRelationLabel}
+              </Text>
+            ) : null}
+          </View>
           {isAdmin ? (
             <TouchableOpacity
               style={[styles.clearButton, clearingChat && styles.clearButtonActive]}
@@ -511,10 +522,16 @@ export default function ChatScreen() {
               return null;
             }
 
+            const senderMember = members.find((member) => member.id === item.message.senderId);
+            const relationLabel = senderMember?.familyRelation
+              ? FamilyRelationLabels[senderMember.familyRelation as keyof typeof FamilyRelationLabels]
+              : null;
+
             return (
               <MessageBubble
                 message={item.message}
                 isOwn={item.message.senderId === currentUserMember?.id}
+                relationLabel={relationLabel}
                 onDelete={handleDeleteMessage}
               />
             );
@@ -609,10 +626,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.light.inputBackground,
   },
+  headerTitleArea: {
+    flex: 1,
+    minWidth: 0,
+    marginLeft: 8,
+  },
   headerTitle: {
     fontSize: 17,
     fontWeight: '700',
     color: Colors.light.text,
+  },
+  headerRelation: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.light.primary,
+    marginTop: 1,
   },
   headerSpacer: {
     width: 40,

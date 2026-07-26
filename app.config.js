@@ -52,4 +52,9 @@ config.expo.extra = {
   ...builtEnv,
 };
 
+config.expo.plugins = config.expo.plugins || [];
+if (!config.expo.plugins.includes('expo-sqlite')) {
+  config.expo.plugins.push('expo-sqlite');
+}
+
 module.exports = config;

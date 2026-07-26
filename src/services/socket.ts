@@ -1,13 +1,14 @@
 import { io, type Socket } from 'socket.io-client';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { getEnv } from '@/lib/env';
 import logger from '@/lib/logger';
+import { storageGet } from '@/lib/storage';
 
 let socket: Socket | null = null;
 
 export async function resolveSocketToken(): Promise<string | null> {
   try {
-    const stored = await ReactNativeAsyncStorage.getItem('token');
+    const stored = await storageGet('token');
     return stored;
   } catch {
     return null;
@@ -25,7 +26,7 @@ export function connectSocket(token: string | null): Socket {
     socket = null;
   }
 
-  const socketUrl = getEnv('EXPO_PUBLIC_API_URL', 'http://192.168.0.103:3333');
+  const socketUrl = getEnv('EXPO_PUBLIC_API_URL', Platform.OS === 'android' ? 'http://10.0.2.2:3333' : 'http://localhost:3333');
 
   logger.info('[socket] URL', socketUrl);
 

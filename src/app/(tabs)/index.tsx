@@ -18,7 +18,7 @@ import { fetchDashboardShopping } from '@/services/shopping';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -108,6 +108,23 @@ export default function Dashboard() {
     [tasks],
   );
 
+  const handleShoppingPress = useCallback(
+    (item: ShoppingItem) => {
+      router.push({
+        pathname: '/shopping-detail',
+        params: {
+          itemId: item.id,
+          name: item.name,
+          done: String(item.done),
+          quantity: item.quantity ?? '',
+          assignee: item.assignee ?? '',
+          assigneeId: item.assigneeId ?? '',
+        },
+      });
+    },
+    [],
+  );
+
   const isLoading =
     authLoading ||
     (!familyId && membersLoading) ||
@@ -183,33 +200,44 @@ export default function Dashboard() {
                 <Text style={styles.sectionTitle}>Lista de Compras</Text>
                 <View style={styles.shoppingPanel}>
                   {pendingShopping.map((item, idx) => (
-                    <View key={item.id} style={[styles.shoppingRow, idx !== pendingShopping.length - 1 && styles.shoppingRowDivider]}>
-                      <View style={styles.shoppingContent}>
-                        <Text style={styles.shoppingName} numberOfLines={1}>{item.name}</Text>
-                        <View style={styles.shoppingMeta}>
-                          {!!item.quantity && (
-                            <Text style={styles.shoppingQty}>{item.quantity}</Text>
-                          )}
-                          {!!item.assignee && (
-                            <View style={styles.assigneeBadge}>
-                              <ZappIcon name="account-outline" size={12} color={Colors.light.mutedText} />
-                              <Text style={styles.assigneeText}>{item.assignee}</Text>
-                            </View>
-                          )}
+                    <View key={item.id}>
+                      <TouchableOpacity
+                        style={[styles.shoppingRow, idx !== pendingShopping.length - 1 && styles.shoppingRowDivider]}
+                        onPress={() => handleShoppingPress(item)}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.shoppingContent}>
+                          <Text style={styles.shoppingName} numberOfLines={1}>{item.name}</Text>
+                          <View style={styles.shoppingMeta}>
+                            {!!item.quantity && (
+                              <Text style={styles.shoppingQty}>{item.quantity}</Text>
+                            )}
+                            {!!item.assignee && (
+                              <View style={styles.assigneeBadge}>
+                                <ZappIcon name="account-outline" size={12} color={Colors.light.mutedText} />
+                                <Text style={styles.assigneeText}>{item.assignee}</Text>
+                              </View>
+                            )}
+                          </View>
                         </View>
-                      </View>
-                      <View style={[styles.statusTag, item.done && styles.statusTagDone]}>
-                        <Text style={[styles.statusTagText, item.done && styles.statusTagTextDone]}>
-                          {item.done ? 'Comprado' : 'Pendente'}
-                        </Text>
-                      </View>
+                        <View style={[styles.statusTag, item.done && styles.statusTagDone]}>
+                          <Text style={[styles.statusTagText, item.done && styles.statusTagTextDone]}>
+                            {item.done ? 'Comprado' : 'Pendente'}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
                     </View>
                   ))}
                   {completedShopping.length > 0 && (
                     <View style={styles.completedSection}>
                       <Text style={styles.completedTitle}>Comprados</Text>
                       {completedShopping.map((item, idx) => (
-                        <View key={item.id} style={[styles.shoppingRow, idx !== completedShopping.length - 1 && styles.shoppingRowDivider]}>
+                        <TouchableOpacity
+                          key={item.id}
+                          style={[styles.shoppingRow, idx !== completedShopping.length - 1 && styles.shoppingRowDivider]}
+                          onPress={() => handleShoppingPress(item)}
+                          activeOpacity={0.8}
+                        >
                           <View style={styles.shoppingContent}>
                             <Text style={[styles.shoppingName, styles.shoppingNameDone]} numberOfLines={1}>{item.name}</Text>
                             <View style={styles.shoppingMeta}>
@@ -224,7 +252,7 @@ export default function Dashboard() {
                           <View style={[styles.statusTag, styles.statusTagDone]}>
                             <Text style={[styles.statusTagText, styles.statusTagTextDone]}>Comprado</Text>
                           </View>
-                        </View>
+                        </TouchableOpacity>
                       ))}
                     </View>
                   )}
