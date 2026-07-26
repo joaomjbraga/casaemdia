@@ -5,6 +5,15 @@ import logger from '@/lib/logger';
 
 let socket: Socket | null = null;
 
+export async function resolveSocketToken(): Promise<string | null> {
+  try {
+    const stored = await ReactNativeAsyncStorage.getItem('token');
+    return stored;
+  } catch {
+    return null;
+  }
+}
+
 export function connectSocket(token: string | null): Socket {
   if (socket?.connected) {
     return socket;

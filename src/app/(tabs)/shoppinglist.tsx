@@ -105,7 +105,7 @@ export default function ShoppingList() {
         quantity: qty,
         assigneeId: newItemAssigneeId ?? undefined,
         assigneeName: assignee?.name,
-        userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
+        userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
         userId: user.uid,
       });
       setItems((prev) =>
@@ -154,7 +154,7 @@ export default function ShoppingList() {
         itemId: item.id,
         quantity: qty,
         itemName: item.name,
-        userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
+        userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
         userId: user.uid,
       });
     } catch {
@@ -209,7 +209,7 @@ export default function ShoppingList() {
         familyId: currentFamilyId,
         itemId: id,
         itemName: deletedItem?.name,
-        userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
+        userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
       });
     } catch {
       setItems(() => snapshot);
@@ -246,7 +246,7 @@ export default function ShoppingList() {
           await clearCompletedShoppingItems({
             familyId: currentFamilyId,
             items: completedItems,
-            userName: user?.displayName || user?.email?.split('@')[0] || 'Alguem',
+            userName: user?.displayName || user?.email?.split('@')[0] || 'Alguém',
             userId: user?.uid,
           });
         } catch {
@@ -325,8 +325,8 @@ export default function ShoppingList() {
             key={item.id}
             name={item.name}
             done={item.done}
-            quantity={item.quantity}
-            assignee={item.assignee}
+            quantity={item.quantity ?? undefined}
+            assignee={item.assignee ?? undefined}
             onToggle={() => handleToggleItem(item.id)}
             onDelete={() => handleDeleteItem(item.id)}
             onEditQuantity={() => openEditQuantity(item)}
@@ -348,8 +348,8 @@ export default function ShoppingList() {
             key={item.id}
             name={item.name}
             done={item.done}
-            quantity={item.quantity}
-            assignee={item.assignee}
+            quantity={item.quantity ?? undefined}
+            assignee={item.assignee ?? undefined}
             onToggle={() => handleToggleItem(item.id)}
             onDelete={() => handleDeleteItem(item.id)}
             onEditQuantity={() => openEditQuantity(item)}

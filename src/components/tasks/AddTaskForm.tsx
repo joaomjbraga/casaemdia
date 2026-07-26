@@ -60,7 +60,7 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
           assigneeId: assignee.id,
         },
         {
-          userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
+          userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
           userId: user.uid,
         },
       );

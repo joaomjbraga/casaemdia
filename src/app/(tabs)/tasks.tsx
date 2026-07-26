@@ -70,7 +70,7 @@ export default function TasksScreen() {
         task,
         newDone,
         options: {
-          userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
+          userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
           userId: user.uid,
         },
       });
@@ -100,7 +100,7 @@ export default function TasksScreen() {
         taskId: id,
         title: deletedTask?.title,
         options: {
-          userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
+          userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
           userId: user.uid,
         },
       });
@@ -175,7 +175,7 @@ export default function TasksScreen() {
             tasks: previousTasks,
             options: user
               ? {
-                  userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
+                  userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
                   userId: user.uid,
                 }
               : undefined,

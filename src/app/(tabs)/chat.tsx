@@ -79,12 +79,15 @@ export default function ChatScreen() {
     let currentDateKey = '';
 
     messages.forEach((message) => {
-      const createdAt = message.createdAt?.toDate?.() ?? message.createdAt;
-      const dateKey = createdAt ? new Date(createdAt).toDateString() : 'unknown';
+      const createdAtRaw = message.createdAt;
+      const createdAt = createdAtRaw && typeof createdAtRaw === 'object' && typeof (createdAtRaw as any).toDate === 'function'
+        ? (createdAtRaw as any).toDate()
+        : createdAtRaw;
+      const dateKey = createdAt ? new Date(createdAt as Date | string).toDateString() : 'unknown';
 
       if (dateKey !== currentDateKey) {
         const formatted = createdAt
-          ? new Date(createdAt).toLocaleDateString('pt-BR', {
+          ? new Date(createdAt as Date | string).toLocaleDateString('pt-BR', {
               day: '2-digit',
               month: 'short',
               year: 'numeric',
@@ -151,7 +154,7 @@ export default function ChatScreen() {
         user.email?.split('@')[0] ||
         'Alguém';
 
-      const tempId = `temp-${Date.now()}`;
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const optimisticMessage: ChatMessage = {
         id: tempId,
         text,

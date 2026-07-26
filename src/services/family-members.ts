@@ -25,7 +25,7 @@ export const deleteFamilyMemberFromStore = async ({
       const { sendNotificationToEmail } = await import('../lib/onesignal');
       await sendNotificationToEmail({
         email: memberEmail,
-        title: 'Você saiu da família',
+        title: 'Você foi removido da família',
         body: `Você foi removido da família "${familyName ?? 'Minha Família'}".`,
         data: { type: 'member_removed' },
       });

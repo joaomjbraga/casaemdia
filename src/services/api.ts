@@ -29,7 +29,7 @@ async function resolveToken(): Promise<string | null> {
   return null;
 }
 
-async function request(path: string, options: RequestInit = {}) {
+async function request(path: string, options: RequestInit = {}, retries = 2) {
   const token = await resolveToken();
 
   const headers: Record<string, string> = {
@@ -41,39 +41,60 @@ async function request(path: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  });
+  let lastError: Error | null = null;
 
-  if (response.status === 401) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      setAuthToken(null);
-    } catch {}
-    await ReactNativeAsyncStorage.removeItem('token');
-    throw new Error('Sessão expirada');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+
+      const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
+      if (response.status === 401) {
+        try {
+          setAuthToken(null);
+        } catch {}
+        await ReactNativeAsyncStorage.removeItem('token');
+        throw new Error('Sessão expirada');
+      }
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(async () => {
+          const text = await response.text().catch(() => 'Erro desconhecido');
+          return { message: text };
+        });
+        const errorMessage = errorBody?.message ?? 'Erro na requisição';
+        logger.error('[api] request failed', {
+          path,
+          status: response.status,
+          statusText: response.statusText,
+          body: errorBody,
+        });
+        throw new Error(`API ${response.status}: ${errorMessage}`);
+      }
+
+      if (response.status === 204) {
+        return null;
+      }
+
+      return response.json();
+    } catch (error: any) {
+      lastError = error;
+      if (attempt < retries && (error.name === 'AbortError' || error.message?.includes('Network request failed'))) {
+        await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+        continue;
+      }
+      break;
+    }
   }
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(async () => {
-      const text = await response.text().catch(() => 'Erro desconhecido');
-      return { message: text };
-    });
-    const errorMessage = errorBody?.message ?? 'Erro na requisição';
-    logger.error('[api] request failed', {
-      path,
-      status: response.status,
-      statusText: response.statusText,
-      body: errorBody,
-    });
-    throw new Error(`API ${response.status}: ${errorMessage}`);
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
+  throw lastError ?? new Error('Erro na requisição');
 }
 
 export const api = {

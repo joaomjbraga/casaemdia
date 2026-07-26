@@ -4,7 +4,7 @@ export interface Task {
   done: boolean;
   assignee: string;
   assigneeId?: string;
-  createdAt?: any;
+  createdAt?: Date | string;
 }
 
 export interface FamilyMember {
@@ -21,7 +21,7 @@ export interface ShoppingItem {
   id: string;
   name: string;
   done: boolean;
-  quantity?: string;
+  quantity?: string | null;
   assignee?: string;
   assigneeId?: string;
 }
@@ -39,8 +39,8 @@ export interface ChatMessage {
   text: string;
   senderId: string;
   senderName: string;
-  createdAt: any;
-  status?: 'sending' | 'sent' | 'error';
+  createdAt: Date | string;
+  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'error';
   attachment?: ChatAttachment;
 }
 
