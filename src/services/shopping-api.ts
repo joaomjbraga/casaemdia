@@ -48,13 +48,15 @@ export const subscribeToShoppingApi = (familyId: string, callback: (items: Shopp
 };
 
 export const createShoppingItemApi = async (
-  familyIdOrPayload: string | { familyId: string; name: string; quantity?: string; userName?: string; userId?: string },
+  familyIdOrPayload: string | { familyId: string; name: string; quantity?: string; assigneeId?: string; assigneeName?: string; userName?: string; userId?: string },
   maybeName?: string,
   maybeQuantity?: string,
 ) => {
   let familyId: string;
   let name: string;
   let quantity: string | undefined;
+  let assigneeId: string | undefined;
+  let assigneeName: string | undefined;
 
   if (typeof familyIdOrPayload === 'string') {
     familyId = familyIdOrPayload;
@@ -64,9 +66,11 @@ export const createShoppingItemApi = async (
     familyId = familyIdOrPayload.familyId;
     name = familyIdOrPayload.name;
     quantity = familyIdOrPayload.quantity;
+    assigneeId = familyIdOrPayload.assigneeId;
+    assigneeName = familyIdOrPayload.assigneeName;
   }
 
-  const result = await api.shopping.create(familyId, { name, quantity });
+  const result = await api.shopping.create(familyId, { name, quantity, assigneeId, assigneeName });
   return result.item.id;
 };
 

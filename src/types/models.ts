@@ -21,6 +21,8 @@ export interface ShoppingItem {
   name: string;
   done: boolean;
   quantity?: string;
+  assignee?: string;
+  assigneeId?: string;
 }
 
 export interface ChatAttachment {

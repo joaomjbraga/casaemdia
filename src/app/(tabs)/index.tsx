@@ -3,7 +3,7 @@ import Colors from '@/constants/Colors';
 import { DOCK_CLEARANCE } from '@/constants/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { Task } from '@/types/models';
+import type { ShoppingItem, Task } from '@/types/models';
 
 import EmptyState from '@/components/common/EmptyState';
 import IconCircleButton from '@/components/common/IconCircleButton';
@@ -14,6 +14,7 @@ import Header from '@/components/dashboard/Header';
 import TaskListPanel from '@/components/dashboard/TaskCard';
 import { useInvitations } from '@/contexts/InvitationContext';
 import { fetchDashboardTasks } from '@/services/tasks';
+import { fetchDashboardShopping } from '@/services/shopping';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useRef, useState } from 'react';
@@ -26,6 +27,8 @@ export default function Dashboard() {
   const { showAlert } = useAlertDialog();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
+  const [shoppingLoading, setShoppingLoading] = useState(true);
 
   const tasksRef = useRef<Task[]>([]);
   tasksRef.current = tasks;
@@ -53,13 +56,37 @@ export default function Dashboard() {
     }
   }, [familyId, showAlert]);
 
+  const fetchShopping = useCallback(async () => {
+    if (!familyId) {
+      setShoppingItems([]);
+      setShoppingLoading(false);
+      return;
+    }
+
+    setShoppingLoading(true);
+
+    try {
+      const data = await fetchDashboardShopping(familyId);
+      setShoppingItems(data);
+    } catch {
+      showAlert({
+        title: 'Erro',
+        message: 'Não foi possível carregar a lista de compras.',
+        type: 'error',
+      });
+    } finally {
+      setShoppingLoading(false);
+    }
+  }, [familyId, showAlert]);
+
   useFocusEffect(
     useCallback(() => {
       if (familyId) {
         fetchTasks();
+        fetchShopping();
         fetchMembers();
       }
-    }, [familyId, fetchTasks, fetchMembers]),
+    }, [familyId, fetchTasks, fetchShopping, fetchMembers]),
   );
 
   const handleTaskPress = useCallback(
@@ -84,11 +111,15 @@ export default function Dashboard() {
   const isLoading =
     authLoading ||
     (!familyId && membersLoading) ||
-    (familyId && tasksLoading && tasks.length === 0 && members.length === 0);
+    (familyId && tasksLoading && tasks.length === 0 && members.length === 0 && shoppingLoading && shoppingItems.length === 0);
 
   if (isLoading) {
     return <LoadingSkeleton variant="dashboard" />;
   }
+
+  const hasShopping = shoppingItems.length > 0;
+  const pendingShopping = shoppingItems.filter((i) => !i.done);
+  const completedShopping = shoppingItems.filter((i) => i.done);
 
   return (
     <View style={styles.container}>
@@ -133,14 +164,106 @@ export default function Dashboard() {
           </View>
         ))}
 
-        {tasks.length === 0 ? (
+        {pendingInvitations.map((inv) => (
+          <View key={inv.id} style={styles.inviteBanner}>
+            <View style={styles.inviteIcon}>
+              <ZappIcon name="account-plus" size={20} color={Colors.light.primary} />
+            </View>
+            <View style={styles.inviteInfo}>
+              <Text style={styles.inviteTitle}>Convite de Família</Text>
+              <Text style={styles.inviteHint}>
+                {inv.fromUserName} convidou você para "{inv.familyName}"
+              </Text>
+            </View>
+            <View style={styles.inviteActions}>
+              <IconCircleButton
+                iconName="check"
+                onPress={() => acceptInvitation(inv.id)}
+                size={36}
+                backgroundColor="rgba(52, 199, 89, 0.15)"
+                borderColor="rgba(52, 199, 89, 0.3)"
+                iconColor={Colors.light.success}
+              />
+              <IconCircleButton
+                iconName="close"
+                onPress={() => declineInvitation(inv.id)}
+                size={36}
+                backgroundColor="rgba(255, 59, 48, 0.15)"
+                borderColor="rgba(255, 59, 48, 0.3)"
+                iconColor={Colors.light.danger}
+              />
+            </View>
+          </View>
+        ))}
+
+        {tasks.length === 0 && !hasShopping ? (
           <EmptyState
             iconName="checkbox-marked-outline"
             title="Nenhuma tarefa"
             subtitle="As tarefas da família aparecerão aqui"
           />
         ) : (
-          <TaskListPanel tasks={tasks} onPressTask={handleTaskPress} />
+          <View>
+            {tasks.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Tarefas</Text>
+                <TaskListPanel tasks={tasks} onPressTask={handleTaskPress} />
+              </View>
+            )}
+            {hasShopping && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Lista de Compras</Text>
+                <View style={styles.shoppingPanel}>
+                  {pendingShopping.map((item, idx) => (
+                    <View key={item.id} style={[styles.shoppingRow, idx !== pendingShopping.length - 1 && styles.shoppingRowDivider]}>
+                      <View style={styles.shoppingContent}>
+                        <Text style={styles.shoppingName} numberOfLines={1}>{item.name}</Text>
+                        <View style={styles.shoppingMeta}>
+                          {!!item.quantity && (
+                            <Text style={styles.shoppingQty}>{item.quantity}</Text>
+                          )}
+                          {!!item.assignee && (
+                            <View style={styles.assigneeBadge}>
+                              <ZappIcon name="account-outline" size={12} color={Colors.light.mutedText} />
+                              <Text style={styles.assigneeText}>{item.assignee}</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                      <View style={[styles.statusTag, item.done && styles.statusTagDone]}>
+                        <Text style={[styles.statusTagText, item.done && styles.statusTagTextDone]}>
+                          {item.done ? 'Comprado' : 'Pendente'}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                  {completedShopping.length > 0 && (
+                    <View style={styles.completedSection}>
+                      <Text style={styles.completedTitle}>Comprados</Text>
+                      {completedShopping.map((item, idx) => (
+                        <View key={item.id} style={[styles.shoppingRow, idx !== completedShopping.length - 1 && styles.shoppingRowDivider]}>
+                          <View style={styles.shoppingContent}>
+                            <Text style={[styles.shoppingName, styles.shoppingNameDone]} numberOfLines={1}>{item.name}</Text>
+                            <View style={styles.shoppingMeta}>
+                              {!!item.assignee && (
+                                <View style={styles.assigneeBadge}>
+                                  <ZappIcon name="account-outline" size={12} color={Colors.light.mutedText} />
+                                  <Text style={styles.assigneeText}>{item.assignee}</Text>
+                                </View>
+                              )}
+                            </View>
+                          </View>
+                          <View style={[styles.statusTag, styles.statusTagDone]}>
+                            <Text style={[styles.statusTagText, styles.statusTagTextDone]}>Comprado</Text>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+          </View>
         )}
       </ScrollView>
     </View>
@@ -199,5 +322,116 @@ const styles = StyleSheet.create({
   inviteActions: {
     flexDirection: 'row',
     gap: 8,
+  },
+  section: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.light.mutedText,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+    paddingHorizontal: 16,
+  },
+  shoppingPanel: {
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
+  },
+  shoppingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  shoppingRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+  },
+  shoppingContent: {
+    flex: 1,
+  },
+  shoppingName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.text,
+    letterSpacing: -0.1,
+  },
+  shoppingNameDone: {
+    textDecorationLine: 'line-through',
+    color: Colors.light.mutedText,
+    fontWeight: '500',
+  },
+  shoppingMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  shoppingQty: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.mutedText,
+    backgroundColor: Colors.light.cardDark,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  assigneeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.light.cardDark,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  assigneeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.light.mutedText,
+  },
+  statusTag: {
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  statusTagDone: {
+    borderColor: Colors.light.success,
+  },
+  statusTagText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.light.mutedText,
+    letterSpacing: 0.2,
+  },
+  statusTagTextDone: {
+    color: Colors.light.success,
+  },
+  completedSection: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.light.border,
+    paddingTop: 8,
+  },
+  completedTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.light.mutedText,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    paddingHorizontal: 16,
+    marginBottom: 6,
   },
 });

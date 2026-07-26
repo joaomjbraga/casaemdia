@@ -2,7 +2,7 @@ import IconCircleButton from '@/components/common/IconCircleButton';
 import ScreenHeader from '@/components/common/ScreenHeader';
 import ZappIcon from '@/components/common/ZappIcon';
 import Colors from '@/constants/Colors';
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ShoppingListHeaderProps {
   hasCompletedItems: boolean;
@@ -14,6 +14,8 @@ interface ShoppingListHeaderProps {
   onFilterChange: (filter: string) => void;
   onAddItem: () => void;
   onClearCompleted: () => void;
+  onOpenAssigneePicker?: () => void;
+  assigneeName?: string;
 }
 
 export default function ShoppingListHeader({
@@ -26,6 +28,8 @@ export default function ShoppingListHeader({
   onFilterChange,
   onAddItem,
   onClearCompleted,
+  onOpenAssigneePicker,
+  assigneeName,
 }: ShoppingListHeaderProps) {
   return (
     <View>
@@ -62,6 +66,20 @@ export default function ShoppingListHeader({
             onSubmitEditing={onAddItem}
             returnKeyType="done"
           />
+          <TouchableOpacity
+            style={[styles.assigneeBtn, !!assigneeName && styles.assigneeBtnActive]}
+            onPress={onOpenAssigneePicker}
+            activeOpacity={0.7}
+          >
+            <ZappIcon
+              name="account-outline"
+              size={18}
+              color={assigneeName ? Colors.light.primary : Colors.light.mutedText}
+            />
+            <Text style={[styles.assigneeLabel, !!assigneeName && styles.assigneeLabelActive]} numberOfLines={1}>
+              {assigneeName || 'Responsável'}
+            </Text>
+          </TouchableOpacity>
           <IconCircleButton
             iconName="plus"
             onPress={onAddItem}
@@ -129,6 +147,30 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     borderWidth: 1,
     borderColor: Colors.light.inputBorder,
+  },
+  assigneeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 52,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: Colors.light.inputBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.inputBorder,
+    maxWidth: 160,
+  },
+  assigneeBtnActive: {
+    borderColor: Colors.light.primary,
+    backgroundColor: `${Colors.light.primary}10`,
+  },
+  assigneeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.mutedText,
+  },
+  assigneeLabelActive: {
+    color: Colors.light.text,
   },
   qtyInput: {
     backgroundColor: Colors.light.inputBackground,

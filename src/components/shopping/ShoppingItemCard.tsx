@@ -7,6 +7,7 @@ interface ShoppingItemCardProps {
   name: string;
   done: boolean;
   quantity?: string;
+  assignee?: string;
   onToggle: () => void;
   onDelete: () => void;
   onEditQuantity: () => void;
@@ -79,6 +80,7 @@ export default function ShoppingItemCard({
   name,
   done,
   quantity,
+  assignee,
   onToggle,
   onDelete,
   onEditQuantity,
@@ -89,6 +91,7 @@ export default function ShoppingItemCard({
   const iconName = getItemIcon(name);
   const iconColor = done ? Colors.light.mutedText : getIconColor(name);
   const hasQty = !!quantity && quantity.trim().length > 0;
+  const hasAssignee = !!assignee && assignee.trim().length > 0;
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateX = useRef(new Animated.Value(-4)).current;
@@ -158,13 +161,23 @@ export default function ShoppingItemCard({
         <Text style={[styles.name, done && styles.nameDone]} numberOfLines={1}>
           {name}
         </Text>
-        {hasQty && (
-          <TouchableOpacity style={styles.qtyTag} onPress={onEditQuantity} activeOpacity={0.7}>
-            <Text style={[styles.qtyText, done && styles.qtyTextDone]} numberOfLines={1}>
-              {quantity!.trim()}
-            </Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.metaRow}>
+          {hasQty && (
+            <TouchableOpacity style={styles.qtyTag} onPress={onEditQuantity} activeOpacity={0.7}>
+              <Text style={[styles.qtyText, done && styles.qtyTextDone]} numberOfLines={1}>
+                {quantity!.trim()}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {hasAssignee && (
+            <View style={styles.assigneeTag}>
+              <ZappIcon name="account-outline" size={12} color={Colors.light.mutedText} />
+              <Text style={[styles.assigneeText, done && styles.assigneeTextDone]} numberOfLines={1}>
+                {assignee}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.actions}>
@@ -244,9 +257,15 @@ const styles = StyleSheet.create({
     color: Colors.light.mutedText,
     fontWeight: '500',
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
   qtyTag: {
     alignSelf: 'flex-start',
-    marginTop: 4,
     borderWidth: 1,
     borderColor: Colors.light.border,
     borderRadius: 6,
@@ -260,6 +279,28 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   qtyTextDone: {
+    color: Colors.light.mutedText,
+    opacity: 0.7,
+  },
+  assigneeTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 7,
+    backgroundColor: Colors.light.cardDark,
+  },
+  assigneeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.light.mutedText,
+    letterSpacing: 0.1,
+  },
+  assigneeTextDone: {
     color: Colors.light.mutedText,
     opacity: 0.7,
   },

@@ -22,21 +22,24 @@ import type { ShoppingItem } from '@/types/models';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ZappIcon from '@/components/common/ZappIcon';
 
 export default function ShoppingList() {
   const { user } = useAuth();
-  const { familyId } = useFamily();
+  const { familyId, members } = useFamily();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQty, setNewItemQty] = useState('');
+  const [newItemAssigneeId, setNewItemAssigneeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filterName, setFilterName] = useState('');
   const [editingItem, setEditingItem] = useState<ShoppingItem | null>(null);
   const [editQty, setEditQty] = useState('');
+  const [showAssigneePicker, setShowAssigneePicker] = useState(false);
   const familyRef = useRef(familyId ?? null);
   const [errorItemId, setErrorItemId] = useState<string | null>(null);
 
@@ -70,11 +73,14 @@ export default function ShoppingList() {
 
     const qty = newItemQty.trim();
     const tempId = Date.now().toString();
+    const assignee = members.find((m) => m.id === newItemAssigneeId);
     const tempItem: ShoppingItem = {
       id: tempId,
       name: newItemName.trim(),
       done: false,
       quantity: qty,
+      assigneeId: newItemAssigneeId ?? undefined,
+      assignee: assignee?.name,
     };
 
     let snapshot: ShoppingItem[] = [];
@@ -84,12 +90,15 @@ export default function ShoppingList() {
     });
     setNewItemName('');
     setNewItemQty('');
+    setNewItemAssigneeId(null);
 
     try {
       const docId = await createShoppingItem({
         familyId: currentFamilyId,
         name: newItemName.trim(),
         quantity: qty,
+        assigneeId: newItemAssigneeId ?? undefined,
+        assigneeName: assignee?.name,
         userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
         userId: user.uid,
       });
@@ -101,6 +110,8 @@ export default function ShoppingList() {
                 name: newItemName.trim(),
                 done: false,
                 quantity: qty,
+                assigneeId: newItemAssigneeId ?? undefined,
+                assignee: assignee?.name,
               }
             : i,
         ),
@@ -249,19 +260,24 @@ export default function ShoppingList() {
   const pendingItems = baseItems.filter((i) => !i.done);
   const completedItems = baseItems.filter((i) => i.done);
 
-  const renderHeader = () => (
-    <ShoppingListHeader
-      hasCompletedItems={hasCompletedItems}
-      newItemName={newItemName}
-      newItemQty={newItemQty}
-      filterName={filterName}
-      onNewItemNameChange={setNewItemName}
-      onNewItemQtyChange={setNewItemQty}
-      onFilterChange={setFilterName}
-      onAddItem={handleAddItem}
-      onClearCompleted={handleClearCompleted}
-    />
-  );
+  const renderHeader = () => {
+    const assignee = members.find((m) => m.id === newItemAssigneeId);
+    return (
+      <ShoppingListHeader
+        hasCompletedItems={hasCompletedItems}
+        newItemName={newItemName}
+        newItemQty={newItemQty}
+        filterName={filterName}
+        onNewItemNameChange={setNewItemName}
+        onNewItemQtyChange={setNewItemQty}
+        onFilterChange={setFilterName}
+        onAddItem={handleAddItem}
+        onClearCompleted={handleClearCompleted}
+        onOpenAssigneePicker={() => setShowAssigneePicker(true)}
+        assigneeName={assignee?.name}
+      />
+    );
+  };
 
   const renderEmpty = () => (
     <EmptyState
@@ -303,6 +319,7 @@ export default function ShoppingList() {
             name={item.name}
             done={item.done}
             quantity={item.quantity}
+            assignee={item.assignee}
             onToggle={() => handleToggleItem(item.id)}
             onDelete={() => handleDeleteItem(item.id)}
             onEditQuantity={() => openEditQuantity(item)}
@@ -325,6 +342,7 @@ export default function ShoppingList() {
             name={item.name}
             done={item.done}
             quantity={item.quantity}
+            assignee={item.assignee}
             onToggle={() => handleToggleItem(item.id)}
             onDelete={() => handleDeleteItem(item.id)}
             onEditQuantity={() => openEditQuantity(item)}
@@ -350,6 +368,45 @@ export default function ShoppingList() {
       <View style={styles.headerSpacer} />
 
       {renderList()}
+
+      <Modal visible={showAssigneePicker} animationType="slide" onRequestClose={() => setShowAssigneePicker(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Responsável</Text>
+            <TouchableOpacity onPress={() => setShowAssigneePicker(false)} activeOpacity={0.7}>
+              <ZappIcon name="close" size={22} color={Colors.light.text} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalList} contentContainerStyle={styles.modalListContent}>
+            {members.length === 0 ? (
+              <Text style={styles.emptyText}>Nenhum membro cadastrado</Text>
+            ) : (
+              members.map((member) => (
+                <TouchableOpacity
+                  key={member.id}
+                  style={[styles.memberRow, newItemAssigneeId === member.id && styles.memberRowActive]}
+                  onPress={() => {
+                    setNewItemAssigneeId(member.id);
+                    setShowAssigneePicker(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.memberAvatar}>
+                    <Text style={styles.memberInitial}>{(member.name || '?')[0].toUpperCase()}</Text>
+                  </View>
+                  <View style={styles.memberInfo}>
+                    <Text style={styles.memberName}>{member.name}</Text>
+                    <Text style={styles.memberEmail}>{member.email}</Text>
+                  </View>
+                  {newItemAssigneeId === member.id && (
+                    <ZappIcon name="check" size={20} color={Colors.light.primary} />
+                  )}
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
 
       <QuantityEditModal
         visible={!!editingItem}
@@ -381,5 +438,83 @@ const styles = StyleSheet.create({
   },
   sectionHeaderDone: {
     marginTop: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 52,
+    paddingBottom: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.light.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: -0.2,
+  },
+  modalList: {
+    flex: 1,
+  },
+  modalListContent: {
+    padding: 16,
+    gap: 10,
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.cardBackground,
+  },
+  memberRowActive: {
+    borderColor: Colors.light.primary,
+    backgroundColor: `${Colors.light.primary}10`,
+  },
+  memberAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.light.cardDark,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberInitial: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: 0.2,
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.text,
+    letterSpacing: -0.1,
+  },
+  memberEmail: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.light.mutedText,
+    marginTop: 2,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.light.mutedText,
+    textAlign: 'center',
+    marginTop: 24,
   },
 });
