@@ -81,7 +81,7 @@ export default function RootLayout() {
 
 function useProtectedRoute() {
   const segments = useSegments();
-  const { user, initialized, isTokenReady } = useAuth();
+  const { user, initialized, isTokenReady, backendUserId } = useAuth();
 
   useEffect(() => {
     if (!initialized) return;
@@ -91,14 +91,14 @@ function useProtectedRoute() {
     if (!firstSegment) return;
 
     const inAuthGroup = firstSegment === '(auth)';
-    const isAuthenticated = Boolean(user && user.email && isTokenReady);
+    const isAuthenticated = Boolean(isTokenReady && backendUserId);
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [user, initialized, isTokenReady, segments]);
+  }, [user, initialized, isTokenReady, backendUserId, segments]);
 }
 
 function RootLayoutNav() {

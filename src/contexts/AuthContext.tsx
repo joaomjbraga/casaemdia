@@ -74,31 +74,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     configureGoogleSignIn();
 
-    const restoreToken = async () => {
+    let isMounted = true;
+
+    const restoreSession = async () => {
       try {
         const storedToken = await ReactNativeAsyncStorage.getItem('token');
+        if (!isMounted) return;
+
         if (storedToken) {
           setAuthToken(storedToken);
           setBackendUserId(decodeJwtSub(storedToken));
           setIsTokenReady(true);
         }
       } catch {
+        if (!isMounted) return;
         setIsTokenReady(false);
+      } finally {
+        if (isMounted) {
+          setInitialized(true);
+        }
       }
     };
 
-    restoreToken();
+    restoreSession();
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!isMounted) return;
       setUser(firebaseUser);
-      setInitialized(true);
       setLoading(false);
-      if (!firebaseUser) {
-        setIsTokenReady(false);
-      }
     });
 
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async (): Promise<AuthResult> => {
