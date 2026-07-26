@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { Auth, getAuth } from 'firebase/auth';
+import { Auth, getAuth, initializeAuth, browserLocalPersistence } from 'firebase/auth';
 import { getRequiredPublicEnv } from '@/lib/env';
 
 const firebaseConfig = {
@@ -32,6 +32,8 @@ if (missing.length > 0) {
 const isFirstInit = getApps().length === 0;
 const app = isFirstInit ? initializeApp(firebaseConfig) : getApp();
 
-const auth: Auth = getAuth(app);
+const auth: Auth = isFirstInit
+  ? initializeAuth(app, { persistence: browserLocalPersistence })
+  : getAuth(app);
 
-export { auth };
+export { app, auth };
