@@ -8,6 +8,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Header() {
@@ -69,9 +70,13 @@ export default function Header() {
       {/* Header */}
       <View style={styles.bar}>
         <View style={styles.brandSection}>
-          <View style={styles.userAvatar}>
-            <Text style={styles.userInitial}>{userInitial}</Text>
-          </View>
+          {user?.photoURL ? (
+            <Image source={{ uri: user.photoURL }} style={styles.userAvatarImage} contentFit="cover" />
+          ) : (
+            <View style={styles.userAvatar}>
+              <Text style={styles.userInitial}>{userInitial}</Text>
+            </View>
+          )}
 
           <View style={styles.appTitleContainer}>
             <Text style={styles.appName} numberOfLines={1}>
@@ -146,6 +151,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.light.cardDark,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  userAvatarImage: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },

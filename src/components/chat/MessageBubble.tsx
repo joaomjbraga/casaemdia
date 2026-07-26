@@ -10,6 +10,7 @@ interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
   relationLabel?: string | null;
+  avatarUri?: string | null;
   onDelete?: (messageId: string) => void;
 }
 
@@ -19,7 +20,7 @@ function formatTime(timestamp: any): string {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function MessageBubble({ message, isOwn, relationLabel, onDelete }: MessageBubbleProps) {
+export default function MessageBubble({ message, isOwn, relationLabel, avatarUri, onDelete }: MessageBubbleProps) {
   const [imageError, setImageError] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
@@ -49,10 +50,21 @@ export default function MessageBubble({ message, isOwn, relationLabel, onDelete 
       ? `${message.senderName || 'Usuário'} • ${relationLabel}`
       : message.senderName || 'Usuário';
 
+  const fallbackInitial = (message.senderName || 'U')[0].toUpperCase();
+
   return (
     <View style={[styles.row, isOwn && styles.rowOwn]}>
       <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
-        <Text style={styles.senderName}>{senderLine}</Text>
+        <View style={styles.senderHeader}>
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.senderAvatar} contentFit="cover" />
+          ) : (
+            <View style={styles.senderAvatarFallback}>
+              <Text style={styles.senderAvatarFallbackText}>{fallbackInitial}</Text>
+            </View>
+          )}
+          <Text style={styles.senderName}>{senderLine}</Text>
+        </View>
         {message.attachment?.type === 'image' && message.attachment.url ? (
           imageError ? (
             <View style={[styles.attachmentImage, styles.attachmentImagePlaceholder]}>
@@ -126,11 +138,38 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
     borderBottomLeftRadius: 4,
   },
+  senderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  senderAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  senderAvatarFallback: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.light.inputBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  senderAvatarFallbackText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.light.primary,
+  },
   senderName: {
     fontSize: 11,
     fontWeight: '700',
     color: Colors.light.primary,
-    marginBottom: 2,
   },
   attachmentImage: {
     width: 220,

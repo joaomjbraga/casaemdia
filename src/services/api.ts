@@ -18,6 +18,7 @@ logger.info('[api] API_BASE', API_BASE);
 
 // In-memory token cache to avoid race conditions with AsyncStorage persistence
 let inMemoryToken: string | null = null;
+const inFlightRequests = new Map<string, Promise<any>>();
 
 export function setAuthToken(token: string | null) {
   inMemoryToken = token ?? null;
@@ -39,70 +40,94 @@ async function resolveToken(): Promise<string | null> {
 
 async function request(path: string, options: RequestInit = {}, retries = 2) {
   const token = await resolveToken();
+  const bodyKey = typeof options.body === 'string' ? options.body : '';
+  const requestKey = `${(options.method || 'GET').toUpperCase()}:${path}:${bodyKey}`;
 
-  const headers = new Headers(options.headers || {});
-  if (!headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
+  const existingRequest = inFlightRequests.get(requestKey);
+  if (existingRequest) {
+    return existingRequest;
   }
 
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
-  let lastError: Error | null = null;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20000);
-
-      const response = await fetch(`${API_BASE}${path}`, {
-        ...options,
-        headers,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-
-      if (response.status === 401) {
-        try {
-          setAuthToken(null);
-        } catch {}
-        await storageRemove('token');
-        throw new Error('Sessão expirada');
-      }
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(async () => {
-          const text = await response.text().catch(() => 'Erro desconhecido');
-          return { message: text };
-        });
-        const errorMessage = errorBody?.message ?? 'Erro na requisição';
-        logger.error('[api] request failed', {
-          path,
-          status: response.status,
-          statusText: response.statusText,
-          body: errorBody,
-        });
-        throw new Error(`API ${response.status}: ${errorMessage}`);
-      }
-
-      if (response.status === 204) {
-        return null;
-      }
-
-      return response.json();
-    } catch (error: any) {
-      lastError = error;
-      if (attempt < retries && (error.name === 'AbortError' || error.message?.includes('Network request failed'))) {
-        await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
-        continue;
-      }
-      break;
+  const executeRequest = async () => {
+    const headers = new Headers(options.headers || {});
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
     }
-  }
 
-  throw lastError ?? new Error('Erro na requisição');
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+
+        const response = await fetch(`${API_BASE}${path}`, {
+          ...options,
+          headers,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+
+        if (response.status === 401) {
+          try {
+            setAuthToken(null);
+          } catch {}
+          await storageRemove('token');
+          throw new Error('Sessão expirada');
+        }
+
+        if (response.status === 429) {
+          logger.warn('[api] rate limited', { path, status: response.status, statusText: response.statusText });
+          throw new Error('API 429: Muitas requisições. Tente novamente mais tarde.');
+        }
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(async () => {
+            const text = await response.text().catch(() => 'Erro desconhecido');
+            return { message: text };
+          });
+          const errorMessage = errorBody?.message ?? 'Erro na requisição';
+          logger.error('[api] request failed', {
+            path,
+            status: response.status,
+            statusText: response.statusText,
+            body: errorBody,
+          });
+          throw new Error(`API ${response.status}: ${errorMessage}`);
+        }
+
+        if (response.status === 204) {
+          return null;
+        }
+
+        return response.json();
+      } catch (error: any) {
+        lastError = error;
+        const shouldRetry = attempt < retries && (error.name === 'AbortError' || error.message?.includes('Network request failed'));
+        if (shouldRetry) {
+          await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+          continue;
+        }
+        break;
+      }
+    }
+
+    throw lastError ?? new Error('Erro na requisição');
+  };
+
+  const requestPromise = executeRequest();
+  inFlightRequests.set(requestKey, requestPromise);
+
+  try {
+    return await requestPromise;
+  } finally {
+    inFlightRequests.delete(requestKey);
+  }
 }
 
 export const api = {

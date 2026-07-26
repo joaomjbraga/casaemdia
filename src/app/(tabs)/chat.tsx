@@ -207,7 +207,7 @@ export default function ChatScreen() {
         setIsSending(false);
       }
     },
-    [familyId, user, members, isSending],
+    [familyId, user, members, isSending, backendUserId],
   );
 
   const handleDeleteMessage = useCallback(
@@ -237,7 +237,7 @@ export default function ChatScreen() {
         showError('Não foi possível excluir a mensagem.');
       }
     },
-    [familyId, user, isAdmin, messages],
+    [familyId, user, isAdmin, messages, backendUserId, members],
   );
 
   const handleClearChat = useCallback(async () => {
@@ -527,11 +527,15 @@ export default function ChatScreen() {
               ? FamilyRelationLabels[senderMember.familyRelation as keyof typeof FamilyRelationLabels]
               : null;
 
+            const senderAvatarUri = senderMember?.photoURL ?? null;
+            const ownAvatarUri = currentUserMember?.photoURL ?? user?.photoURL ?? null;
+
             return (
               <MessageBubble
                 message={item.message}
                 isOwn={item.message.senderId === currentUserMember?.id}
                 relationLabel={relationLabel}
+                avatarUri={item.message.senderId === currentUserMember?.id ? ownAvatarUri : senderAvatarUri}
                 onDelete={handleDeleteMessage}
               />
             );

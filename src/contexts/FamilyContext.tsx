@@ -227,18 +227,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
 
-    if (!hasTriggeredStartupRevalidationRef.current) {
-      hasTriggeredStartupRevalidationRef.current = true;
-      init();
-
-      const revalidateTimer = setTimeout(() => {
-        if (!hasRestoredCachedFamilyRef.current) return;
-        init().catch(() => undefined);
-      }, 2500);
-
-      return () => clearTimeout(revalidateTimer);
-    }
-
+    hasTriggeredStartupRevalidationRef.current = true;
     init();
   }, [user, authInitialized, isTokenReady]);
 

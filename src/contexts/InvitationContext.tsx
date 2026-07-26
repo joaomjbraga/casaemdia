@@ -99,12 +99,6 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!email || !isTokenReady) return;
 
     refreshInvitations();
-
-    const interval = setInterval(() => {
-      refreshInvitations();
-    }, 60000);
-
-    return () => clearInterval(interval);
   }, [user?.email, isTokenReady, refreshInvitations]);
 
   const sendInvitation = useCallback(

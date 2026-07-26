@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [shoppingLoading, setShoppingLoading] = useState(true);
 
   const tasksRef = useRef<Task[]>([]);
+  const dashboardRefreshInFlightRef = useRef(false);
   tasksRef.current = tasks;
 
   const fetchTasks = useCallback(async () => {
@@ -79,14 +80,24 @@ export default function Dashboard() {
     }
   }, [familyId, showAlert]);
 
+  const refreshDashboardData = useCallback(async () => {
+    if (!familyId || dashboardRefreshInFlightRef.current) return;
+
+    dashboardRefreshInFlightRef.current = true;
+
+    try {
+      await Promise.all([fetchTasks(), fetchShopping(), fetchMembers()]);
+    } finally {
+      dashboardRefreshInFlightRef.current = false;
+    }
+  }, [familyId, fetchTasks, fetchShopping, fetchMembers]);
+
   useFocusEffect(
     useCallback(() => {
       if (familyId) {
-        fetchTasks();
-        fetchShopping();
-        fetchMembers();
+        refreshDashboardData();
       }
-    }, [familyId, fetchTasks, fetchShopping, fetchMembers]),
+    }, [familyId, refreshDashboardData]),
   );
 
   const handleTaskPress = useCallback(
