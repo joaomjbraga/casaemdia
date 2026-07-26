@@ -3,7 +3,6 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import Colors from '@/constants/Colors';
 import type { ChatMessage } from '@/types/models';
-import logger from '@/lib/logger';
 import AudioPlayer from './AudioPlayer';
 import ImageViewer from './ImageViewer';
 
@@ -29,14 +28,6 @@ export default function MessageBubble({ message, isOwn, onDelete }: MessageBubbl
       : message.status === 'error'
         ? 'Erro ao enviar'
         : null;
-
-  logger.debug('[MessageBubble] render', {
-    id: message.id,
-    status: message.status,
-    hasAttachment: !!message.attachment,
-    attachmentType: message.attachment?.type,
-    attachmentUrl: message.attachment?.url,
-  });
 
   const openImageViewer = useCallback((url: string) => {
     setViewerUri(url);

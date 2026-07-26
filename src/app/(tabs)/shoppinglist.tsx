@@ -53,7 +53,10 @@ export default function ShoppingList() {
     }
 
     const unsubscribe = subscribeToShoppingItems(currentFamilyId, (mappedItems) => {
-      setItems(mappedItems as ShoppingItem[]);
+      const safeMappedItems = Array.isArray(mappedItems)
+        ? mappedItems.filter((item): item is ShoppingItem => Boolean(item && typeof item.name === 'string'))
+        : [];
+      setItems(safeMappedItems);
       setLoading(false);
     });
 
@@ -160,13 +163,6 @@ export default function ShoppingList() {
         itemId: id,
         item,
         newDone,
-        user: user
-          ? {
-              uid: user.uid,
-              displayName: user.displayName,
-              email: user.email,
-            }
-          : undefined,
       });
 
       setErrorItemId(null);
@@ -197,7 +193,6 @@ export default function ShoppingList() {
         itemId: id,
         itemName: deletedItem?.name,
         userName: user.displayName || user.email?.split('@')[0] || 'Alguem',
-        userId: user.uid,
       });
     } catch {
       setItems(() => snapshot);
@@ -210,7 +205,7 @@ export default function ShoppingList() {
   };
 
   const handleClearCompleted = () => {
-    const completed = items.filter((i) => i.done);
+    const completed = safeItems.filter((i) => i.done);
     if (completed.length === 0) return;
 
     showDialog({
@@ -223,11 +218,11 @@ export default function ShoppingList() {
         const currentFamilyId = familyRef.current;
         if (!currentFamilyId) return;
 
-        const completedItems = items.filter((i) => i.done);
+        const completedItems = safeItems.filter((i) => i.done);
         let snapshot: ShoppingItem[] = [];
         setItems((prev) => {
           snapshot = prev;
-          return prev.filter((i) => !i.done);
+          return prev.filter((i) => !i?.done);
         });
 
         try {
@@ -244,11 +239,12 @@ export default function ShoppingList() {
     });
   };
 
-  const hasCompletedItems = items.some((i) => i.done);
+  const safeItems = Array.isArray(items) ? items.filter((item) => item && typeof item.name === 'string') : [];
+  const hasCompletedItems = safeItems.some((i) => i.done);
 
   const baseItems = filterName
-    ? items.filter((item) => item.name.toLowerCase().includes(filterName.toLowerCase()))
-    : items;
+    ? safeItems.filter((item) => item.name.toLowerCase().includes(filterName.toLowerCase()))
+    : safeItems;
 
   const pendingItems = baseItems.filter((i) => !i.done);
   const completedItems = baseItems.filter((i) => i.done);
@@ -293,10 +289,14 @@ export default function ShoppingList() {
       return <LoadingSkeleton variant="shopping" />;
     }
 
+    const safePendingItems = safeItems.filter((i) => !i.done);
+    const safeCompletedItems = safeItems.filter((i) => i.done);
+
     const rows: React.ReactElement[] = [];
-    if (pendingItems.length > 0) {
+    if (safePendingItems.length > 0) {
       rows.push(<View key="pending-header">{renderSectionHeader('A comprar')}</View>);
-      pendingItems.forEach((item, idx) =>
+      safePendingItems.forEach((item, idx) => {
+        if (!item) return;
         rows.push(
           <ShoppingItemCard
             key={item.id}
@@ -309,16 +309,16 @@ export default function ShoppingList() {
             index={idx}
             error={errorItemId === item.id}
           />,
-        ),
-      );
+        );
+      });
     }
-    if (completedItems.length > 0) {
+    if (safeCompletedItems.length > 0) {
       rows.push(
         <View key="done-header" style={styles.sectionHeaderDone}>
           {renderSectionHeader('Comprados')}
         </View>,
       );
-      completedItems.forEach((item, idx) =>
+      safeCompletedItems.forEach((item, idx) =>
         rows.push(
           <ShoppingItemCard
             key={item.id}
@@ -338,7 +338,7 @@ export default function ShoppingList() {
     return (
       <ScrollView style={styles.listWrap} showsVerticalScrollIndicator={false}>
         {renderHeader()}
-        {items.length === 0 ? renderEmpty() : <View style={styles.listContent}>{rows}</View>}
+        {safeItems.length === 0 ? renderEmpty() : <View style={styles.listContent}>{rows}</View>}
       </ScrollView>
     );
   };

@@ -11,7 +11,6 @@ import {
   addNotificationClickListener,
   removeNotificationClickListener,
   requestPermissionAfterLogin,
-  diagnosePushFailure,
 } from '@/lib/onesignal';
 import { useFonts } from 'expo-font';
 import { NavigationBar } from 'expo-navigation-bar';
@@ -82,20 +81,24 @@ export default function RootLayout() {
 
 function useProtectedRoute() {
   const segments = useSegments();
-  const { user, initialized } = useAuth();
+  const { user, initialized, isTokenReady } = useAuth();
 
   useEffect(() => {
     if (!initialized) return;
+    if (!segments) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
-    const isAuthenticated = user && user.email;
+    const firstSegment = Array.isArray(segments) ? segments[0] : undefined;
+    if (!firstSegment) return;
+
+    const inAuthGroup = firstSegment === '(auth)';
+    const isAuthenticated = Boolean(user && user.email && isTokenReady);
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [user, initialized, segments]);
+  }, [user, initialized, isTokenReady, segments]);
 }
 
 function RootLayoutNav() {
@@ -103,7 +106,6 @@ function RootLayoutNav() {
   const { familyId, wasRemoved, acknowledgeRemoval } = useFamily();
   const { showAlert } = useAlertDialog();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const pushWarningShown = useRef(false);
 
   useProtectedRoute();
 
@@ -116,25 +118,6 @@ function RootLayoutNav() {
       return () => clearTimeout(timer);
     }
   }, [initialized, loading]);
-
-  useEffect(() => {
-    if (!initialized || loading || pushWarningShown.current) return;
-
-    const timer = setTimeout(async () => {
-      const diag = await diagnosePushFailure();
-      if (!diag.hasPermission && !pushWarningShown.current) {
-        pushWarningShown.current = true;
-        showAlert({
-          title: 'Notificações desativadas',
-          message: diag.reason + ' Você não receberá alertas de tarefas e compras.',
-          type: 'error',
-          buttonText: 'Entendi',
-        });
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [initialized, loading, showAlert]);
 
   useEffect(() => {
     if (!wasRemoved) return;
@@ -224,15 +207,6 @@ function RootLayoutNav() {
 
         <Stack.Screen
           name="task-detail"
-          options={{
-            headerShown: false,
-            gestureEnabled: true,
-            animation: 'slide_from_right',
-          }}
-        />
-
-        <Stack.Screen
-          name="my-tasks"
           options={{
             headerShown: false,
             gestureEnabled: true,

@@ -11,7 +11,7 @@ import Badge from '@/components/tasks/Badge';
 import PrimaryActionButton from '@/components/common/PrimaryActionButton';
 import ZappIcon from '@/components/common/ZappIcon';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 export default function TaskDetailScreen() {
@@ -22,8 +22,8 @@ export default function TaskDetailScreen() {
     assigneeId: string;
     done: string;
   }>();
-  const { familyId } = useFamily();
-  const { user } = useAuth();
+  const { familyId, members } = useFamily();
+  const { user, backendUserId } = useAuth();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
 
@@ -32,7 +32,11 @@ export default function TaskDetailScreen() {
   const checkScale = useRef(new Animated.Value(0)).current;
 
   const isDone = params.done === 'true';
-  const isOwner = user?.uid === params.assigneeId;
+  const currentMemberId = useMemo(
+    () => members.find((m) => m.userId === backendUserId)?.id,
+    [members, backendUserId],
+  );
+  const isOwner = currentMemberId === params.assigneeId;
 
   useEffect(() => {
     Animated.parallel([

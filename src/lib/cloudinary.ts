@@ -1,3 +1,4 @@
+import { getRequiredPublicEnv } from '@/lib/env';
 import logger from '@/lib/logger';
 
 export interface CloudinaryUploadResult {
@@ -7,14 +8,8 @@ export interface CloudinaryUploadResult {
 }
 
 const getCloudinaryConfig = () => {
-  const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error(
-      'Cloudinary config missing. Defina EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME e EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET.',
-    );
-  }
+  const cloudName = getRequiredPublicEnv('EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME');
+  const uploadPreset = getRequiredPublicEnv('EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET');
 
   return { cloudName, uploadPreset };
 };

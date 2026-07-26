@@ -188,6 +188,6 @@ const styles = StyleSheet.create({
   confirmText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.light.text,
+    color: '#fff',
   },
 });

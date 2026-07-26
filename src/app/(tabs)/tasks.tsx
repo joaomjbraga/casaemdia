@@ -11,7 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import {
   deleteAllTasks,
-  deleteTask as deleteTaskRecord,
+  deleteTask,
+  fetchDashboardTasks,
   subscribeToTasks,
   toggleTaskCompletion,
 } from '@/services/tasks';
@@ -83,7 +84,7 @@ export default function TasksScreen() {
     }
   };
 
-  const deleteTask = async (id: string) => {
+  const handleDeleteTask = async (id: string) => {
     if (!familyId || !user) return;
 
     const deletedTask = tasks.find((t) => t.id === id);
@@ -94,7 +95,7 @@ export default function TasksScreen() {
     });
 
     try {
-      await deleteTaskRecord({
+      await deleteTask({
         familyId,
         taskId: id,
         title: deletedTask?.title,
@@ -122,13 +123,19 @@ export default function TasksScreen() {
       type: 'danger',
       confirmText: 'Excluir',
       cancelText: 'Cancelar',
-      onConfirm: () => deleteTask(id),
+      onConfirm: () => handleDeleteTask(id),
     });
   };
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
+    if (!familyId) return;
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    try {
+      const data = await fetchDashboardTasks(familyId);
+      setTasks(data);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const openAdd = () => router.push('/AddTaskScreen');

@@ -1,97 +1,81 @@
 import type { FamilyMember, Invitation } from '@/types/models';
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  query,
-  serverTimestamp,
-  Timestamp,
-  updateDoc,
-  where,
-  writeBatch,
-} from 'firebase/firestore';
-import { createNewFamily, migrateOrCreateFamily } from '../lib/family-migration';
-import { db } from '../lib/firebase';
-import { removeUserTags, sendNotificationToEmail } from '../lib/onesignal';
-import logger from '@/lib/logger';
+  createFamilyApi,
+  getFamilyApi,
+  addFamilyMemberApi,
+  removeFamilyMemberApi,
+  updateFamilyMemberRoleApi,
+  subscribeToFamilyMembersApi,
+  fetchPendingInvitationsApi,
+  fetchSentInvitationsApi,
+  acceptInvitationApi,
+  declineInvitationApi,
+  sendFamilyInvitationApi,
+} from './family-api';
+import { removeUserTags } from '../lib/onesignal';
+import type { User } from 'firebase/auth';
 
-export const initializeFamilyForUser = async (user: any) => {
-  return migrateOrCreateFamily(user);
+interface FamilyResult {
+  familyId: string;
+  familyName: string;
+}
+
+export const initializeFamilyForUser = async (user: User): Promise<FamilyResult> => {
+  const profile = {
+    email: user.email ?? '',
+    name: user.displayName ?? user.email?.split('@')[0] ?? 'Usuário',
+    photoURL: user.photoURL ?? null,
+  };
+
+  try {
+    const existing = await getFamilyApi();
+    if (existing?.family?.id) {
+      return {
+        familyId: existing.family.id,
+        familyName: existing.family.name ?? 'Minha Família',
+      };
+    }
+  } catch {
+    // no existing family, create new
+  }
+
+  const created = await createFamilyApi(profile.name);
+  return {
+    familyId: created.family.id,
+    familyName: created.family.name ?? 'Minha Família',
+  };
 };
 
-export const recoverFamilyAfterRemoval = async (currentUser: any) => {
+export const recoverFamilyAfterRemoval = async (currentUser: User): Promise<FamilyResult> => {
   removeUserTags();
-  return createNewFamily(currentUser);
+  return initializeFamilyForUser(currentUser);
 };
 
 export const subscribeToFamilyMembers = (
   familyId: string,
   callback: (members: FamilyMember[]) => void,
 ) => {
-  const membersRef = collection(db, 'families', familyId, 'members');
-  return onSnapshot(
-    query(membersRef),
-    (snapshot) => {
-      const membersList: FamilyMember[] = snapshot.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          name: data.name,
-          email: data.email ?? '',
-          photoURL: data.photoURL ?? null,
-          role: (data.role ?? 'member') as 'admin' | 'member',
-        };
-      });
-      callback(membersList);
-    },
-    (error) => {
-      logger.error('Members snapshot error:', error);
-    },
-  );
+  return subscribeToFamilyMembersApi(familyId, (members) => {
+    callback(
+      members.map((m) => ({
+        id: m.id,
+        userId: m.userId,
+        name: m.name,
+        email: m.email ?? '',
+        photoURL: m.photoURL ?? null,
+        role: (m.role ?? 'member') as 'admin' | 'member',
+      })),
+    );
+  });
 };
 
 export const fetchPendingInvitations = async (email: string) => {
-  const q = query(
-    collection(db, 'invitations'),
-    where('toEmail', '==', email),
-    where('status', '==', 'pending'),
-  );
-
-  const snap = await getDocs(q);
-  const now = Date.now();
-  const expiredIds: string[] = [];
-  const invitations: Invitation[] = snap.docs
-    .map((d) => {
-      const data = d.data();
-      return {
-        id: d.id,
-        familyId: data.familyId,
-        familyName: data.familyName,
-        fromUserId: data.fromUserId,
-        fromUserName: data.fromUserName,
-        toEmail: data.toEmail,
-        status: data.status,
-        createdAt: data.createdAt,
-      };
-    })
-    .filter((inv) => {
-      const docData = snap.docs.find((d) => d.id === inv.id);
-      const expiresAt = docData?.data().expiresAt;
-      if (expiresAt && expiresAt.toMillis() < now) {
-        expiredIds.push(inv.id);
-        return false;
-      }
-      return true;
-    });
-
-  return { invitations, expiredIds };
+  const invitations = await fetchPendingInvitationsApi();
+  return { invitations, expiredIds: [] as string[] };
 };
 
-export const markInvitationAsExpired = async (invitationId: string) => {
-  const docRef = doc(db, 'invitations', invitationId);
-  await updateDoc(docRef, { status: 'expired' });
+export const fetchSentInvitations = async (familyId: string) => {
+  return fetchSentInvitationsApi(familyId);
 };
 
 export const sendFamilyInvitation = async (
@@ -99,55 +83,11 @@ export const sendFamilyInvitation = async (
   familyName: string,
   currentUser: any,
   targetEmail: string,
-  members: FamilyMember[],
+  _members: FamilyMember[],
 ) => {
   if (!currentUser) throw new Error('Usuário não autenticado');
-
   const normalizedEmail = targetEmail.trim().toLowerCase();
-  const invitationId = `${familyId}_${normalizedEmail}_${currentUser.uid}`;
-
-  const existingRef = doc(db, 'invitations', invitationId);
-  const existingSnap = await getDoc(existingRef);
-  if (existingSnap.exists() && existingSnap.data().status === 'pending') {
-    throw new Error('Convite já enviado para este email');
-  }
-
-  const alreadyMember = members.some((m) => m.email === normalizedEmail);
-  if (alreadyMember) {
-    throw new Error('Este email já é membro da família');
-  }
-
-  const userQ = query(collection(db, 'users'), where('email', '==', normalizedEmail));
-  const userSnap = await getDocs(userQ);
-  if (userSnap.empty) {
-    throw new Error('Este email não possui uma conta no app');
-  }
-
-  const batch = writeBatch(db);
-
-  batch.set(existingRef, {
-    familyId,
-    familyName,
-    fromUserId: currentUser.uid,
-    fromUserName: currentUser.displayName || 'Administrador',
-    toEmail: normalizedEmail,
-    status: 'pending',
-    createdAt: serverTimestamp(),
-    expiresAt: Timestamp.fromDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
-  });
-
-  await batch.commit();
-
-  try {
-    await sendNotificationToEmail({
-      email: normalizedEmail,
-      title: 'Convite de Familia',
-      body: `${currentUser.displayName || 'Alguem'} te convidou para a familia "${familyName}". Abra o app para aceitar.`,
-      data: { type: 'invitation' },
-    });
-  } catch (error) {
-    logger.error('Erro ao enviar notificação (convite):', error);
-  }
+  return sendFamilyInvitationApi(familyId, familyName, normalizedEmail);
 };
 
 export const acceptFamilyInvitation = async (
@@ -157,65 +97,10 @@ export const acceptFamilyInvitation = async (
   refreshFamily: () => Promise<void>,
 ) => {
   if (!currentUser) throw new Error('Usuário não autenticado');
-
-  const invRef = doc(db, 'invitations', invitationId);
-  const invSnap = await getDoc(invRef);
-  if (!invSnap.exists()) throw new Error('Convite não encontrado');
-
-  const invData = invSnap.data();
-  if (invData.status !== 'pending') {
-    throw new Error('Este convite não está mais disponível');
-  }
-
-  const expiresAt = invData.expiresAt;
-  if (expiresAt && expiresAt.toMillis() < Date.now()) {
-    throw new Error('Este convite expirou');
-  }
-
-  if (invData.toEmail?.toLowerCase() !== currentUser.email?.toLowerCase()) {
-    throw new Error('Este convite não pertence ao usuário atual');
-  }
-
-  const targetFamilyId = invData.familyId;
-  const targetFamilyName = invData.familyName || 'Minha Família';
-
-  const uid = currentUser.uid;
-  const memberRef = doc(db, 'families', targetFamilyId, 'members', uid);
-  const userRef = doc(db, 'users', uid);
-  const batch = writeBatch(db);
-
-  if (currentFamilyId && currentFamilyId !== targetFamilyId) {
-    const oldMemberRef = doc(db, 'families', currentFamilyId, 'members', uid);
-    batch.delete(oldMemberRef);
-  }
-
-  batch.set(memberRef, {
-    name: currentUser.displayName || 'Membro',
-    email: currentUser.email || '',
-    photoURL: currentUser.photoURL || null,
-    role: 'member',
-    invitationId,
-    joinedAt: serverTimestamp(),
-  });
-
-  batch.set(
-    userRef,
-    {
-      familyId: targetFamilyId,
-      familyName: targetFamilyName,
-      email: currentUser.email?.toLowerCase() || '',
-      migratedAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
-
-  batch.update(invRef, { status: 'accepted' });
-  await batch.commit();
-
+  await acceptInvitationApi(invitationId, currentFamilyId ?? undefined);
   await refreshFamily();
 };
 
 export const declineFamilyInvitation = async (invitationId: string) => {
-  const invRef = doc(db, 'invitations', invitationId);
-  await updateDoc(invRef, { status: 'declined' });
+  await declineInvitationApi(invitationId);
 };

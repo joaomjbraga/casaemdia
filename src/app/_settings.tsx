@@ -19,7 +19,6 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { deleteUserAccountFromFamily } from '../services/account';
 
 export default function SettingsScreen() {
   return <SettingsInner />;
@@ -33,14 +32,14 @@ function SettingsInner() {
 
   const { members, deleteFamilyMember, familyId, beginIntentionalExit, cancelIntentionalExit } =
     useFamily();
-  const { sendInvitation } = useInvitations();
+  const { sendInvitation, sentInvitations } = useInvitations();
   const router = useRouter();
-  const { user, signOut, deleteAccount } = useAuth();
+  const { user, backendUserId, signOut, deleteAccount } = useAuth();
   const { showDialog } = useConfirmDialog();
 
   const currentUser = useMemo(() => {
-    return members.find((m) => m.id === user?.uid);
-  }, [members, user?.uid]);
+    return members.find((m) => m.userId === backendUserId);
+  }, [members, backendUserId]);
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -105,11 +104,7 @@ function SettingsInner() {
         try {
           setDeletingAccount(true);
           beginIntentionalExit();
-          await deleteUserAccountFromFamily({
-            familyId,
-            userId: user.uid,
-            deleteAccount,
-          });
+          await deleteAccount();
           router.replace('/(auth)/login');
         } catch (error) {
           cancelIntentionalExit();
@@ -200,6 +195,28 @@ function SettingsInner() {
                   </View>
                 </View>
               </Cell>
+              {sentInvitations.map((invitation, index) => (
+                <Cell key={invitation.id} last={index === sentInvitations.length - 1}>
+                  <View style={styles.memberRow}>
+                    <View style={styles.memberAvatar}>
+                      <ZappIcon name="email-outline" size={16} color={Colors.light.primary} />
+                    </View>
+                    <View style={styles.memberInfo}>
+                      <Text style={styles.memberName} numberOfLines={1}>
+                        {invitation.toEmail}
+                      </Text>
+                      <Text style={styles.memberEmail} numberOfLines={1}>
+                        {invitation.status === 'pending' ? 'Pendente' : invitation.status === 'accepted' ? 'Aceito' : 'Recusado'}
+                      </Text>
+                    </View>
+                    <View style={[styles.invitationBadge, invitation.status === 'pending' ? styles.badgePending : invitation.status === 'accepted' ? styles.badgeAccepted : styles.badgeDeclined]}>
+                      <Text style={styles.invitationBadgeText}>
+                        {invitation.status === 'pending' ? 'Pendente' : invitation.status === 'accepted' ? 'Aceito' : 'Recusado'}
+                      </Text>
+                    </View>
+                  </View>
+                </Cell>
+              ))}
             </ListSection>
           </>
         )}
@@ -230,7 +247,7 @@ function SettingsInner() {
                     </Text>
                   ) : null}
                 </View>
-                {isAdmin && member.id !== user?.uid && (
+                {isAdmin && member.userId !== backendUserId && (
                   <TouchableOpacity
                     onPress={() => handleDeleteMember(member.id, member.name)}
                     disabled={deletingMember === member.id}
@@ -392,6 +409,25 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     color: Colors.light.mutedText,
+    letterSpacing: 0.4,
+  },
+  invitationBadge: {
+    borderRadius: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+  },
+  badgePending: {
+    backgroundColor: '#FFF3CD',
+  },
+  badgeAccepted: {
+    backgroundColor: '#D4EDDA',
+  },
+  badgeDeclined: {
+    backgroundColor: '#F8D7DA',
+  },
+  invitationBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
     letterSpacing: 0.4,
   },
   removeBtn: {

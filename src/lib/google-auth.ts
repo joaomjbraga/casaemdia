@@ -1,9 +1,10 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from './firebase';
+import { getRequiredPublicEnv } from '@/lib/env';
 import logger from '@/lib/logger';
 
-const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+const WEB_CLIENT_ID = getRequiredPublicEnv('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID');
 
 export function configureGoogleSignIn() {
   if (!WEB_CLIENT_ID) {
@@ -27,12 +28,20 @@ export async function signInWithGoogle() {
 
   const idToken = userInfo.data?.idToken;
 
-  if (!idToken) {
+  if (!idToken || !idToken.includes('.')) {
+    const tokens = {
+      idToken: userInfo.data?.idToken,
+      serverAuthCode: userInfo.data?.serverAuthCode,
+    };
+    logger.error('[GoogleAuth] idToken ausente ou inválido', tokens);
     throw new Error('Não foi possível obter o token do Google.');
   }
 
   const credential = GoogleAuthProvider.credential(idToken);
   const userCredential = await signInWithCredential(auth, credential);
 
-  return userCredential.user;
+  return {
+    user: userCredential.user,
+    idToken,
+  };
 }

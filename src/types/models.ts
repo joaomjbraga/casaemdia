@@ -9,6 +9,7 @@ export interface Task {
 
 export interface FamilyMember {
   id: string;
+  userId: string;
   name: string;
   email: string;
   photoURL: string | null;

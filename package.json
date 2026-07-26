@@ -6,13 +6,10 @@
     "start": "expo start",
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint \"src/**\" --ext .ts,.tsx",
-    "lint:fix": "eslint \"src/**\" --ext .ts,.tsx --fix",
+    "lint": "eslint \"src/**\"",
+    "lint:fix": "eslint \"src/**\" --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"**/*.json\" \"**/*.md\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"**/*.json\" \"**/*.md\"",
-    "firebase:login": "firebase login",
-    "firebase:rules": "firebase deploy --only firestore:rules",
-    "firebase:functions": "firebase deploy --only functions"
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"**/*.json\" \"**/*.md\""
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -53,7 +50,8 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
-    "react-native-worklets": "0.10.0"
+    "react-native-worklets": "0.10.0",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

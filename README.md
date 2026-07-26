@@ -88,6 +88,22 @@ EXPO_PUBLIC_ONESIGNAL_REST_API_KEY=
 
 O template completo está em [.env.example](./.env.example).
 
+**Observação sobre o Backend (Node/Express)**
+
+O backend Node/Express usa variáveis adicionais que não devem ser expostas ao cliente. Elas devem ser definidas no ambiente do servidor (por exemplo em um arquivo `.env` no diretório `server/` ou nas configurações do seu provedor):
+
+```env
+JWT_SECRET=change-me-super-secret
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+ONESIGNAL_APP_ID=
+ONESIGNAL_REST_API_KEY=
+```
+
+Certifique-se de preencher essas variáveis no ambiente do servidor antes de iniciar `server`.
+
 ## Firebase e Firestore
 
 O app usa Firebase Auth, Firestore e regras de segurança definidas em [firestore.rules](./firestore.rules).

@@ -1,32 +1,8 @@
 import type { FamilyMember } from '@/types/models';
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  where,
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { sendNotificationToEmail } from '../lib/onesignal';
-import logger from '@/lib/logger';
+import { getFamilyMembersApi, removeFamilyMemberApi } from './family-api';
 
 export const fetchFamilyMembersFromStore = async (familyId: string): Promise<FamilyMember[]> => {
-  const q = query(collection(db, 'families', familyId, 'members'), orderBy('name', 'asc'));
-  const snapshot = await getDocs(q);
-
-  return snapshot.docs.map((d) => {
-    const data = d.data();
-    return {
-      id: d.id,
-      name: data.name,
-      email: data.email ?? '',
-      photoURL: data.photoURL ?? null,
-      role: (data.role ?? 'member') as 'admin' | 'member',
-    };
-  });
+  return getFamilyMembersApi(familyId);
 };
 
 export const deleteFamilyMemberFromStore = async ({
@@ -42,19 +18,11 @@ export const deleteFamilyMemberFromStore = async ({
   memberEmail?: string;
   familyName?: string;
 }) => {
-  const tasksSnapshot = await getDocs(collection(db, 'families', familyId, 'tasks'));
-  const memberTasks = tasksSnapshot.docs.filter(
-    (d) => d.data().assigneeId === memberId || d.data().assignee === memberName,
-  );
-
-  if (memberTasks.length > 0) {
-    throw new Error('Não é possível remover este membro, pois ele tem tarefas atribuídas.');
-  }
-
-  await deleteDoc(doc(db, 'families', familyId, 'members', memberId));
+  await removeFamilyMemberApi(familyId, memberId);
 
   if (memberEmail) {
     try {
+      const { sendNotificationToEmail } = await import('../lib/onesignal');
       await sendNotificationToEmail({
         email: memberEmail,
         title: 'Você saiu da família',
@@ -62,7 +30,7 @@ export const deleteFamilyMemberFromStore = async ({
         data: { type: 'member_removed' },
       });
     } catch (error) {
-      logger.error('Erro ao enviar notificação (membro removido):', error);
+      console.error('Erro ao enviar notificação (membro removido):', error);
     }
   }
 };

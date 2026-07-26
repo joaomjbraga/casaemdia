@@ -2,6 +2,7 @@ import * as Cellular from 'expo-cellular';
 import NetInfo, { NetInfoStateType } from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
 import { OneSignal, LogLevel, type NotificationClickEvent } from 'react-native-onesignal';
+import { getRequiredPublicEnv } from '@/lib/env';
 import logger from '@/lib/logger';
 
 export interface PushDiagnostic {
@@ -69,8 +70,8 @@ export async function diagnosePushFailure(): Promise<PushDiagnostic> {
   return { hasPermission, chipPresent, noService, phonePermissionDenied, carrierName, reason };
 }
 
-const ONESIGNAL_APP_ID = process.env.EXPO_PUBLIC_ONESIGNAL_APP_ID || '';
-const ONESIGNAL_REST_API_KEY = process.env.EXPO_PUBLIC_ONESIGNAL_REST_API_KEY || '';
+const ONESIGNAL_APP_ID = getRequiredPublicEnv('EXPO_PUBLIC_ONESIGNAL_APP_ID');
+const ONESIGNAL_REST_API_KEY = getRequiredPublicEnv('EXPO_PUBLIC_ONESIGNAL_REST_API_KEY');
 const ONESIGNAL_API_URL = 'https://api.onesignal.com/notifications';
 
 export function initializeOneSignal(): void {
@@ -96,9 +97,6 @@ export async function requestPermissionAfterLogin(): Promise<void> {
 export async function checkPushPermission(): Promise<boolean> {
   try {
     const permission = await OneSignal.Notifications.getPermissionAsync();
-    if (!permission) {
-      logger.warn('[OneSignal] Push permission denied - usuario sem chip ou permissao negada');
-    }
     return permission;
   } catch {
     return false;

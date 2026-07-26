@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,9 +57,11 @@ export default function AudioPlayer({ uri, name }: AudioPlayerProps) {
   const durationMs = Math.max(0, status.duration) * 1000;
   const positionMs = Math.min(durationMs, Math.max(0, status.currentTime) * 1000);
 
-  if (status.didJustFinish) {
-    finishedRef.current = true;
-  }
+  useEffect(() => {
+    if (status.didJustFinish) {
+      finishedRef.current = true;
+    }
+  }, [status.didJustFinish]);
 
   const togglePlayback = useCallback(async () => {
     try {

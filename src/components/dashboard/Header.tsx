@@ -10,7 +10,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Header() {
-  const { user, signOut } = useAuth();
+  const { user, backendUserId, signOut } = useAuth();
   const { familyName, members } = useFamily();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
@@ -19,7 +19,7 @@ export default function Header() {
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const currentUser = members.find((member) => member.id === user?.uid);
+  const currentUser = members.find((member) => member.userId === backendUserId);
   const isAdmin = currentUser?.role === 'admin';
 
   const userInitial = (user?.displayName || user?.email || '?')[0].toUpperCase();

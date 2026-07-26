@@ -49,7 +49,7 @@ export default function EmptyState({
   }, [opacity, translateY]);
 
   return (
-    <Animated.View style={[styles.container, containerStyle, { opacity, translateY }]}>
+    <Animated.View style={[styles.container, containerStyle, { opacity, transform: [{ translateY }] }]}>
       <View style={[styles.iconContainer, { backgroundColor: iconBackgroundColor }]}>
         <ZappIcon name={iconName} size={iconSize} color={iconColor} />
       </View>

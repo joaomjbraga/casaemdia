@@ -1,11 +1,9 @@
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { auth, db } from '../lib/firebase';
 import {
   acceptFamilyInvitation,
   declineFamilyInvitation,
   fetchPendingInvitations as fetchPendingInvitationsService,
-  markInvitationAsExpired,
+  fetchSentInvitations as fetchSentInvitationsService,
   sendFamilyInvitation,
 } from '../services/family';
 import { useAuth } from './AuthContext';
@@ -15,6 +13,7 @@ import logger from '@/lib/logger';
 
 interface InvitationContextType {
   pendingInvitations: Invitation[];
+  sentInvitations: Invitation[];
   loading: boolean;
   sendInvitation: (email: string) => Promise<void>;
   acceptInvitation: (invitationId: string) => Promise<void>;
@@ -33,88 +32,81 @@ export const useInvitations = () => {
 
 export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { familyId, familyName, members, refreshFamily } = useFamily();
-  const { user } = useAuth();
+  const { user, isTokenReady } = useAuth();
   const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
+  const [sentInvitations, setSentInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchPendingInvitations = useCallback(async () => {
-    const uid = auth.currentUser?.uid;
-    const email = auth.currentUser?.email;
-    if (!uid || !email) return;
+    const email = user?.email;
+    if (!email || !isTokenReady) return;
 
     try {
-      const { invitations, expiredIds } = await fetchPendingInvitationsService(email);
+      const { invitations } = await fetchPendingInvitationsService(email);
       setPendingInvitations(invitations as Invitation[]);
-
-      for (const id of expiredIds) {
-        markInvitationAsExpired(id).catch(() => {});
-      }
     } catch (error) {
       logger.error('Error fetching invitations:', error);
     }
-  }, []);
+  }, [user?.email, isTokenReady]);
+
+  const fetchSentInvitations = useCallback(async () => {
+    if (!familyId || !isTokenReady) return;
+
+    try {
+      const invitations = await fetchSentInvitationsService(familyId);
+      setSentInvitations(invitations as Invitation[]);
+    } catch (error) {
+      logger.error('Error fetching sent invitations:', error);
+    }
+  }, [familyId, isTokenReady]);
 
   useEffect(() => {
-    const uid = auth.currentUser?.uid;
-    const email = auth.currentUser?.email;
-    if (!uid || !email) return;
+    const email = user?.email;
+    if (!email || !isTokenReady) {
+      setPendingInvitations([]);
+      setSentInvitations([]);
+      return;
+    }
 
     fetchPendingInvitations();
+    fetchSentInvitations();
+    const interval = setInterval(() => {
+      fetchPendingInvitations();
+      fetchSentInvitations();
+    }, 30000);
 
-    const q = query(
-      collection(db, 'invitations'),
-      where('toEmail', '==', email),
-      where('status', '==', 'pending'),
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      () => {
-        fetchPendingInvitations();
-      },
-      (error) => {
-        logger.error('Invitations snapshot error:', error);
-      },
-    );
-
-    return unsubscribe;
-  }, [fetchPendingInvitations, user?.uid]);
-
-  useEffect(() => {
-    if (!user) {
-      setPendingInvitations([]);
-    }
-  }, [user]);
+    return () => clearInterval(interval);
+  }, [fetchPendingInvitations, fetchSentInvitations, user?.email, isTokenReady]);
 
   const sendInvitation = useCallback(
     async (email: string) => {
       if (!familyId || !familyName) throw new Error('Família não carregada');
-      if (!auth.currentUser) throw new Error('Usuário não autenticado');
+      if (!user || !isTokenReady) throw new Error('Usuário não autenticado');
 
       setLoading(true);
       try {
-        await sendFamilyInvitation(familyId, familyName, auth.currentUser, email, members);
+        await sendFamilyInvitation(familyId, familyName, user, email, members);
+        await fetchSentInvitations();
       } finally {
         setLoading(false);
       }
     },
-    [familyId, familyName, members],
+    [familyId, familyName, members, user, isTokenReady, fetchSentInvitations],
   );
 
   const acceptInvitation = useCallback(
     async (invitationId: string) => {
-      const uid = auth.currentUser?.uid;
-      const user = auth.currentUser;
-      if (!uid || !user) throw new Error('Usuario nao autenticado');
+      if (!user || !isTokenReady) throw new Error('Usuário não autenticado');
 
       setLoading(true);
       try {
         await acceptFamilyInvitation(invitationId, user, familyId, refreshFamily);
+        await fetchPendingInvitations();
       } finally {
         setLoading(false);
       }
     },
-    [refreshFamily, familyId],
+    [user, familyId, refreshFamily, isTokenReady, fetchPendingInvitations],
   );
 
   const declineInvitation = useCallback(
@@ -134,6 +126,7 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     <InvitationContext.Provider
       value={{
         pendingInvitations,
+        sentInvitations,
         loading,
         sendInvitation,
         acceptInvitation,

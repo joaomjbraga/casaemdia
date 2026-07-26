@@ -48,7 +48,7 @@ const showError = (message: string) => {
 };
 
 export default function ChatScreen() {
-  const { user } = useAuth();
+  const { user, backendUserId } = useAuth();
   const { familyId, members } = useFamily();
   const confirmDialog = useConfirmDialog();
 
@@ -69,8 +69,8 @@ export default function ChatScreen() {
   const listBottomPadding = Math.max(24, bottom + 24);
 
   const currentUserMember = useMemo(
-    () => members.find((member) => member.id === user?.uid),
-    [members, user?.uid],
+    () => members.find((member) => member.userId === backendUserId),
+    [members, backendUserId],
   );
   const isAdmin = currentUserMember?.role === 'admin';
 
@@ -107,7 +107,7 @@ export default function ChatScreen() {
       return;
     }
 
-    const unsubscribe = subscribeToMessages(familyId, (data) => {
+    const unsubscribe = subscribeToMessages(familyId, (data: ChatMessage[]) => {
       setMessages(data);
       setLoading(false);
     });
@@ -144,8 +144,9 @@ export default function ChatScreen() {
     async (text: string, attachment?: ChatMessage['attachment']) => {
       if (!familyId || !user || isSending) return;
 
+      const memberSelf = members.find((member) => member.userId === backendUserId);
       const senderName =
-        members.find((member) => member.id === user.uid)?.name ||
+        memberSelf?.name ||
         user.displayName ||
         user.email?.split('@')[0] ||
         'Alguém';
@@ -154,7 +155,7 @@ export default function ChatScreen() {
       const optimisticMessage: ChatMessage = {
         id: tempId,
         text,
-        senderId: user.uid,
+        senderId: memberSelf?.id ?? backendUserId ?? user.uid,
         senderName,
         createdAt: new Date(),
         status: 'sending',
@@ -172,16 +173,18 @@ export default function ChatScreen() {
       setIsSending(true);
 
       try {
-        await sendMessage({
-          familyId,
-          text,
-          senderId: user.uid,
-          senderName,
-          attachment,
-        });
-        setMessages((current) =>
-          current.map((item) => (item.id === tempId ? { ...item, status: 'sent' } : item)),
-        );
+        const sentMessage = await sendMessage(familyId, text, attachment);
+        if (sentMessage?.id) {
+          setMessages((current) =>
+            current.map((item) =>
+              item.id === tempId ? { ...sentMessage, status: 'sent' as const } : item,
+            ),
+          );
+        } else {
+          setMessages((current) =>
+            current.map((item) => (item.id === tempId ? { ...item, status: 'sent' as const } : item)),
+          );
+        }
       } catch (error) {
         logger.error('[Chat] handleSend error', error);
         setMessages((current) =>
@@ -201,9 +204,15 @@ export default function ChatScreen() {
       const message = messages.find((item) => item.id === messageId);
       if (!message) return;
 
-      const canDelete = message.senderId === user.uid || isAdmin;
+      const memberSelf = members.find((m) => m.userId === backendUserId);
+      const canDelete = message.senderId === memberSelf?.id || isAdmin;
       if (!canDelete) {
         showError('Você não pode excluir esta mensagem.');
+        return;
+      }
+
+      if (messageId.startsWith('temp-')) {
+        setMessages((current) => current.filter((item) => item.id !== messageId));
         return;
       }
 
@@ -496,7 +505,7 @@ export default function ChatScreen() {
             return (
               <MessageBubble
                 message={item.message}
-                isOwn={item.message.senderId === user?.uid}
+                isOwn={item.message.senderId === currentUserMember?.id}
                 onDelete={handleDeleteMessage}
               />
             );
