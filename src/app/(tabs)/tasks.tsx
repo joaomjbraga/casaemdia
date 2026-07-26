@@ -140,6 +140,22 @@ export default function TasksScreen() {
 
   const openAdd = () => router.push('/AddTaskScreen');
 
+  const handleTaskPress = (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    router.push({
+      pathname: '/task-detail',
+      params: {
+        taskId: task.id,
+        title: task.title,
+        assignee: task.assignee,
+        assigneeId: task.assigneeId || '',
+        done: String(task.done),
+      },
+    });
+  };
+
   const handleDeleteAll = async () => {
     if (!familyId || tasks.length === 0) return;
 
@@ -212,7 +228,7 @@ export default function TasksScreen() {
             subtitle="Toque em adicionar para criar a primeira tarefa"
           />
         ) : (
-          <TaskListPanel tasks={tasks} />
+          <TaskListPanel tasks={tasks} onPressTask={handleTaskPress} />
         )}
       </ScrollView>
     </SafeAreaView>

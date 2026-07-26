@@ -22,7 +22,7 @@ export default function TaskDetailScreen() {
     assigneeId: string;
     done: string;
   }>();
-  const { familyId, members } = useFamily();
+  const { familyId, members, isReady: familyReady } = useFamily();
   const { user, backendUserId } = useAuth();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
@@ -37,6 +37,8 @@ export default function TaskDetailScreen() {
     [members, backendUserId],
   );
   const isOwner = currentMemberId === params.assigneeId;
+  const canComplete = !isDone && !!backendUserId && (!!currentMemberId || familyReady);
+  const showOwnerAction = canComplete && (isOwner || !params.assigneeId);
 
   useEffect(() => {
     Animated.parallel([
@@ -147,7 +149,7 @@ export default function TaskDetailScreen() {
           </View>
         </Card>
 
-        {!isDone && isOwner && (
+        {!isDone && showOwnerAction && (
           <PrimaryActionButton
             title="Concluir Tarefa"
             icon="check"

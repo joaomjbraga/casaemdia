@@ -83,7 +83,6 @@ export const sendFamilyInvitation = async (
   familyName: string,
   currentUser: any,
   targetEmail: string,
-  _members: FamilyMember[],
 ) => {
   if (!currentUser) throw new Error('Usuário não autenticado');
   const normalizedEmail = targetEmail.trim().toLowerCase();
