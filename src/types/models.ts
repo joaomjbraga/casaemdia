@@ -51,6 +51,6 @@ export interface Invitation {
   fromUserId: string;
   fromUserName: string;
   toEmail: string;
-  status: 'pending' | 'accepted' | 'declined';
-  createdAt: any;
+  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  expiresAt: Date;
 }
