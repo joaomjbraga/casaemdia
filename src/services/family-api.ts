@@ -49,8 +49,8 @@ export const updateFamilyMemberRelationApi = async (familyId: string, memberId: 
   return response.member;
 };
 
-export const subscribeToFamilyMembersApi = (familyId: string, callback: (members: any[]) => void) => {
-  const socket = connectSocket('');
+export const subscribeToFamilyMembersApi = async (familyId: string, callback: (members: any[]) => void) => {
+  const socket = await connectSocket('');
 
   socket.on('connect', () => {
     socket.emit('family:join', { familyId });
@@ -67,16 +67,16 @@ export const subscribeToFamilyMembersApi = (familyId: string, callback: (members
 
   fetchMembers();
 
-  socket.on('family:member:added', (_member: any) => {
-    getFamilyMembersApi(familyId).then(callback);
+  socket.on('family:member:added', async (_member: any) => {
+    await fetchMembers();
   });
 
-  socket.on('family:member:removed', (_payload: any) => {
-    getFamilyMembersApi(familyId).then(callback);
+  socket.on('family:member:removed', async (_payload: any) => {
+    await fetchMembers();
   });
 
-  socket.on('family:member:updated', (_payload: any) => {
-    getFamilyMembersApi(familyId).then(callback);
+  socket.on('family:member:updated', async (_payload: any) => {
+    await fetchMembers();
   });
 
   return () => {

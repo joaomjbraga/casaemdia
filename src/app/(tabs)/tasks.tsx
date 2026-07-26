@@ -42,13 +42,19 @@ export default function TasksScreen() {
       return;
     }
 
-    const unsubscribe = subscribeToTasks(familyId, (data) => {
+    let cleanup: (() => void) | undefined;
+
+    subscribeToTasks(familyId, (data) => {
       setTasks(data as Task[]);
       setTasksLoading(false);
       setRefreshing(false);
+    }).then((unsubscribe) => {
+      cleanup = unsubscribe;
     });
 
-    return () => unsubscribe();
+    return () => {
+      cleanup?.();
+    };
   }, [familyId]);
 
   const toggleTask = async (id: string) => {

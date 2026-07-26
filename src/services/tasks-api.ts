@@ -2,8 +2,8 @@ import type { Task } from '@/types/models';
 import { api } from './api';
 import { connectSocket } from './socket';
 
-export const subscribeToTasksApi = (familyId: string, callback: (tasks: Task[] | ((prev: Task[]) => Task[])) => void) => {
-  const socket = connectSocket('');
+export const subscribeToTasksApi = async (familyId: string, callback: (tasks: Task[] | ((prev: Task[]) => Task[])) => void) => {
+  const socket = await connectSocket('');
 
   socket.on('connect', () => {
     socket.emit('family:join', { familyId });

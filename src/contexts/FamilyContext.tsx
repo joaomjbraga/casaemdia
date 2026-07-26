@@ -155,10 +155,22 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     if (!familyId) return;
 
-    return subscribeToFamilyMembers(familyId, (membersList) => {
-      setMembers(membersList);
+    let mounted = true;
+
+    subscribeToFamilyMembers(familyId, (membersList) => {
+      if (mounted) {
+        setMembers(membersList);
+      }
+    }).then(() => {
+      if (mounted) {
+        fetchMembers();
+      }
     });
-  }, [familyId]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [familyId, fetchMembers]);
 
   const isReady = initialized && !loading && !!familyId;
 

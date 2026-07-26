@@ -57,15 +57,21 @@ export default function ShoppingList() {
       return;
     }
 
-    const unsubscribe = subscribeToShoppingItems(currentFamilyId, (mappedItems) => {
+    let cleanup: (() => void) | undefined;
+
+    subscribeToShoppingItems(currentFamilyId, (mappedItems) => {
       const safeMappedItems = Array.isArray(mappedItems)
         ? mappedItems.filter((item): item is ShoppingItem => Boolean(item && typeof item.name === 'string'))
         : [];
       setItems(safeMappedItems);
       setLoading(false);
+    }).then((unsubscribe) => {
+      cleanup = unsubscribe;
     });
 
-    return () => unsubscribe();
+    return () => {
+      cleanup?.();
+    };
   }, [familyId]);
 
   const openAdd = () => {

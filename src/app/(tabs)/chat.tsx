@@ -110,12 +110,18 @@ export default function ChatScreen() {
       return;
     }
 
-    const unsubscribe = subscribeToMessages(familyId, (data: ChatMessage[]) => {
+    let cleanup: (() => void) | undefined;
+
+    subscribeToMessages(familyId, (data: ChatMessage[]) => {
       setMessages(data);
       setLoading(false);
+    }).then((unsubscribe) => {
+      cleanup = unsubscribe;
     });
 
-    return unsubscribe;
+    return () => {
+      cleanup?.();
+    };
   }, [familyId]);
 
   useEffect(() => {

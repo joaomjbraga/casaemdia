@@ -2,8 +2,8 @@ import type { ShoppingItem } from '@/types/models';
 import { api } from './api';
 import { connectSocket } from './socket';
 
-export const subscribeToShoppingApi = (familyId: string, callback: (items: ShoppingItem[] | ((prev: ShoppingItem[]) => ShoppingItem[])) => void) => {
-  const socket = connectSocket('');
+export const subscribeToShoppingApi = async (familyId: string, callback: (items: ShoppingItem[] | ((prev: ShoppingItem[]) => ShoppingItem[])) => void) => {
+  const socket = await connectSocket('');
 
   socket.on('connect', () => {
     socket.emit('family:join', { familyId });
