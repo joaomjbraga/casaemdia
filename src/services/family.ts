@@ -64,6 +64,7 @@ export const subscribeToFamilyMembers = (
         email: m.email ?? '',
         photoURL: m.photoURL ?? null,
         role: (m.role ?? 'member') as 'admin' | 'member',
+        familyRelation: m.familyRelation ?? null,
       })),
     );
   });

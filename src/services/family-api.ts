@@ -30,7 +30,7 @@ export const getFamilyMembersApi = async (familyId: string) => {
   }
 };
 
-export const addFamilyMemberApi = async (familyId: string, data: { userId: string; email: string; name: string; role?: string }) => {
+export const addFamilyMemberApi = async (familyId: string, data: { userId?: string; email: string; name: string; familyRelation?: string | null }) => {
   const response = await api.family.addMember(familyId, data);
   return response.member;
 };

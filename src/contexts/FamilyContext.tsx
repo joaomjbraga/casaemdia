@@ -25,6 +25,7 @@ interface FamilyContextType {
   cancelIntentionalExit: () => void;
   refreshFamily: () => Promise<void>;
   deleteFamilyMember: (id: string) => Promise<void>;
+  updateMemberRelation: (memberId: string, familyRelation: string | null) => Promise<void>;
   fetchMembers: () => Promise<void>;
 }
 
@@ -101,6 +102,39 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [familyId, familyName, members, fetchMembers],
   );
 
+  const updateMemberRelation = useCallback(
+    async (memberId: string, familyRelation: string | null) => {
+      if (!familyId) return;
+
+      const token = await require('@react-native-async-storage/async-storage').default.getItem('authToken');
+      if (!token) {
+        throw new Error('Token de autenticação não encontrado.');
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/families/${familyId}/members/${memberId}/relation`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ familyRelation }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Não foi possível atualizar a relação.');
+        }
+
+        await fetchMembers();
+      } finally {
+        setLoading(false);
+      }
+    },
+    [familyId, fetchMembers],
+  );
+
   const refreshFamily = useCallback(async () => {
     if (!familyId) return;
     await fetchMembers(familyId);
@@ -160,6 +194,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         cancelIntentionalExit,
         refreshFamily,
         deleteFamilyMember,
+        updateMemberRelation,
         fetchMembers,
       }}
     >

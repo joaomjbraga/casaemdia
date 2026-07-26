@@ -2,6 +2,7 @@ import ZappIcon from '@/components/common/ZappIcon';
 import { Cell, ListSection, SectionLabel } from '@/components/settings/SettingsList';
 import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import Colors from '@/constants/Colors';
+import { FamilyRelationLabels, FamilyRelationGroups, type FamilyRelation } from '@/constants/FamilyRelationLabels';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useInvitations } from '@/contexts/InvitationContext';
@@ -11,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -29,8 +31,10 @@ function SettingsInner() {
   const [deletingMember, setDeletingMember] = useState<string | null>(null);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [relationMemberId, setRelationMemberId] = useState<string | null>(null);
+  const [relationSaving, setRelationSaving] = useState(false);
 
-  const { members, deleteFamilyMember, familyId, beginIntentionalExit, cancelIntentionalExit } =
+  const { members, deleteFamilyMember, familyId, beginIntentionalExit, cancelIntentionalExit, updateMemberRelation } =
     useFamily();
   const { sendInvitation, sentInvitations } = useInvitations();
   const router = useRouter();
@@ -90,6 +94,20 @@ function SettingsInner() {
         }
       },
     });
+  };
+
+  const handleUpdateRelation = async (memberId: string, relation: FamilyRelation | null) => {
+    if (!familyId) return;
+    setRelationSaving(true);
+    try {
+      await updateMemberRelation(memberId, relation);
+      toast.success('Relação atualizada.');
+    } catch (error: any) {
+      toast.error(error?.message || 'Não foi possível atualizar a relação.');
+    } finally {
+      setRelationSaving(false);
+      setRelationMemberId(null);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -224,48 +242,109 @@ function SettingsInner() {
         <SectionLabel text="MEMBROS" />
 
         <ListSection>
-          {members.map((member, index) => (
-            <Cell key={member.id} first={index === 0} last={index === members.length - 1}>
-              <View style={styles.memberRow}>
-                <View style={styles.memberAvatar}>
-                  <Text style={styles.memberInitial}>{(member.name || '?')[0].toUpperCase()}</Text>
-                </View>
-                <View style={styles.memberInfo}>
-                  <View style={styles.memberNameRow}>
-                    <Text style={styles.memberName} numberOfLines={1}>
-                      {member.name}
-                    </Text>
-                    {member.role === 'admin' && (
-                      <View style={styles.adminBadge}>
-                        <Text style={styles.adminBadgeText}>ADMIN</Text>
-                      </View>
+          {members.map((member, index) => {
+            const isMe = member.userId === backendUserId;
+            const relationLabel = member.familyRelation ? FamilyRelationLabels[member.familyRelation as keyof typeof FamilyRelationLabels] : null;
+            return (
+              <Cell key={member.id} first={index === 0} last={index === members.length - 1}>
+                <View style={styles.memberRow}>
+                  <View style={styles.memberAvatar}>
+                    <Text style={styles.memberInitial}>{(member.name || '?')[0].toUpperCase()}</Text>
+                  </View>
+                  <View style={styles.memberInfo}>
+                    <View style={styles.memberNameRow}>
+                      <Text style={styles.memberName} numberOfLines={1}>
+                        {member.name}
+                      </Text>
+                      {member.role === 'admin' && (
+                        <View style={styles.adminBadge}>
+                          <Text style={styles.adminBadgeText}>ADMIN</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.memberMeta}>
+                      {member.email ? (
+                        <Text style={styles.memberEmail} numberOfLines={1}>
+                          {member.email}
+                        </Text>
+                      ) : null}
+                      {!!relationLabel && (
+                        <Text style={styles.relationLabel}>{relationLabel}</Text>
+                      )}
+                    </View>
+                    {isMe && !relationLabel && (
+                      <TouchableOpacity onPress={() => setRelationMemberId(member.id)} activeOpacity={0.7}>
+                        <Text style={styles.setRelationText}>Definir relação</Text>
+                      </TouchableOpacity>
+                    )}
+                    {isMe && relationLabel && (
+                      <TouchableOpacity onPress={() => setRelationMemberId(member.id)} activeOpacity={0.7}>
+                        <Text style={styles.setRelationText}>Alterar relação</Text>
+                      </TouchableOpacity>
                     )}
                   </View>
-                  {member.email ? (
-                    <Text style={styles.memberEmail} numberOfLines={1}>
-                      {member.email}
-                    </Text>
-                  ) : null}
+                  {isAdmin && member.userId !== backendUserId && (
+                    <TouchableOpacity
+                      onPress={() => handleDeleteMember(member.id, member.name)}
+                      disabled={deletingMember === member.id}
+                      style={styles.removeBtn}
+                      activeOpacity={0.5}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      {deletingMember === member.id ? (
+                        <ActivityIndicator size={14} color={Colors.light.danger} />
+                      ) : (
+                        <ZappIcon name="close" size={15} color={Colors.light.mutedText} />
+                      )}
+                    </TouchableOpacity>
+                  )}
                 </View>
-                {isAdmin && member.userId !== backendUserId && (
-                  <TouchableOpacity
-                    onPress={() => handleDeleteMember(member.id, member.name)}
-                    disabled={deletingMember === member.id}
-                    style={styles.removeBtn}
-                    activeOpacity={0.5}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    {deletingMember === member.id ? (
-                      <ActivityIndicator size={14} color={Colors.light.danger} />
-                    ) : (
-                      <ZappIcon name="close" size={15} color={Colors.light.mutedText} />
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-            </Cell>
-          ))}
+              </Cell>
+            );
+          })}
         </ListSection>
+
+        <Modal visible={!!relationMemberId} animationType="slide" onRequestClose={() => setRelationMemberId(null)}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Relação familiar</Text>
+              <TouchableOpacity onPress={() => setRelationMemberId(null)} activeOpacity={0.7}>
+                <ZappIcon name="close" size={22} color={Colors.light.text} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalList} contentContainerStyle={styles.modalListContent}>
+              {FamilyRelationGroups.map((group) => (
+                <View key={group.label} style={styles.group}>
+                  <Text style={styles.groupLabel}>{group.label}</Text>
+                  <View style={styles.groupGrid}>
+                    {group.relations.map((relation) => {
+                      const selected = relationMemberId ? members.find((m) => m.id === relationMemberId)?.familyRelation === relation : false;
+                      const label = FamilyRelationLabels[relation];
+                      return (
+                        <TouchableOpacity
+                          key={relation}
+                          style={[styles.relationChip, selected && styles.relationChipActive]}
+                          onPress={() => relationMemberId && handleUpdateRelation(relationMemberId, relation)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.relationText, selected && styles.relationTextActive]}>{label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))}
+              <TouchableOpacity style={styles.noneBtn} onPress={() => relationMemberId && handleUpdateRelation(relationMemberId, null)} activeOpacity={0.7}>
+                <Text style={styles.noneText}>Sem relação</Text>
+              </TouchableOpacity>
+            </ScrollView>
+            {relationSaving && (
+              <View style={styles.overlay}>
+                <ActivityIndicator size="small" color="#fff" />
+              </View>
+            )}
+          </View>
+        </Modal>
 
         <SectionLabel text="CONTA" />
 
@@ -456,4 +535,108 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   textRed: { color: Colors.light.danger },
+  memberMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+    flexWrap: 'wrap',
+  },
+  relationLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.light.mutedText,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  setRelationText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.light.primary,
+    marginTop: 2,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 52,
+    paddingBottom: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.light.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: -0.2,
+  },
+  modalList: {
+    flex: 1,
+  },
+  modalListContent: {
+    padding: 16,
+    gap: 14,
+  },
+  group: {
+    gap: 8,
+  },
+  groupLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.light.mutedText,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  groupGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  relationChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  relationChipActive: {
+    backgroundColor: `${Colors.light.primary}15`,
+    borderColor: Colors.light.primary,
+  },
+  relationText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  relationTextActive: {
+    color: Colors.light.primary,
+  },
+  noneBtn: {
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.cardBackground,
+    alignItems: 'center',
+  },
+  noneText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

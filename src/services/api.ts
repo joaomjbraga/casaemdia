@@ -92,7 +92,7 @@ export const api = {
         body: JSON.stringify({ familyName: name }),
       }),
     get: () => request('/api/families'),
-    addMember: (familyId: string, data: { userId: string; email: string; name: string }) =>
+    addMember: (familyId: string, data: { userId?: string; email: string; name: string; familyRelation?: string | null }) =>
       request(`/api/families/${familyId}/members`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -103,6 +103,11 @@ export const api = {
       request(`/api/families/${familyId}/members/${memberId}/role`, {
         method: 'PATCH',
         body: JSON.stringify({ role }),
+      }),
+    updateMemberRelation: (familyId: string, memberId: string, familyRelation: string | null) =>
+      request(`/api/families/${familyId}/members/${memberId}/relation`, {
+        method: 'PATCH',
+        body: JSON.stringify({ familyRelation }),
       }),
     getMembers: (familyId: string) =>
       request(`/api/families/${familyId}/members`),
@@ -123,7 +128,7 @@ export const api = {
   },
   shopping: {
     list: (familyId: string) => request(`/api/shopping?familyId=${familyId}`),
-    create: (familyId: string, data: { name: string; quantity?: string }) =>
+    create: (familyId: string, data: { name: string; quantity?: string; assigneeId?: string; assigneeName?: string }) =>
       request('/api/shopping', {
         method: 'POST',
         body: JSON.stringify({ ...data, familyId }),

@@ -10,6 +10,7 @@ import Card from '@/components/tasks/Card';
 import Badge from '@/components/tasks/Badge';
 import PrimaryActionButton from '@/components/common/PrimaryActionButton';
 import ZappIcon from '@/components/common/ZappIcon';
+import { FamilyRelationLabels } from '@/constants/FamilyRelationLabels';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
@@ -145,6 +146,7 @@ export default function TaskDetailScreen() {
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Responsável</Text>
               <Text style={styles.detailValue}>{params.assignee}</Text>
+              <Text style={styles.detailSub}>({params.assigneeId ? FamilyRelationLabels[params.assigneeId as keyof typeof FamilyRelationLabels] ?? '' : ''})</Text>
             </View>
           </View>
         </Card>
@@ -249,6 +251,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.light.text,
     letterSpacing: -0.2,
+  },
+  detailSub: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.light.mutedText,
+    marginTop: 2,
   },
   actionBtn: {
     width: '100%',
