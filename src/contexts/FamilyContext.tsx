@@ -10,6 +10,7 @@ import {
   recoverFamilyAfterRemoval,
   subscribeToFamilyMembers,
 } from '../services/family';
+import { updateFamilyMemberRelationApi } from '../services/family-api';
 import logger from '@/lib/logger';
 
 interface FamilyContextType {
@@ -106,27 +107,9 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     async (memberId: string, familyRelation: string | null) => {
       if (!familyId) return;
 
-      const token = await require('@react-native-async-storage/async-storage').default.getItem('token');
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado.');
-      }
-
       setLoading(true);
       try {
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/families/${familyId}/members/${memberId}/relation`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ familyRelation }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Não foi possível atualizar a relação.');
-        }
-
+        await updateFamilyMemberRelationApi(familyId, memberId, familyRelation);
         await fetchMembers();
       } finally {
         setLoading(false);

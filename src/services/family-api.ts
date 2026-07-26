@@ -44,6 +44,11 @@ export const updateFamilyMemberRoleApi = async (familyId: string, memberId: stri
   return response.member;
 };
 
+export const updateFamilyMemberRelationApi = async (familyId: string, memberId: string, familyRelation: string | null) => {
+  const response = await api.family.updateMemberRelation(familyId, memberId, familyRelation);
+  return response.member;
+};
+
 export const subscribeToFamilyMembersApi = (familyId: string, callback: (members: any[]) => void) => {
   const socket = connectSocket('');
 
