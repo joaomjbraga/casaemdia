@@ -3,7 +3,7 @@ import { api } from './api';
 import { connectSocket } from './socket';
 
 export const subscribeToTasksApi = async (familyId: string, callback: (tasks: Task[] | ((prev: Task[]) => Task[])) => void) => {
-  const socket = await connectSocket('');
+  const socket = await connectSocket();
 
   socket.on('connect', () => {
     socket.emit('family:join', { familyId });

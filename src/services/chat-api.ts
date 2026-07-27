@@ -3,7 +3,7 @@ import { api } from './api';
 import { connectSocket } from './socket';
 
 export const subscribeToChatApi = async (familyId: string, callback: any) => {
-  const socket = await connectSocket('');
+  const socket = await connectSocket();
 
   socket.on('connect', () => {
     socket.emit('family:join', { familyId });

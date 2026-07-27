@@ -10,7 +10,6 @@ import Card from '@/components/tasks/Card';
 import Badge from '@/components/tasks/Badge';
 import PrimaryActionButton from '@/components/common/PrimaryActionButton';
 import ZappIcon from '@/components/common/ZappIcon';
-import { FamilyRelationLabels } from '@/constants/FamilyRelationLabels';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
@@ -41,10 +40,12 @@ export default function TaskDetailScreen() {
     () => members.find((m) => m.id === params.assigneeId) ?? null,
     [members, params.assigneeId],
   );
-  const isOwner = currentMemberId === params.assigneeId;
-  const canComplete = !isDone && !!backendUserId && !!currentMemberId && familyReady;
-  const showOwnerAction = canComplete && (isOwner || !params.assigneeId);
-
+  const isOwner = currentMemberId === params.assigneeId || backendUserId === params.assigneeId;
+  const hasAssignee = Boolean(params.assigneeId);
+  const canComplete = !isDone && !!backendUserId && !!currentMemberId && familyReady && (isOwner || !params.assigneeId);
+  const showOwnerAction = canComplete;  const lockedMessage = hasAssignee
+    ? `Apenas ${params.assignee} pode concluir esta tarefa.`
+    : 'Esta tarefa ainda não tem responsável.';
   useEffect(() => {
     Animated.parallel([
       Animated.timing(contentOpacity, {
@@ -149,12 +150,7 @@ export default function TaskDetailScreen() {
             </View>
             <View style={styles.detailContent}>
               <Text style={styles.detailLabel}>Responsável</Text>
-              <Text style={styles.detailValue}>{params.assignee}</Text>
-              {assigneeMember?.familyRelation && (
-                <Text style={styles.detailSub}>
-                  {FamilyRelationLabels[assigneeMember.familyRelation as keyof typeof FamilyRelationLabels]}
-                </Text>
-              )}
+              <Text style={styles.detailValue}>{params.assignee || 'Sem responsável'}</Text>
             </View>
           </View>
         </Card>
@@ -172,9 +168,7 @@ export default function TaskDetailScreen() {
         {!isDone && !isOwner && (
           <View style={styles.lockedBanner}>
             <ZappIcon name="lock-outline" size={16} color={Colors.light.mutedText} />
-            <Text style={styles.lockedText}>
-              Apenas {params.assignee} pode concluir esta tarefa
-            </Text>
+            <Text style={styles.lockedText}>{lockedMessage}</Text>
           </View>
         )}
       </Animated.View>

@@ -24,10 +24,7 @@ export default function LoginScreen() {
   const { showAlert } = useAlertDialog();
   const { width: screenWidth } = useWindowDimensions();
 
-  const iconSize = Math.min(Math.round(screenWidth * 0.44), 190);
-  const titleFontSize = Math.min(Math.round(screenWidth * 0.078), 32);
-  const taglineFontSize = Math.min(Math.round(screenWidth * 0.034), 13.5);
-
+  const iconSize = Math.min(Math.round(screenWidth * 0.42), 168);
   const { scale, handlePressIn, handlePressOut } = usePressScale({ pressedValue: 0.98 });
 
   const handleGoogleLogin = async () => {
@@ -44,7 +41,7 @@ export default function LoginScreen() {
         }
         return;
       }
-    } catch (error) {
+    } catch {
       showAlert({
         title: 'Erro Inesperado',
         message: 'Ocorreu um erro ao entrar com Google. Tente novamente.',
@@ -59,38 +56,29 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <StatusBar style="dark" />
 
-      <LinearGradient
-        colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.0)']}
-        style={styles.topOverlay}
-      />
-
-      <LinearGradient
-        colors={['rgba(255,255,255,0.0)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0.92)']}
-        style={styles.bottomOverlay}
-      />
+      <LinearGradient colors={['#E9FAFB', '#F8FBFF']} style={styles.backgroundGradient} />
 
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.content}>
-          <View style={styles.topSpacer} />
-
-          <View style={styles.brandMark}>
-            <Image
-              source={require('@/assets/images/icon.png')}
-              style={{ width: iconSize, height: iconSize }}
-              resizeMode="contain"
-            />
+          <View style={styles.hero}>
+            <View style={styles.brandCircle}>
+              <Image
+                source={require('@/assets/images/icon.png')}
+                style={{ width: iconSize, height: iconSize }}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.title}>Casa em Dia</Text>
+            <Text style={styles.subtitle}>
+              Rotina da família mais simples, com tarefas e compras sempre visíveis.
+            </Text>
           </View>
 
-          <View style={styles.midSpacer} />
-
-          <View style={styles.panel}>
-            <View style={styles.panelHeader}>
-              <Text style={styles.kicker}>BEM-VINDO DE VOLTA</Text>
-              <Text style={[styles.appName, { fontSize: titleFontSize }]}>Casa em Dia</Text>
-              <Text style={[styles.tagline, { fontSize: taglineFontSize }]}>
-                Organize sua casa em família
-              </Text>
-            </View>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Entre com Google</Text>
+            <Text style={styles.cardDescription}>
+              Use sua conta para entrar na casa, sincronizar membros e manter tudo em dia.
+            </Text>
 
             <Animated.View style={{ transform: [{ scale }] }}>
               <TouchableOpacity
@@ -99,10 +87,10 @@ export default function LoginScreen() {
                 onPressOut={handlePressOut}
                 disabled={loading}
                 activeOpacity={1}
-                style={styles.googleButton}
+                style={[styles.googleButton, loading && styles.googleButtonDisabled]}
               >
                 {loading ? (
-                  <ActivityIndicator size="small" color="#1A1A1A" />
+                  <ActivityIndicator size="small" color={Colors.light.textWhite} />
                 ) : (
                   <>
                     <Image
@@ -116,20 +104,30 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </Animated.View>
 
-            <Text style={styles.footer}>
-              Ao continuar, você concorda com os{'\n'}
-              <Text style={styles.footerLink} onPress={() => {}}>
-                termos de uso
-              </Text>
-              {' e a '}
-              <Text style={styles.footerLink} onPress={() => {}}>
-                política de privacidade
-              </Text>
-              .
-            </Text>
+            <View style={styles.featuresRow}>
+              <View style={styles.featureChip}>
+                <Text style={styles.featureText}>Tarefas claras</Text>
+              </View>
+              <View style={styles.featureChip}>
+                <Text style={styles.featureText}>Compras organizadas</Text>
+              </View>
+              <View style={styles.featureChip}>
+                <Text style={styles.featureText}>Chat familiar</Text>
+              </View>
+            </View>
           </View>
 
-          <View style={styles.bottomSpacer} />
+          <Text style={styles.footer}>
+            Ao continuar, você concorda com nossos{' '}
+            <Text style={styles.footerLink} onPress={() => {}}>
+              termos de uso
+            </Text>
+            {' e '}
+            <Text style={styles.footerLink} onPress={() => {}}>
+              política de privacidade
+            </Text>
+            .
+          </Text>
         </View>
       </SafeAreaView>
     </View>
@@ -141,98 +139,134 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
-  topOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '30%',
-  },
-  bottomOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '64%',
+  backgroundGradient: {
+    ...StyleSheet.absoluteFillObject,
   },
   safeArea: {
     flex: 1,
   },
   content: {
     flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 32,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
-  topSpacer: {
-    flex: 1.1,
-  },
-  brandMark: {
+  hero: {
     alignItems: 'center',
+    paddingTop: 12,
+  },
+  brandCircle: {
+    width: 116,
+    height: 116,
+    borderRadius: 32,
+    backgroundColor: Colors.light.cardBackground,
     justifyContent: 'center',
-  },
-  midSpacer: {
-    flex: 0.9,
-  },
-  bottomSpacer: {
-    height: 16,
-  },
-  panel: {
-    width: '100%',
-    maxWidth: 420,
-  },
-  panelHeader: {
     alignItems: 'center',
-    marginBottom: 28,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
   },
-  kicker: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.light.mutedText,
-    letterSpacing: 1.6,
-    marginBottom: 10,
-  },
-  appName: {
-    fontWeight: '700',
+  title: {
+    marginTop: 22,
+    fontSize: 34,
+    fontWeight: '800',
     color: Colors.light.text,
-    letterSpacing: -0.6,
+    textAlign: 'center',
+    letterSpacing: -0.5,
   },
-  tagline: {
-    color: Colors.light.mutedText,
-    marginTop: 8,
+  subtitle: {
+    marginTop: 10,
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: '500',
-    letterSpacing: 0.1,
+    color: Colors.light.mutedText,
+    textAlign: 'center',
+    maxWidth: 330,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: Colors.light.cardBackground,
+    borderRadius: 28,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 5,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Colors.light.text,
+    marginBottom: 10,
+    letterSpacing: -0.4,
+  },
+  cardDescription: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: Colors.light.mutedText,
+    marginBottom: 22,
   },
   googleButton: {
-    width: '100%',
     height: 56,
-    borderRadius: 12,
-    backgroundColor: Colors.light.cardBackground,
+    borderRadius: 16,
+    backgroundColor: Colors.light.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    shadowColor: '#005B5B',
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 3,
+  },
+  googleButtonDisabled: {
+    opacity: 0.7,
   },
   googleIcon: {
     width: 20,
     height: 20,
   },
   googleButtonText: {
-    color: Colors.light.text,
+    color: Colors.light.textWhite,
     fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: -0.1,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  featuresRow: {
+    marginTop: 22,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  featureChip: {
+    flexBasis: '48%',
+    backgroundColor: Colors.light.cardDark,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  featureText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: Colors.light.secondary,
+    lineHeight: 18,
   },
   footer: {
     fontSize: 11.5,
     color: Colors.light.mutedText,
     textAlign: 'center',
-    marginTop: 24,
-    lineHeight: 17,
+    lineHeight: 18,
+    paddingHorizontal: 8,
   },
   footerLink: {
     color: Colors.light.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

@@ -9,7 +9,6 @@ import ImageViewer from './ImageViewer';
 interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
-  relationLabel?: string | null;
   avatarUri?: string | null;
   onDelete?: (messageId: string) => void;
 }
@@ -20,7 +19,7 @@ function formatTime(timestamp: any): string {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function MessageBubble({ message, isOwn, relationLabel, avatarUri, onDelete }: MessageBubbleProps) {
+export default function MessageBubble({ message, isOwn, avatarUri, onDelete }: MessageBubbleProps) {
   const [imageError, setImageError] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
@@ -42,13 +41,7 @@ export default function MessageBubble({ message, isOwn, relationLabel, avatarUri
     onDelete?.(message.id);
   }, [message.id, onDelete]);
 
-  const senderLine = isOwn
-    ? relationLabel
-      ? `Você • ${relationLabel}`
-      : 'Você'
-    : relationLabel
-      ? `${message.senderName || 'Usuário'} • ${relationLabel}`
-      : message.senderName || 'Usuário';
+  const senderLine = isOwn ? 'Você' : message.senderName || 'Usuário';
 
   const fallbackInitial = (message.senderName || 'U')[0].toUpperCase();
 

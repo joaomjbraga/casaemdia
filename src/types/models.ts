@@ -14,7 +14,6 @@ export interface FamilyMember {
   email: string;
   photoURL: string | null;
   role: 'admin' | 'member';
-  familyRelation?: string | null;
 }
 
 export interface ShoppingItem {

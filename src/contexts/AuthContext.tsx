@@ -199,25 +199,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const current = auth.currentUser;
     if (!current) return;
     try {
-      await GoogleSignin.signOut().catch(() => {});
-    } catch {
-      // non-blocking
-    }
-    try {
-      await deleteUser(current);
-    } catch (error: any) {
-      if (error?.code === 'auth/requires-recent-login') {
-        throw new Error('É necessário fazer login novamente antes de excluir a conta.');
+      setLoading(true);
+      try {
+        await api.auth.deleteAccount();
+      } catch (error: any) {
+        logger.error('[AuthProvider] deleteAccount API error', { message: error?.message, raw: error });
+        throw new Error(error?.message || 'Falha ao excluir conta no backend.');
       }
-      throw error;
+      try {
+        await GoogleSignin.signOut().catch(() => {});
+      } catch {
+        // non-blocking
+      }
+      try {
+        await deleteUser(current);
+      } catch (error: any) {
+        if (error?.code === 'auth/requires-recent-login') {
+          throw new Error('É necessário fazer login novamente antes de excluir a conta.');
+        }
+        throw error;
+      }
+      try {
+        setAuthToken(null);
+      } catch {}
+      setBackendUserId(null);
+      await storageRemove('token');
+      await clearUserData();
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-    try {
-      setAuthToken(null);
-    } catch {}
-    setBackendUserId(null);
-    await storageRemove('token');
-    await clearUserData();
-    setUser(null);
   };
 
   return (

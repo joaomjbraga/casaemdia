@@ -82,6 +82,7 @@ export default function RootLayout() {
 function useProtectedRoute() {
   const segments = useSegments();
   const { user, initialized, isTokenReady, backendUserId } = useAuth();
+  const { familyId, initialized: familyInitialized } = useFamily();
 
   useEffect(() => {
     if (!initialized) return;
@@ -91,14 +92,23 @@ function useProtectedRoute() {
     if (!firstSegment) return;
 
     const inAuthGroup = firstSegment === '(auth)';
+    const inCreateFamily = firstSegment === 'create-family';
     const isAuthenticated = Boolean(isTokenReady && backendUserId);
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
+      if (familyInitialized && !familyId) {
+        router.replace('/create-family');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } else if (isAuthenticated && !inAuthGroup && !inCreateFamily && familyInitialized && !familyId) {
+      router.replace('/create-family');
+    } else if (isAuthenticated && inCreateFamily && familyId) {
       router.replace('/(tabs)');
     }
-  }, [user, initialized, isTokenReady, backendUserId, segments]);
+  }, [user, initialized, isTokenReady, backendUserId, familyId, familyInitialized, segments]);
 }
 
 function RootLayoutNav() {
@@ -181,6 +191,14 @@ function RootLayoutNav() {
 
         <Stack.Screen
           name="(auth)/login"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="create-family"
           options={{
             headerShown: false,
             gestureEnabled: false,

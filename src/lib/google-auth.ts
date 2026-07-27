@@ -40,8 +40,10 @@ export async function signInWithGoogle() {
   const credential = GoogleAuthProvider.credential(idToken);
   const userCredential = await signInWithCredential(auth, credential);
 
+  const firebaseIdToken = await userCredential.user.getIdToken();
+
   return {
     user: userCredential.user,
-    idToken,
+    idToken: firebaseIdToken,
   };
 }

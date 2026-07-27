@@ -10,7 +10,7 @@ import {
   recoverFamilyAfterRemoval,
   subscribeToFamilyMembers,
 } from '../services/family';
-import { updateFamilyMemberRelationApi } from '../services/family-api';
+import { connectSocket } from '../services/socket';
 import logger from '@/lib/logger';
 import { storageGet, storageRemove, storageSet } from '@/lib/storage';
 
@@ -27,7 +27,6 @@ interface FamilyContextType {
   cancelIntentionalExit: () => void;
   refreshFamily: () => Promise<void>;
   deleteFamilyMember: (id: string) => Promise<void>;
-  updateMemberRelation: (memberId: string, familyRelation: string | null) => Promise<void>;
   fetchMembers: () => Promise<void>;
 }
 
@@ -136,21 +135,6 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [familyId, familyName, members, fetchMembers],
   );
 
-  const updateMemberRelation = useCallback(
-    async (memberId: string, familyRelation: string | null) => {
-      if (!familyId) return;
-
-      setLoading(true);
-      try {
-        await updateFamilyMemberRelationApi(familyId, memberId, familyRelation);
-        await fetchMembers();
-      } finally {
-        setLoading(false);
-      }
-    },
-    [familyId, fetchMembers],
-  );
-
   useEffect(() => {
     if (!familyId) return;
 
@@ -244,7 +228,38 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
 
+    const setupSocket = async () => {
+      const socket = await connectSocket();
+      const handleMemberRemoved = async (data: { memberId: string; userId?: string }) => {
+        if (!mounted) return;
+        if (data.userId && user?.uid && data.userId === user.uid) {
+          setWasRemoved(true);
+          await recoverFamilyAfterRemoval(user);
+          await refreshFamily();
+        }
+      };
+
+      const handleFamilyNameUpdated = async (data: { familyName: string }) => {
+        if (!mounted) return;
+        setFamilyName(data.familyName);
+        await storageSet('last_family_name', data.familyName);
+      };
+
+      socket.on('family:member:removed', handleMemberRemoved);
+      socket.on('family:name:updated', handleFamilyNameUpdated);
+
+      return () => {
+        socket.off('family:member:removed', handleMemberRemoved);
+        socket.off('family:name:updated', handleFamilyNameUpdated);
+      };
+    };
+
     hydrateMembers();
+
+    let cleanupSocket: (() => void) | undefined;
+    setupSocket().then((cleanup) => {
+      cleanupSocket = cleanup;
+    });
 
     subscribeToFamilyMembers(familyId, (membersList) => {
       if (mounted) {
@@ -258,8 +273,9 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     return () => {
       mounted = false;
+      cleanupSocket?.();
     };
-  }, [familyId, fetchMembers]);
+  }, [familyId, fetchMembers, refreshFamily, user]);
 
   const isReady = initialized && !loading && !!familyId;
 
@@ -278,7 +294,6 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         cancelIntentionalExit,
         refreshFamily,
         deleteFamilyMember,
-        updateMemberRelation,
         fetchMembers,
       }}
     >

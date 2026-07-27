@@ -160,6 +160,17 @@ export default function Dashboard() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.metricsRow}>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricValue}>{tasks.length}</Text>
+            <Text style={styles.metricLabel}>Lista de Tarefas</Text>
+          </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricValue}>{pendingShopping.length}</Text>
+            <Text style={styles.metricLabel}>Lista de Compras</Text>
+          </View>
+        </View>
+
         {pendingInvitations.map((inv) => (
           <View key={inv.id} style={styles.inviteBanner}>
             <View style={styles.inviteIcon}>
@@ -202,7 +213,7 @@ export default function Dashboard() {
           <View>
             {tasks.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Tarefas</Text>
+                <Text style={styles.sectionTitle}>Lista de Tarefas</Text>
                 <TaskListPanel tasks={tasks} onPressTask={handleTaskPress} />
               </View>
             )}
@@ -296,17 +307,17 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.light.primary}08`,
     borderWidth: 1,
     borderColor: `${Colors.light.primary}15`,
-    borderRadius: 12,
+    borderRadius: 14,
     marginHorizontal: 16,
-    marginBottom: 12,
-    padding: 12,
+    marginBottom: 14,
+    padding: 14,
     gap: 12,
   },
   inviteIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: `${Colors.light.primary}12`,
+    borderRadius: 12,
+    backgroundColor: `${Colors.light.primary}14`,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -336,11 +347,43 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: Colors.light.mutedText,
-    letterSpacing: 1,
+    color: Colors.light.secondary,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom: 12,
     paddingHorizontal: 16,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginHorizontal: 4,
+    marginBottom: 16,
+  },
+  metricCard: {
+    flex: 1,
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
+  },
+  metricValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: Colors.light.text,
+  },
+  metricLabel: {
+    marginTop: 8,
+    fontSize: 12,
+    color: Colors.light.mutedText,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   shoppingPanel: {
     backgroundColor: Colors.light.cardBackground,

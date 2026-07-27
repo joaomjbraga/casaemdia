@@ -5,7 +5,6 @@ import EmptyState from '@/components/common/EmptyState';
 import LoadingSkeleton from '@/components/common/LoadingSkeleton';
 import ZappIcon from '@/components/common/ZappIcon';
 import Colors from '@/constants/Colors';
-import { FamilyRelationLabels } from '@/constants/FamilyRelationLabels';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -74,15 +73,16 @@ export default function ChatScreen() {
     [members, backendUserId],
   );
   const isAdmin = currentUserMember?.role === 'admin';
-  const currentUserRelationLabel = currentUserMember?.familyRelation
-    ? FamilyRelationLabels[currentUserMember.familyRelation as keyof typeof FamilyRelationLabels]
-    : null;
 
   const groupedMessages = useMemo<ChatListItem[]>(() => {
     const groups: ChatListItem[] = [];
     let currentDateKey = '';
+    const seenIds = new Set<string>();
 
     messages.forEach((message) => {
+      if (!message?.id || seenIds.has(message.id)) return;
+      seenIds.add(message.id);
+
       const createdAtRaw = message.createdAt;
       const createdAt = createdAtRaw && typeof createdAtRaw === 'object' && typeof (createdAtRaw as any).toDate === 'function'
         ? (createdAtRaw as any).toDate()
@@ -218,7 +218,7 @@ export default function ChatScreen() {
       if (!message) return;
 
       const memberSelf = members.find((m) => m.userId === backendUserId);
-      const canDelete = message.senderId === memberSelf?.id || isAdmin;
+      const canDelete = message.senderId === memberSelf?.id;
       if (!canDelete) {
         showError('Você não pode excluir esta mensagem.');
         return;
@@ -237,7 +237,7 @@ export default function ChatScreen() {
         showError('Não foi possível excluir a mensagem.');
       }
     },
-    [familyId, user, isAdmin, messages, backendUserId, members],
+    [familyId, user, messages, backendUserId, members],
   );
 
   const handleClearChat = useCallback(async () => {
@@ -330,9 +330,9 @@ export default function ChatScreen() {
       copyToCacheDirectory: true,
     });
 
-    if (!('assets' in result) || !result.assets?.[0]?.uri) return;
+    if (result.type !== 'success' || !result.uri) return;
 
-    const asset = result.assets[0];
+    const asset = result;
     logger.debug('[Chat] handlePickAudio asset', {
       uri: asset.uri,
       name: asset.name,
@@ -479,11 +479,7 @@ export default function ChatScreen() {
           </TouchableOpacity>
           <View style={styles.headerTitleArea}>
             <Text style={styles.headerTitle}>Chat</Text>
-            {currentUserRelationLabel ? (
-              <Text style={styles.headerRelation} numberOfLines={1}>
-                Você: {currentUserRelationLabel}
-              </Text>
-            ) : null}
+
           </View>
           {isAdmin ? (
             <TouchableOpacity
@@ -523,9 +519,6 @@ export default function ChatScreen() {
             }
 
             const senderMember = members.find((member) => member.id === item.message.senderId);
-            const relationLabel = senderMember?.familyRelation
-              ? FamilyRelationLabels[senderMember.familyRelation as keyof typeof FamilyRelationLabels]
-              : null;
 
             const senderAvatarUri = senderMember?.photoURL ?? null;
             const ownAvatarUri = currentUserMember?.photoURL ?? user?.photoURL ?? null;
@@ -534,7 +527,6 @@ export default function ChatScreen() {
               <MessageBubble
                 message={item.message}
                 isOwn={item.message.senderId === currentUserMember?.id}
-                relationLabel={relationLabel}
                 avatarUri={item.message.senderId === currentUserMember?.id ? ownAvatarUri : senderAvatarUri}
                 onDelete={handleDeleteMessage}
               />

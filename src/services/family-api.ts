@@ -12,8 +12,13 @@ export const getFamilyApi = async () => {
     const response = await api.family.get();
     logger.info('[family-api] getFamily response', { hasFamily: !!response?.family });
     return response;
-  } catch (error) {
-    logger.error('[family-api] getFamily error', error);
+  } catch (error: any) {
+    const message = error?.message ?? String(error ?? '');
+    if (message.includes('400') || message.includes('não pertence a nenhuma família')) {
+      logger.info('[family-api] getFamily: usuário sem família');
+    } else {
+      logger.error('[family-api] getFamily error', error);
+    }
     throw error;
   }
 };
@@ -30,7 +35,7 @@ export const getFamilyMembersApi = async (familyId: string) => {
   }
 };
 
-export const addFamilyMemberApi = async (familyId: string, data: { userId?: string; email: string; name: string; familyRelation?: string | null }) => {
+export const addFamilyMemberApi = async (familyId: string, data: { userId?: string; email: string; name: string }) => {
   const response = await api.family.addMember(familyId, data);
   return response.member;
 };
@@ -44,13 +49,8 @@ export const updateFamilyMemberRoleApi = async (familyId: string, memberId: stri
   return response.member;
 };
 
-export const updateFamilyMemberRelationApi = async (familyId: string, memberId: string, familyRelation: string | null) => {
-  const response = await api.family.updateMemberRelation(familyId, memberId, familyRelation);
-  return response.member;
-};
-
 export const subscribeToFamilyMembersApi = async (familyId: string, callback: (members: any[]) => void) => {
-  const socket = await connectSocket('');
+  const socket = await connectSocket();
 
   socket.on('connect', () => {
     socket.emit('family:join', { familyId });

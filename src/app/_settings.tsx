@@ -2,7 +2,6 @@ import ZappIcon from '@/components/common/ZappIcon';
 import { Cell, ListSection, SectionLabel } from '@/components/settings/SettingsList';
 import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import Colors from '@/constants/Colors';
-import { FamilyRelationLabels, FamilyRelationGroups, type FamilyRelation } from '@/constants/FamilyRelationLabels';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useInvitations } from '@/contexts/InvitationContext';
@@ -12,7 +11,6 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -31,10 +29,9 @@ function SettingsInner() {
   const [deletingMember, setDeletingMember] = useState<string | null>(null);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
-  const [relationMemberId, setRelationMemberId] = useState<string | null>(null);
-  const [relationSaving, setRelationSaving] = useState(false);
-
-  const { members, deleteFamilyMember, familyId, beginIntentionalExit, cancelIntentionalExit, updateMemberRelation } =
+  const [familyNameInput, setFamilyNameInput] = useState('');
+  const [updatingFamilyName, setUpdatingFamilyName] = useState(false);
+  const { members, deleteFamilyMember, familyId, familyName, beginIntentionalExit, cancelIntentionalExit } =
     useFamily();
   const { sendInvitation, sentInvitations } = useInvitations();
   const router = useRouter();
@@ -46,6 +43,28 @@ function SettingsInner() {
   }, [members, backendUserId]);
 
   const isAdmin = currentUser?.role === 'admin';
+
+  useEffect(() => {
+    if (familyName) {
+      setFamilyNameInput(familyName);
+    }
+  }, [familyName]);
+
+  const handleUpdateFamilyName = async () => {
+    if (!familyId || !familyNameInput.trim()) {
+      toast.error('Nome da família é obrigatório.');
+      return;
+    }
+    try {
+      setUpdatingFamilyName(true);
+      await api.family.updateName(familyId, familyNameInput.trim());
+      toast.success('Nome da família atualizado.');
+    } catch (error: any) {
+      toast.error(error?.message || 'Falha ao atualizar nome da família.');
+    } finally {
+      setUpdatingFamilyName(false);
+    }
+  };
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) {
@@ -94,20 +113,6 @@ function SettingsInner() {
         }
       },
     });
-  };
-
-  const handleUpdateRelation = async (memberId: string, relation: FamilyRelation | null) => {
-    if (!familyId) return;
-    setRelationSaving(true);
-    try {
-      await updateMemberRelation(memberId, relation);
-      toast.success('Relação atualizada.');
-    } catch (error: any) {
-      toast.error(error?.message || 'Não foi possível atualizar a relação.');
-    } finally {
-      setRelationSaving(false);
-      setRelationMemberId(null);
-    }
   };
 
   const handleDeleteAccount = async () => {
@@ -239,12 +244,48 @@ function SettingsInner() {
           </>
         )}
 
+        {isAdmin && (
+          <>
+            <SectionLabel text="FAMÍLIA" />
+            <ListSection>
+              <Cell first last>
+                <View style={styles.inviteBody}>
+                  <View style={styles.inputBox}>
+                    <TextInput
+                      style={styles.memberInput}
+                      value={familyNameInput}
+                      onChangeText={setFamilyNameInput}
+                      placeholder="Nome da família"
+                      placeholderTextColor={Colors.light.mutedText}
+                      autoCapitalize="sentences"
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.sendBtn,
+                        (!familyNameInput.trim() || updatingFamilyName) && styles.sendBtnDisabled,
+                      ]}
+                      onPress={handleUpdateFamilyName}
+                      disabled={!familyNameInput.trim() || updatingFamilyName}
+                      activeOpacity={0.5}
+                    >
+                      {updatingFamilyName ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <ZappIcon name="check" size={16} color="#fff" />
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Cell>
+            </ListSection>
+          </>
+        )}
+
         <SectionLabel text="MEMBROS" />
 
         <ListSection>
           {members.map((member, index) => {
             const isMe = member.userId === backendUserId;
-            const relationLabel = member.familyRelation ? FamilyRelationLabels[member.familyRelation as keyof typeof FamilyRelationLabels] : null;
             return (
               <Cell key={member.id} first={index === 0} last={index === members.length - 1}>
                 <View style={styles.memberRow}>
@@ -262,26 +303,11 @@ function SettingsInner() {
                         </View>
                       )}
                     </View>
-                    <View style={styles.memberMeta}>
-                      {member.email ? (
-                        <Text style={styles.memberEmail} numberOfLines={1}>
-                          {member.email}
-                        </Text>
-                      ) : null}
-                      {!!relationLabel && (
-                        <Text style={styles.relationLabel}>{relationLabel}</Text>
-                      )}
-                    </View>
-                    {isMe && !relationLabel && (
-                      <TouchableOpacity onPress={() => setRelationMemberId(member.id)} activeOpacity={0.7}>
-                        <Text style={styles.setRelationText}>Definir relação</Text>
-                      </TouchableOpacity>
-                    )}
-                    {isMe && relationLabel && (
-                      <TouchableOpacity onPress={() => setRelationMemberId(member.id)} activeOpacity={0.7}>
-                        <Text style={styles.setRelationText}>Alterar relação</Text>
-                      </TouchableOpacity>
-                    )}
+                    {member.email ? (
+                      <Text style={styles.memberEmail} numberOfLines={1}>
+                        {member.email}
+                      </Text>
+                    ) : null}
                   </View>
                   {isAdmin && member.userId !== backendUserId && (
                     <TouchableOpacity
@@ -303,48 +329,6 @@ function SettingsInner() {
             );
           })}
         </ListSection>
-
-        <Modal visible={!!relationMemberId} animationType="slide" onRequestClose={() => setRelationMemberId(null)}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Relação familiar</Text>
-              <TouchableOpacity onPress={() => setRelationMemberId(null)} activeOpacity={0.7}>
-                <ZappIcon name="close" size={22} color={Colors.light.text} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalList} contentContainerStyle={styles.modalListContent}>
-              {FamilyRelationGroups.map((group) => (
-                <View key={group.label} style={styles.group}>
-                  <Text style={styles.groupLabel}>{group.label}</Text>
-                  <View style={styles.groupGrid}>
-                    {group.relations.map((relation) => {
-                      const selected = relationMemberId ? members.find((m) => m.id === relationMemberId)?.familyRelation === relation : false;
-                      const label = FamilyRelationLabels[relation];
-                      return (
-                        <TouchableOpacity
-                          key={relation}
-                          style={[styles.relationChip, selected && styles.relationChipActive]}
-                          onPress={() => relationMemberId && handleUpdateRelation(relationMemberId, relation)}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[styles.relationText, selected && styles.relationTextActive]}>{label}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-              ))}
-              <TouchableOpacity style={styles.noneBtn} onPress={() => relationMemberId && handleUpdateRelation(relationMemberId, null)} activeOpacity={0.7}>
-                <Text style={styles.noneText}>Sem relação</Text>
-              </TouchableOpacity>
-            </ScrollView>
-            {relationSaving && (
-              <View style={styles.overlay}>
-                <ActivityIndicator size="small" color="#fff" />
-              </View>
-            )}
-          </View>
-        </Modal>
 
         <SectionLabel text="CONTA" />
 
@@ -535,29 +519,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   textRed: { color: Colors.light.danger },
-  memberMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 2,
-    flexWrap: 'wrap',
-  },
-  relationLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.light.mutedText,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  setRelationText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.light.primary,
-    marginTop: 2,
-  },
   modalContainer: {
     flex: 1,
     backgroundColor: Colors.light.background,
@@ -594,44 +555,6 @@ const styles = StyleSheet.create({
     color: Colors.light.mutedText,
     letterSpacing: 1,
     textTransform: 'uppercase',
-  },
-  groupGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  relationChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: Colors.light.cardBackground,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  relationChipActive: {
-    backgroundColor: `${Colors.light.primary}15`,
-    borderColor: Colors.light.primary,
-  },
-  relationText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.light.text,
-  },
-  relationTextActive: {
-    color: Colors.light.primary,
-  },
-  noneBtn: {
-    paddingVertical: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    backgroundColor: Colors.light.cardBackground,
-    alignItems: 'center',
-  },
-  noneText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.light.text,
   },
   overlay: {
     ...StyleSheet.absoluteFill,

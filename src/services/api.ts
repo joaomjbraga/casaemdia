@@ -1,12 +1,34 @@
 
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { getEnv } from '@/lib/env';
 import { storageGet, storageRemove, storageSet } from '@/lib/storage';
 
+function getLocalDebugHost(): string | null {
+  const hostUri =
+    (Constants.expoConfig as any)?.hostUri ||
+    (Constants as any).manifest2?.hostUri ||
+    (Constants as any).manifest?.debuggerHost;
+
+  if (typeof hostUri !== 'string') {
+    return null;
+  }
+
+  const normalized = hostUri.replace(/^.*?:\/\//, '');
+  const [host] = normalized.split(':');
+  return host || null;
+}
+
 function getDefaultApiBase() {
+  const host = getLocalDebugHost();
+  if (host) {
+    return `http://${host}:3333`;
+  }
+
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:3333';
   }
+
   return 'http://localhost:3333';
 }
 
@@ -74,11 +96,19 @@ async function request(path: string, options: RequestInit = {}, retries = 2) {
         clearTimeout(timeout);
 
         if (response.status === 401) {
+          const errorBody = await response.json().catch(async () => {
+            const text = await response.text().catch(() => null);
+            return text ? { message: text } : null;
+          });
+          const isAuthEndpoint = path === '/api/auth';
+          if (isAuthEndpoint) {
+            throw new Error(errorBody?.message ?? 'Falha na autenticação');
+          }
           try {
             setAuthToken(null);
           } catch {}
           await storageRemove('token');
-          throw new Error('Sessão expirada');
+          throw new Error(errorBody?.message ?? 'Sessão expirada');
         }
 
         if (response.status === 429) {
@@ -138,6 +168,7 @@ export const api = {
         body: JSON.stringify({ idToken }),
       }),
     me: () => request('/api/auth/me'),
+    deleteAccount: () => request('/api/auth/me', { method: 'DELETE' }),
   },
   family: {
     create: (name: string) =>
@@ -146,7 +177,8 @@ export const api = {
         body: JSON.stringify({ familyName: name }),
       }),
     get: () => request('/api/families'),
-    addMember: (familyId: string, data: { userId?: string; email: string; name: string; familyRelation?: string | null }) =>
+    getAll: () => request('/api/families/all'),
+    addMember: (familyId: string, data: { userId?: string; email: string; name: string }) =>
       request(`/api/families/${familyId}/members`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -158,10 +190,10 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ role }),
       }),
-    updateMemberRelation: (familyId: string, memberId: string, familyRelation: string | null) =>
-      request(`/api/families/${familyId}/members/${memberId}/relation`, {
+    updateName: (familyId: string, name: string) =>
+      request<{ family: any }>(`/api/families/${familyId}/name`, {
         method: 'PATCH',
-        body: JSON.stringify({ familyRelation }),
+        body: JSON.stringify({ familyName: name }),
       }),
     getMembers: (familyId: string) =>
       request(`/api/families/${familyId}/members`),
@@ -226,6 +258,23 @@ export const api = {
       }),
     decline: (invitationId: string) =>
       request(`/api/invitations/${invitationId}/decline`, { method: 'POST' }),
+  },
+  joinRequests: {
+    send: (familyId: string) =>
+      request('/api/join-requests', {
+        method: 'POST',
+        body: JSON.stringify({ familyId }),
+      }),
+    listPendingByFamily: (familyId: string) =>
+      request(`/api/join-requests/family/${familyId}`),
+    listPendingByUser: () =>
+      request('/api/join-requests/pending'),
+    accept: (requestId: string) =>
+      request(`/api/join-requests/${requestId}/accept`, { method: 'POST' }),
+    decline: (requestId: string) =>
+      request(`/api/join-requests/${requestId}/decline`, { method: 'POST' }),
+    cancel: (requestId: string) =>
+      request(`/api/join-requests/${requestId}/cancel`, { method: 'POST' }),
   },
   upload: {
     image: async (uri: string) => {

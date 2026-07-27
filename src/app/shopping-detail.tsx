@@ -58,7 +58,7 @@ export default function ShoppingDetailScreen() {
     assignee: string;
     assigneeId: string;
   }>();
-  const { familyId } = useFamily();
+  const { familyId, members } = useFamily();
   const { backendUserId } = useAuth();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
@@ -68,9 +68,12 @@ export default function ShoppingDetailScreen() {
 
   const isDone = params.done === 'true';
   const hasQuantity = !!params.quantity;
-  const hasAssignee = !!params.assignee;
-  const isResponsible = Boolean(backendUserId && params.assigneeId && backendUserId === params.assigneeId);
-  const canToggle = !isDone ? isResponsible : true;
+  const hasAssignee = !!params.assigneeId;
+  const currentMemberId = members.find((m) => m.userId === backendUserId)?.id;
+  const isResponsible = Boolean(
+    params.assigneeId && backendUserId && (currentMemberId === params.assigneeId || backendUserId === params.assigneeId)
+  );
+  const canToggle = isResponsible;
   const itemIcon = getItemIcon(params.name);
   const itemIconColor = getIconColor(params.name);
 
@@ -176,17 +179,15 @@ export default function ShoppingDetailScreen() {
             </View>
           )}
 
-          {hasAssignee && (
-            <View style={[styles.detailRow, !hasQuantity && styles.detailRowFirst]}>
-              <View style={styles.detailIcon}>
-                <ZappIcon name="account-outline" size={18} color={Colors.light.mutedText} />
-              </View>
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Responsável</Text>
-                <Text style={styles.detailValue}>{params.assignee}</Text>
-              </View>
+          <View style={[styles.detailRow, !hasQuantity && styles.detailRowFirst]}>
+            <View style={styles.detailIcon}>
+              <ZappIcon name="account-outline" size={18} color={Colors.light.mutedText} />
             </View>
-          )}
+            <View style={styles.detailContent}>
+              <Text style={styles.detailLabel}>Responsável</Text>
+              <Text style={styles.detailValue}>{params.assignee || 'Sem responsável'}</Text>
+            </View>
+          </View>
         </Card>
 
         {canToggle ? (
@@ -200,7 +201,11 @@ export default function ShoppingDetailScreen() {
         ) : (
           <View style={styles.lockedBanner}>
             <ZappIcon name="lock-outline" size={16} color={Colors.light.mutedText} />
-            <Text style={styles.lockedText}>Apenas o responsável pode marcar este item como comprado.</Text>
+            <Text style={styles.lockedText}>
+              {hasAssignee
+                ? `Apenas ${params.assignee} pode alterar este item.`
+                : 'Apenas o responsável pode alterar este item.'}
+            </Text>
           </View>
         )}
 

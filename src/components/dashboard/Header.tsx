@@ -2,7 +2,6 @@ import IconCircleButton from '@/components/common/IconCircleButton';
 import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
 import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import Colors from '@/constants/Colors';
-import { FamilyRelationLabels } from '@/constants/FamilyRelationLabels';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { router } from 'expo-router';
@@ -23,9 +22,6 @@ export default function Header() {
 
   const currentUser = members.find((member) => member.userId === backendUserId);
   const isAdmin = currentUser?.role === 'admin';
-  const currentUserRelationLabel = currentUser?.familyRelation
-    ? FamilyRelationLabels[currentUser.familyRelation as keyof typeof FamilyRelationLabels]
-    : null;
 
   const userInitial = (user?.displayName || user?.email || '?')[0].toUpperCase();
 
@@ -86,11 +82,6 @@ export default function Header() {
             <Text style={styles.appSubtitle}>
               {membersCount} {membersCount === 1 ? 'membro' : 'membros'}
             </Text>
-            {currentUserRelationLabel ? (
-              <Text style={styles.appRelation} numberOfLines={1}>
-                Você: {currentUserRelationLabel}
-              </Text>
-            ) : null}
           </View>
         </View>
 
@@ -121,18 +112,19 @@ export default function Header() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.light.backgroundSecondary,
+    backgroundColor: Colors.light.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.light.border,
+    paddingBottom: 8,
   },
 
   bar: {
-    minHeight: 52,
+    minHeight: 80,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 18,
   },
 
   brandSection: {
@@ -140,14 +132,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginRight: 12,
+    gap: 14,
+    marginRight: 10,
   },
 
   userAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Colors.light.cardDark,
@@ -155,16 +147,16 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
   },
   userAvatarImage: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
 
   userInitial: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.light.primary,
   },
 
@@ -174,8 +166,8 @@ const styles = StyleSheet.create({
   },
 
   appName: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: Colors.light.text,
     letterSpacing: -0.3,
     marginBottom: 2,
@@ -186,19 +178,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.light.mutedText,
     letterSpacing: 0.1,
-  },
-
-  appRelation: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.light.primary,
-    letterSpacing: 0.1,
+    marginBottom: 2,
   },
 
   actions: {
     flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
   },
 });
