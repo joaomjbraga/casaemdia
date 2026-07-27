@@ -41,7 +41,6 @@
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.1",
     "expo-video": "~57.0.2",
-    "firebase": "^12.16.0",
     "onesignal-expo-plugin": "^2.7.0",
     "react": "19.2.3",
     "react-native": "0.86.0",

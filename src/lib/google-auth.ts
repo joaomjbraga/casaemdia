@@ -1,6 +1,4 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { auth } from './firebase';
 import { getRequiredPublicEnv } from '@/lib/env';
 import logger from '@/lib/logger';
 
@@ -11,6 +9,7 @@ export function configureGoogleSignIn() {
     logger.error('[GoogleAuth] EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID não configurada');
     return;
   }
+
   GoogleSignin.configure({
     webClientId: WEB_CLIENT_ID,
     offlineAccess: true,
@@ -37,13 +36,13 @@ export async function signInWithGoogle() {
     throw new Error('Não foi possível obter o token do Google.');
   }
 
-  const credential = GoogleAuthProvider.credential(idToken);
-  const userCredential = await signInWithCredential(auth, credential);
-
-  const firebaseIdToken = await userCredential.user.getIdToken();
-
   return {
-    user: userCredential.user,
-    idToken: firebaseIdToken,
+    user: {
+      uid: userInfo.data?.user.id ?? '',
+      email: userInfo.data?.user.email ?? '',
+      displayName: userInfo.data?.user.name ?? userInfo.data?.user.email?.split('@')[0] ?? 'Usuário',
+      photoURL: userInfo.data?.user.photo ?? null,
+    },
+    idToken,
   };
 }

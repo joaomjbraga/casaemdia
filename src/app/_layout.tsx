@@ -112,7 +112,7 @@ function useProtectedRoute() {
 }
 
 function RootLayoutNav() {
-  const { user, loading, initialized } = useAuth();
+  const { user, loading, initialized, backendUserId } = useAuth();
   const { familyId, wasRemoved, acknowledgeRemoval } = useFamily();
   const { showAlert } = useAlertDialog();
   const [isInitialLoad, setIsInitialLoad] = useState(true);

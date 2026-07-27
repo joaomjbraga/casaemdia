@@ -8,7 +8,8 @@ import { useInvitations } from '@/contexts/InvitationContext';
 import logger from '@/lib/logger';
 import { toast } from '@/lib/toast';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { api } from '@/services/api';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,

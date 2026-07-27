@@ -13,7 +13,7 @@ import {
   sendFamilyInvitationApi,
 } from './family-api';
 import { removeUserTags } from '../lib/onesignal';
-import type { User } from 'firebase/auth';
+import type { User } from '@/types/models';
 
 interface FamilyResult {
   familyId: string;

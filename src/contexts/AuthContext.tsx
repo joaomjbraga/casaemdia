@@ -1,11 +1,10 @@
-import { auth } from '@/lib/firebase';
-import { configureGoogleSignIn, signInWithGoogle as googleSignIn } from '@/lib/google-auth';
-import { User, deleteUser, onAuthStateChanged } from 'firebase/auth';
+import { User } from '@/types/models';
 import { storageGet, storageGetAllKeys, storageMultiRemove, storageRemove, storageSet } from '@/lib/storage';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import logger from '@/lib/logger';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { api, setAuthToken } from '@/services/api';
+import { signInWithGoogle as googleSignIn } from '@/lib/google-auth';
 
 function decodeJwtSub(token: string): string | null {
   try {
@@ -72,8 +71,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isTokenReady, setIsTokenReady] = useState(false);
 
   useEffect(() => {
-    configureGoogleSignIn();
-
     let isMounted = true;
 
     const restoreSession = async () => {
@@ -85,6 +82,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setAuthToken(storedToken);
           setBackendUserId(decodeJwtSub(storedToken));
           setIsTokenReady(true);
+
+          try {
+            const me = await api.auth.me();
+            setUser({ uid: me.user.id, email: me.user.email, displayName: me.user.name, photoURL: me.user.photoURL });
+          } catch {
+            setIsTokenReady(false);
+            setBackendUserId(null);
+            await storageRemove('token');
+          }
         }
       } catch {
         if (!isMounted) return;
@@ -98,22 +104,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     restoreSession();
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!isMounted) return;
-      setUser(firebaseUser);
-      setLoading(false);
-    });
-
     return () => {
       isMounted = false;
-      unsubscribe();
     };
   }, []);
 
   const signInWithGoogle = async (): Promise<AuthResult> => {
     try {
       setLoading(true);
-      const { user: firebaseUser, idToken } = await googleSignIn();
+      const { user: googleUser, idToken } = await googleSignIn();
 
       try {
         const authResponse = await api.auth.authenticate(idToken);
@@ -126,14 +125,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const stored = await storageGet('token');
         logger.info('[AuthProvider] Token stored length', { length: stored?.length ?? 0, storedPrefix: stored?.slice(0, 20) });
 
-        // keep token in memory to avoid AsyncStorage race
         setAuthToken(authResponse.token);
         setBackendUserId(decodeJwtSub(authResponse.token));
         setIsTokenReady(true);
-        setUser(firebaseUser);
+        setUser(googleUser as unknown as User);
 
         return {
-          data: { user: firebaseUser },
+          data: { user: googleUser as unknown as User },
           error: null,
           success: true,
         };
@@ -156,7 +154,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       let message = 'Erro ao entrar com Google.';
 
       if (error.code) {
-        message = translateFirebaseError(error.code);
+        message = translateGoogleError(error.code);
       } else if (error.message) {
         message = error.message;
       }
@@ -174,14 +172,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       try {
-        await GoogleSignin.signOut();
-      } catch (e) {
-        logger.warn('Google signOut error (non-blocking):', e);
-      }
-      await auth.signOut();
-      try {
-        setAuthToken(null);
+        await GoogleSignin.signOut().catch(() => {});
       } catch {}
+      setAuthToken(null);
       setBackendUserId(null);
       setIsTokenReady(false);
       await storageRemove('token');
@@ -196,8 +189,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const deleteAccount = async (): Promise<void> => {
-    const current = auth.currentUser;
-    if (!current) return;
+    const currentUserId = backendUserId;
+    if (!currentUserId) return;
     try {
       setLoading(true);
       try {
@@ -206,23 +199,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         logger.error('[AuthProvider] deleteAccount API error', { message: error?.message, raw: error });
         throw new Error(error?.message || 'Falha ao excluir conta no backend.');
       }
-      try {
-        await GoogleSignin.signOut().catch(() => {});
-      } catch {
-        // non-blocking
-      }
-      try {
-        await deleteUser(current);
-      } catch (error: any) {
-        if (error?.code === 'auth/requires-recent-login') {
-          throw new Error('É necessário fazer login novamente antes de excluir a conta.');
-        }
-        throw error;
-      }
-      try {
-        setAuthToken(null);
-      } catch {}
+      setAuthToken(null);
       setBackendUserId(null);
+      setIsTokenReady(false);
       await storageRemove('token');
       await clearUserData();
       setUser(null);
@@ -249,18 +228,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-function translateFirebaseError(code: string): string {
+function translateGoogleError(code: string): string {
   switch (code) {
-    case 'auth/too-many-requests':
-      return 'Muitas tentativas. Aguarde alguns minutos.';
-    case 'auth/network-request-failed':
+    case 'IN_PROGRESS':
+      return 'Operação de login já em andamento.';
+    case 'PLAY_SERVICES_NOT_AVAILABLE':
+      return 'Google Play Services não disponíveis.';
+    case 'SIGN_IN_CANCELLED':
+      return 'Login cancelado.';
+    case 'NETWORK_ERROR':
       return 'Erro de conexão. Verifique sua internet.';
-    case 'auth/operation-not-allowed':
-      return 'Login com Google não habilitado. Verifique no Firebase Console.';
-    case 'auth/credential-already-in-use':
-      return 'Esta conta já está associada a outro método de login.';
-    case 'auth/account-exists-with-different-credential':
-      return 'Já existe uma conta com este e-mail usando outro método de login.';
     default:
       return 'Ocorreu um erro. Tente novamente.';
   }
