@@ -16,7 +16,7 @@ interface AddTaskFormProps {
 }
 
 export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
-  const { user } = useAuth();
+  const { user, backendUserId } = useAuth();
   const { familyId, members } = useFamily();
 
   const [title, setTitle] = useState('');
@@ -61,7 +61,7 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
         },
         {
           userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-          userId: user.uid,
+          userId: backendUserId,
         },
       );
 

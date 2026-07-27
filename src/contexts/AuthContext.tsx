@@ -5,6 +5,7 @@ import logger from '@/lib/logger';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { api, setAuthToken } from '@/services/api';
 import { signInWithGoogle as googleSignIn } from '@/lib/google-auth';
+import { disconnectSocket } from '@/services/socket';
 
 function decodeJwtSub(token: string): string | null {
   try {
@@ -89,7 +90,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } catch {
             setIsTokenReady(false);
             setBackendUserId(null);
+            setAuthToken(null);
             await storageRemove('token');
+            setUser(null);
           }
         }
       } catch {
@@ -174,6 +177,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         await GoogleSignin.signOut().catch(() => {});
       } catch {}
+      disconnectSocket();
       setAuthToken(null);
       setBackendUserId(null);
       setIsTokenReady(false);

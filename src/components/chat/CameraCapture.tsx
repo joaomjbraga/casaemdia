@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -90,6 +90,13 @@ export default function CameraCapture({ visible, onClose, onCapture }: CameraCap
   }
 
   return (
+    <Modal
+    visible={visible}
+    transparent
+    animationType="slide"
+    statusBarTranslucent
+    onRequestClose={onClose}
+  >
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={styles.camera} facing={facing} mode="picture">
         <View style={[styles.controls, { paddingBottom: Math.max(insets.bottom, 16) }]}>
@@ -127,6 +134,7 @@ export default function CameraCapture({ visible, onClose, onCapture }: CameraCap
         </View>
       </CameraView>
     </View>
+  </Modal>
   );
 }
 
@@ -163,11 +171,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   controls: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingTop: 16,
+    paddingBottom: 16,
     backgroundColor: '#00000066',
   },
   controlButton: {

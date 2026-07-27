@@ -96,7 +96,7 @@ export default function TaskDetailScreen() {
             newDone: true,
             options: {
               userName: user?.displayName || user?.email?.split('@')[0] || 'Alguém',
-              userId: user?.uid || '',
+              userId: backendUserId || '',
             },
           });
           toast.success('Tarefa concluída!');

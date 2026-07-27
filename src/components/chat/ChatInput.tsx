@@ -11,13 +11,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ZappIcon from '@/components/common/ZappIcon';
 
-interface ChatInputProps {
+  interface ChatInputProps {
   onSend: (text: string) => void;
   disabled?: boolean;
   bottomInset?: number;
   onPickImage?: () => void;
   onPickAudio?: () => void;
-  onToggleAudioRecording?: () => void;
+  onStartAudioRecording?: () => void;
+  onStopAudioRecording?: () => void;
   onPickCamera?: () => void;
   uploading?: boolean;
   isRecordingAudio?: boolean;
@@ -29,7 +30,8 @@ export default function ChatInput({
   bottomInset = 0,
   onPickImage,
   onPickAudio,
-  onToggleAudioRecording,
+  onStartAudioRecording,
+  onStopAudioRecording,
   onPickCamera,
   uploading = false,
   isRecordingAudio = false,
@@ -71,10 +73,14 @@ export default function ChatInput({
           {onPickAudio ? (
             <TouchableOpacity
               style={[styles.iconButton, isRecordingAudio && styles.iconButtonActive]}
-              onPress={onToggleAudioRecording || onPickAudio}
+              onPressIn={onStartAudioRecording}
+              onPressOut={onStopAudioRecording}
               disabled={disabled || uploading}
               activeOpacity={0.8}
             >
+              {isRecordingAudio ? (
+                <View style={styles.recordingDot} />
+              ) : null}
               <ZappIcon
                 name={isRecordingAudio ? 'microphone' : 'microphone-outline'}
                 size={18}
@@ -142,6 +148,18 @@ const styles = StyleSheet.create({
   },
   iconButtonActive: {
     backgroundColor: Colors.light.primary,
+  },
+  recordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ff3b30',
+    marginRight: 4,
+    shadowColor: '#ff3b30',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
   },
   input: {
     flex: 1,

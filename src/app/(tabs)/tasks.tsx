@@ -24,7 +24,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TasksScreen() {
-  const { user } = useAuth();
+  const { user, backendUserId } = useAuth();
   const { familyId } = useFamily();
   const { showAlert } = useAlertDialog();
   const { showDialog } = useConfirmDialog();
@@ -77,7 +77,7 @@ export default function TasksScreen() {
         newDone,
         options: {
           userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-          userId: user.uid,
+          userId: backendUserId,
         },
       });
     } catch {
@@ -107,7 +107,7 @@ export default function TasksScreen() {
         title: deletedTask?.title,
         options: {
           userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-          userId: user.uid,
+          userId: backendUserId,
         },
       });
     } catch {
@@ -182,7 +182,7 @@ export default function TasksScreen() {
             options: user
               ? {
                   userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-                  userId: user.uid,
+                  userId: backendUserId,
                 }
               : undefined,
           });

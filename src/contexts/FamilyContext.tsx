@@ -41,7 +41,7 @@ export const useFamily = () => {
 };
 
 export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, initialized: authInitialized, isTokenReady } = useAuth();
+  const { user, backendUserId } = useAuth();
   const [familyId, setFamilyId] = useState<string | null>(null);
   const [familyName, setFamilyName] = useState<string>('Minha Família');
   const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -232,7 +232,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const socket = await connectSocket();
       const handleMemberRemoved = async (data: { memberId: string; userId?: string }) => {
         if (!mounted) return;
-        if (data.userId && user?.uid && data.userId === user.uid) {
+        if (data.userId && backendUserId && data.userId === backendUserId) {
           setWasRemoved(true);
           await recoverFamilyAfterRemoval(user);
           await refreshFamily();

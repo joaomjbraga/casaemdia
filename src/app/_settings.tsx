@@ -117,7 +117,7 @@ function SettingsInner() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!user?.uid || !familyId) return;
+    if (!backendUserId || !familyId) return;
     showDialog({
       title: 'Excluir Conta',
       message: 'Isso removerá seus dados da família. Continuar?',

@@ -156,7 +156,7 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (user && familyId) {
-      setUserTags(familyId, user.uid, user.email || undefined);
+      setUserTags(familyId, backendUserId, user.email || undefined);
       requestPermissionAfterLogin();
     } else {
       removeUserTags();

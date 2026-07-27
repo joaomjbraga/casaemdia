@@ -375,46 +375,8 @@ export default function ChatScreen() {
     setRecordingTime(0);
   }, [recorder]);
 
-  const handleToggleAudioRecording = useCallback(async () => {
-    if (!familyId || !user || isSending || uploadingMedia) return;
-
-    if (isRecordingAudio) {
-      try {
-        if (recorder) {
-          await recorder.stop();
-          const uri = recorder.uri;
-          if (uri) {
-            setRecordingUri(uri);
-            setUploadingMedia(true);
-            try {
-              logger.debug('[Chat] handleToggleAudioRecording upload start', { uri });
-              const uploaded = await uploadToCloudinary(
-                uri,
-                `audio-${Date.now()}.m4a`,
-                'audio/m4a',
-              );
-              logger.info('[Chat] handleToggleAudioRecording upload success', uploaded);
-              await handleSend('', {
-                url: uploaded.url,
-                type: 'audio',
-                name: 'audio.m4a',
-                mimeType: 'audio/m4a',
-                publicId: uploaded.publicId,
-              });
-            } catch (error) {
-              logger.error('[Chat] handleToggleAudioRecording error', error);
-              showError('Não foi possível enviar o áudio. Tente novamente.');
-            } finally {
-              setUploadingMedia(false);
-              setRecordingUri(null);
-            }
-          }
-        }
-      } finally {
-        setIsRecordingAudio(false);
-      }
-      return;
-    }
+  const handleStartAudioRecording = useCallback(async () => {
+    if (!familyId || !user || isSending || uploadingMedia || isRecordingAudio) return;
 
     try {
       const perm = await AudioModule.requestRecordingPermissionsAsync();
@@ -427,10 +389,55 @@ export default function ChatScreen() {
       setRecordingUri(null);
       setIsRecordingAudio(true);
     } catch (error) {
-      logger.error('[Chat] handleToggleAudioRecording record error', error);
+      logger.error('[Chat] handleStartAudioRecording error', error);
       showError('Não foi possível iniciar a gravação.');
     }
-  }, [familyId, user, isSending, uploadingMedia, isRecordingAudio, handleSend, recorder]);
+  }, [familyId, user, isSending, uploadingMedia, isRecordingAudio, recorder]);
+
+  const handleStopAudioRecording = useCallback(async () => {
+    if (!isRecordingAudio) return;
+
+    if (recorder) {
+      try {
+        await recorder.stop();
+      } catch {
+        // ignore
+      }
+    }
+
+    const uri = recorder.uri;
+    if (!uri) {
+      setIsRecordingAudio(false);
+      setRecordingTime(0);
+      return;
+    }
+
+    setUploadingMedia(true);
+    try {
+      logger.debug('[Chat] handleStopAudioRecording upload start', { uri });
+      const uploaded = await uploadToCloudinary(
+        uri,
+        `audio-${Date.now()}.m4a`,
+        'audio/m4a',
+      );
+      logger.info('[Chat] handleStopAudioRecording upload success', uploaded);
+      await handleSend('', {
+        url: uploaded.url,
+        type: 'audio',
+        name: 'audio.m4a',
+        mimeType: 'audio/m4a',
+        publicId: uploaded.publicId,
+      });
+    } catch (error) {
+      logger.error('[Chat] handleStopAudioRecording error', error);
+      showError('Não foi possível enviar o áudio. Tente novamente.');
+    } finally {
+      setUploadingMedia(false);
+      setRecordingUri(null);
+      setIsRecordingAudio(false);
+      setRecordingTime(0);
+    }
+  }, [isRecordingAudio, recorder, handleSend, uploadToCloudinary]);
 
   const handleBack = useCallback(() => {
     router.replace('/(tabs)');
@@ -580,7 +587,8 @@ export default function ChatScreen() {
           bottomInset={bottom}
           onPickImage={handlePickImage}
           onPickAudio={handlePickAudio}
-          onToggleAudioRecording={handleToggleAudioRecording}
+          onStartAudioRecording={handleStartAudioRecording}
+          onStopAudioRecording={handleStopAudioRecording}
           onPickCamera={() => setShowCamera(true)}
           uploading={uploadingMedia}
           isRecordingAudio={isRecordingAudio}

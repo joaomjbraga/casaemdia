@@ -27,7 +27,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ZappIcon from '@/components/common/ZappIcon';
 
 export default function ShoppingList() {
-  const { user } = useAuth();
+  const { user, backendUserId } = useAuth();
   const { familyId, members } = useFamily();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
@@ -111,7 +111,7 @@ export default function ShoppingList() {
         assigneeId: newItemAssigneeId ?? undefined,
         assigneeName: assignee?.name,
         userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-        userId: user.uid,
+        userId: backendUserId,
       });
       setItems((prev) =>
         prev.map((i) =>
@@ -160,7 +160,7 @@ export default function ShoppingList() {
         quantity: qty,
         itemName: item.name,
         userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-        userId: user.uid,
+        userId: backendUserId,
       });
     } catch {
       setItems(() => snapshot);
@@ -252,7 +252,7 @@ export default function ShoppingList() {
             familyId: currentFamilyId,
             items: completedItems,
             userName: user?.displayName || user?.email?.split('@')[0] || 'Alguém',
-            userId: user?.uid,
+            userId: backendUserId,
           });
         } catch {
           setItems(() => snapshot);
