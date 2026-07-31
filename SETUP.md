@@ -42,7 +42,7 @@ npm start
 
 Notas:
 
-- Para Google Sign-In no Android, adicione o SHA-1 do keystore no console do Firebase e baixe o `google-services.json`.
+- Para Google Sign-In no Android, adicione o SHA-1 do keystore no client OAuth Android no Google Cloud Console e baixe o `google-services.json`.
 - Proteja chaves sensíveis usando secrets no CI (não commitá-las).
 - A `ONESIGNAL_REST_API_KEY` pertence ao **backend** (`casaemdia-api/.env`), nunca ao app: colocá-la em `EXPO_PUBLIC_*` expõe a credencial no binário/cliente.
 

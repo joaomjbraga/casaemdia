@@ -2,11 +2,11 @@
 
 # Casa em Dia
 
-Casa em Dia é um aplicativo mobile para organização doméstica, criado com React Native, Expo e Firebase. O projeto concentra tarefas, lista de compras, convites de família e notificações em uma experiência colaborativa para o dia a dia.
+Casa em Dia é um aplicativo mobile para organização doméstica, criado com React Native e Expo. O projeto concentra tarefas, lista de compras, convites de família e notificações em uma experiência colaborativa para o dia a dia.
 
 ## O que o app faz
 
-- Login com Google via Firebase Auth
+- Login com Google (ID token verificado pelo backend)
 - Gestão de famílias compartilhadas com convites por e-mail
 - Tarefas com responsáveis
 - Lista de compras colaborativa
@@ -15,7 +15,7 @@ Casa em Dia é um aplicativo mobile para organização doméstica, criado com Re
 - Navegação e componentes reestilizados para maior clareza e consistência
 - Cores unificadas e superfícies mais limpas
 - Correções de bugs e inconsistências no tema e tipos
-- Persistência offline nativa via Firestore
+- Dados sincronizados em tempo real com o backend via HTTP + WebSocket
 
 ## Arquitetura atual
 
@@ -29,7 +29,7 @@ A base do projeto foi reorganizada para separar responsabilidades entre:
   - shopping.ts
   - family-members.ts
   - account.ts
-- Helpers e integrações em src/lib, incluindo Firebase, OneSignal e autenticação Google
+- Helpers e integrações em src/lib, incluindo OneSignal e autenticação Google
 
 Essa estrutura ajuda a manter as telas mais enxutas e centraliza as regras de negócio em pontos mais fáceis de manter.
 
@@ -38,7 +38,7 @@ Essa estrutura ajuda a manter as telas mais enxutas e centraliza as regras de ne
 - Node.js 20+ (22 recomendado para CI)
 - npm
 - Android Studio e um emulador ou dispositivo Android
-- Conta Firebase com Firestore e Google Sign-In habilitados
+- Client IDs OAuth do Google (Android/iOS) criados no Google Cloud Console
 - Conta OneSignal para notificações push
 
 ## Configuração rápida
@@ -50,7 +50,7 @@ Essa estrutura ajuda a manter as telas mais enxutas e centraliza as regras de ne
 cp .env.example .env
 ```
 
-3. Preencha as variáveis no arquivo .env com as credenciais do Firebase e do OneSignal.
+3. Preencha as variáveis no arquivo .env com as credenciais do Google, OneSignal e Cloudinary.
 
 4. Instale as dependências:
 
@@ -101,16 +101,16 @@ ONESIGNAL_REST_API_KEY=
 
 Certifique-se de preencher essas variáveis no ambiente do servidor antes de iniciar `server`. A `ONESIGNAL_REST_API_KEY` **não deve** estar no app: ela é uma credencial de servidor e vazaria segredos se embarcada no cliente.
 
-## Firebase e Firestore
+## Autenticação e dados
 
-O app usa Firebase Auth, Firestore e regras de segurança definidas em [firestore.rules](./firestore.rules).
+O app não usa Firebase. O login é feito com o Google Sign-In nativo (`@react-native-google-signin`), que entrega um ID token enviado ao backend para emissão de um JWT próprio.
 
 Resumo do fluxo principal:
 
 - O primeiro login cria a família do usuário, quando necessário
 - O administrador pode convidar membros por e-mail
 - O convite é aceito pelo destinatário e o membro entra na família
-- As operações principais de tarefas, compras e convites são persistidas no Firestore
+- As operações principais de tarefas, compras e convites são persistidas no banco do backend
 
 ## Notificações push
 
@@ -169,8 +169,6 @@ Se qualquer etapa falhar, o resultado do `tsc` é armazenado como artefato de bu
 casaemdia/
 ├── app.json
 ├── eas.json
-├── firebase.json
-├── firestore.rules
 ├── .env.example
 └── src/
     ├── app/
@@ -187,13 +185,14 @@ casaemdia/
 
 ### Google Sign-In com erro DEVELOPER_ERROR
 
-- Verifique se o SHA-1 do keystore de debug foi registrado no Firebase
+- Verifique se o SHA-1 do keystore foi registrado no client OAuth Android no Google Cloud Console
 - Confirme se o package name do app corresponde ao cadastrado
-- Baixe novamente o google-services.json após ajustar a configuração
+- Baixe novamente o `google-services.json` após ajustar a configuração
 
-### Erro de API key no Firebase
+### Erro "no registered origin"
 
-- Verifique se as variáveis no arquivo .env estão corretas
+- O client OAuth Web precisa das origens cadastradas em *Authorized JavaScript origins*
+- Apps nativos (Android/iOS) exigem client OAuth próprios, criados com o package/bundle ID do app
 - Reinicie o Metro/Expo após alterar o ambiente
 
 ## Contribuição
