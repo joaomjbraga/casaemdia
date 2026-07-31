@@ -60,14 +60,14 @@ async function resolveToken(): Promise<string | null> {
   return null;
 }
 
-async function request(path: string, options: RequestInit = {}, retries = 2) {
+async function request<T = any>(path: string, options: RequestInit = {}, retries = 2): Promise<T> {
   const token = await resolveToken();
   const bodyKey = typeof options.body === 'string' ? options.body : '';
   const requestKey = `${(options.method || 'GET').toUpperCase()}:${path}:${bodyKey}`;
 
   const existingRequest = inFlightRequests.get(requestKey);
   if (existingRequest) {
-    return existingRequest;
+    return existingRequest as Promise<T>;
   }
 
   const executeRequest = async () => {

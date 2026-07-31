@@ -12,20 +12,16 @@ npm install
 
 ```bash
 cp .env.example .env
-# preencher .env com as chaves do Firebase e OneSignal
+# preencher .env com as chaves do Google, OneSignal e Cloudinary
 ```
 
 Variáveis exigidas (exemplos):
 
-- EXPO_PUBLIC_FIREBASE_API_KEY
-- EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
-- EXPO_PUBLIC_FIREBASE_PROJECT_ID
-- EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
-- EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-- EXPO_PUBLIC_FIREBASE_APP_ID
 - EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 - EXPO_PUBLIC_ONESIGNAL_APP_ID
-- EXPO_PUBLIC_ONESIGNAL_REST_API_KEY
+- EXPO_PUBLIC_API_URL
+- EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME
+- EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET
 
 3. (Android) Gere o build nativo e execute no emulador:
 
@@ -48,6 +44,7 @@ Notas:
 
 - Para Google Sign-In no Android, adicione o SHA-1 do keystore no console do Firebase e baixe o `google-services.json`.
 - Proteja chaves sensíveis usando secrets no CI (não commitá-las).
+- A `ONESIGNAL_REST_API_KEY` pertence ao **backend** (`casaemdia-api/.env`), nunca ao app: colocá-la em `EXPO_PUBLIC_*` expõe a credencial no binário/cliente.
 
 ## Lint e formatação
 

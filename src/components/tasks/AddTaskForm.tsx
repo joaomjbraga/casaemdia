@@ -61,7 +61,7 @@ export default function AddTaskForm({ onClose, onCreated }: AddTaskFormProps) {
         },
         {
           userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-          userId: backendUserId,
+          userId: backendUserId ?? undefined,
         },
       );
 

@@ -41,7 +41,7 @@ export const useFamily = () => {
 };
 
 export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, backendUserId } = useAuth();
+  const { user, backendUserId, initialized: authInitialized, isTokenReady } = useAuth();
   const [familyId, setFamilyId] = useState<string | null>(null);
   const [familyName, setFamilyName] = useState<string>('Minha Família');
   const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -234,8 +234,10 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (!mounted) return;
         if (data.userId && backendUserId && data.userId === backendUserId) {
           setWasRemoved(true);
-          await recoverFamilyAfterRemoval(user);
-          await refreshFamily();
+          if (user) {
+            await recoverFamilyAfterRemoval(user);
+            await refreshFamily();
+          }
         }
       };
 
@@ -275,7 +277,7 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       mounted = false;
       cleanupSocket?.();
     };
-  }, [familyId, fetchMembers, refreshFamily, user]);
+  }, [familyId, fetchMembers, refreshFamily, user, backendUserId]);
 
   const isReady = initialized && !loading && !!familyId;
 

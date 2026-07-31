@@ -75,15 +75,11 @@ npm run android
 As variáveis esperadas são:
 
 ```env
-EXPO_PUBLIC_FIREBASE_API_KEY=
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-EXPO_PUBLIC_FIREBASE_APP_ID=
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
 EXPO_PUBLIC_ONESIGNAL_APP_ID=
-EXPO_PUBLIC_ONESIGNAL_REST_API_KEY=
+EXPO_PUBLIC_API_URL=http://192.168.0.103:3333
+EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME=
+EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET=
 ```
 
 O template completo está em [.env.example](./.env.example).
@@ -98,11 +94,12 @@ DATABASE_URL=postgresql://user:pass@host:5432/dbname
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
+GOOGLE_CLIENT_ID=
 ONESIGNAL_APP_ID=
 ONESIGNAL_REST_API_KEY=
 ```
 
-Certifique-se de preencher essas variáveis no ambiente do servidor antes de iniciar `server`.
+Certifique-se de preencher essas variáveis no ambiente do servidor antes de iniciar `server`. A `ONESIGNAL_REST_API_KEY` **não deve** estar no app: ela é uma credencial de servidor e vazaria segredos se embarcada no cliente.
 
 ## Firebase e Firestore
 
@@ -117,7 +114,7 @@ Resumo do fluxo principal:
 
 ## Notificações push
 
-As notificações são enviadas para os membros da família via OneSignal, com filtragem por família e usuário. O fluxo cobre eventos como criação de tarefas, conclusão, reabertura, remoção e atualização de itens da lista de compras.
+O app registra o dispositivo no OneSignal e envia tags (`familyId`, `userId`, `userEmail`) ao entrar numa família. O **envio** das notificações é feito pelo backend (Node/Express) via `NotificationService`, que usa a `ONESIGNAL_REST_API_KEY` apenas no servidor — nunca no app. O fluxo cobre eventos como criação de tarefas, conclusão, reabertura, remoção e atualização de itens da lista de compras.
 
 ## Scripts
 

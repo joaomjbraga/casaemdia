@@ -8,9 +8,6 @@ export const fetchFamilyMembersFromStore = async (familyId: string): Promise<Fam
 export const deleteFamilyMemberFromStore = async ({
   familyId,
   memberId,
-  memberName,
-  memberEmail,
-  familyName,
 }: {
   familyId: string;
   memberId: string;
@@ -19,18 +16,4 @@ export const deleteFamilyMemberFromStore = async ({
   familyName?: string;
 }) => {
   await removeFamilyMemberApi(familyId, memberId);
-
-  if (memberEmail) {
-    try {
-      const { sendNotificationToEmail } = await import('../lib/onesignal');
-      await sendNotificationToEmail({
-        email: memberEmail,
-        title: 'Você foi removido da família',
-        body: `Você foi removido da família "${familyName ?? 'Minha Família'}".`,
-        data: { type: 'member_removed' },
-      });
-    } catch (error) {
-      console.error('Erro ao enviar notificação (membro removido):', error);
-    }
-  }
 };

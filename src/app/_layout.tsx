@@ -155,13 +155,13 @@ function RootLayoutNav() {
   }, []);
 
   useEffect(() => {
-    if (user && familyId) {
+    if (user && familyId && backendUserId) {
       setUserTags(familyId, backendUserId, user.email || undefined);
       requestPermissionAfterLogin();
     } else {
       removeUserTags();
     }
-  }, [user, familyId]);
+  }, [user, familyId, backendUserId]);
 
   if (!initialized || loading || isInitialLoad) {
     return (

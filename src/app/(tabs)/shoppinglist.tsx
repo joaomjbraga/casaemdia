@@ -111,7 +111,7 @@ export default function ShoppingList() {
         assigneeId: newItemAssigneeId ?? undefined,
         assigneeName: assignee?.name,
         userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-        userId: backendUserId,
+        userId: backendUserId ?? undefined,
       });
       setItems((prev) =>
         prev.map((i) =>
@@ -160,7 +160,7 @@ export default function ShoppingList() {
         quantity: qty,
         itemName: item.name,
         userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-        userId: backendUserId,
+        userId: backendUserId ?? undefined,
       });
     } catch {
       setItems(() => snapshot);
@@ -252,7 +252,7 @@ export default function ShoppingList() {
             familyId: currentFamilyId,
             items: completedItems,
             userName: user?.displayName || user?.email?.split('@')[0] || 'Alguém',
-            userId: backendUserId,
+            userId: backendUserId ?? undefined,
           });
         } catch {
           setItems(() => snapshot);

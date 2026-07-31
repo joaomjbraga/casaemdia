@@ -330,9 +330,9 @@ export default function ChatScreen() {
       copyToCacheDirectory: true,
     });
 
-    if (result.type !== 'success' || !result.uri) return;
+    if (result.canceled || !result.assets || result.assets.length === 0) return;
 
-    const asset = result;
+    const asset = result.assets[0];
     logger.debug('[Chat] handlePickAudio asset', {
       uri: asset.uri,
       name: asset.name,

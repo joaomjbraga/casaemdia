@@ -77,7 +77,7 @@ export default function TasksScreen() {
         newDone,
         options: {
           userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-          userId: backendUserId,
+          userId: backendUserId ?? undefined,
         },
       });
     } catch {
@@ -107,7 +107,7 @@ export default function TasksScreen() {
         title: deletedTask?.title,
         options: {
           userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-          userId: backendUserId,
+          userId: backendUserId ?? undefined,
         },
       });
     } catch {
@@ -182,7 +182,7 @@ export default function TasksScreen() {
             options: user
               ? {
                   userName: user.displayName || user.email?.split('@')[0] || 'Alguém',
-                  userId: backendUserId,
+                  userId: backendUserId ?? undefined,
                 }
               : undefined,
           });
