@@ -3,6 +3,7 @@ import { ConfirmDialogProvider } from '@/components/shared/ui/dialog/ConfirmDial
 import { ToastProviderWithViewport } from '@/components/shared/ui/toast';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { FamilyProvider, useFamily } from '@/contexts/FamilyContext';
+import { BillsProvider } from '@/contexts/BillsContext';
 import { InvitationProvider } from '@/contexts/InvitationContext';
 import {
   initializeOneSignal,
@@ -65,15 +66,17 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <FamilyProvider>
-        <InvitationProvider>
-          <AlertDialogProvider>
-            <ConfirmDialogProvider>
-              <ToastProviderWithViewport>
-                <RootLayoutNav />
-              </ToastProviderWithViewport>
-            </ConfirmDialogProvider>
-          </AlertDialogProvider>
-        </InvitationProvider>
+        <BillsProvider>
+          <InvitationProvider>
+            <AlertDialogProvider>
+              <ConfirmDialogProvider>
+                <ToastProviderWithViewport>
+                  <RootLayoutNav />
+                </ToastProviderWithViewport>
+              </ConfirmDialogProvider>
+            </AlertDialogProvider>
+          </InvitationProvider>
+        </BillsProvider>
       </FamilyProvider>
     </AuthProvider>
   );
@@ -238,6 +241,32 @@ function RootLayoutNav() {
             headerShown: false,
             gestureEnabled: true,
             animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
+          name="bill-form"
+          options={{
+            headerShown: false,
+            gestureEnabled: true,
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
+          name="bill-detail"
+          options={{
+            headerShown: false,
+            gestureEnabled: true,
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
+          name="(tabs)/bills"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
           }}
         />
       </Stack>

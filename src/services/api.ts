@@ -276,6 +276,53 @@ export const api = {
     cancel: (requestId: string) =>
       request(`/api/join-requests/${requestId}/cancel`, { method: 'POST' }),
   },
+  bills: {
+    list: (familyId: string) => request(`/api/bills?familyId=${familyId}`),
+    get: (familyId: string, billId: string) =>
+      request(`/api/bills/${billId}?familyId=${familyId}`),
+    create: (familyId: string, data: {
+      title: string;
+      description?: string | null;
+      amount: number;
+      dueDate: string;
+      type: 'recurring' | 'unique';
+      category: string;
+      totalInstallments: number;
+      reminderDays: number[];
+    }) =>
+      request('/api/bills', {
+        method: 'POST',
+        body: JSON.stringify({ ...data, familyId }),
+      }),
+    update: (familyId: string, billId: string, data: Partial<{
+      title: string;
+      description: string | null;
+      amount: number;
+      dueDate: string;
+      category: string;
+      reminderDays: number[];
+    }>) =>
+      request(`/api/bills/${billId}?familyId=${familyId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    delete: (familyId: string, billId: string) =>
+      request(`/api/bills/${billId}?familyId=${familyId}`, { method: 'DELETE' }),
+    listInstallments: (familyId: string) =>
+      request(`/api/bills/installments?familyId=${familyId}`),
+    payInstallment: (familyId: string, billId: string, installmentId: string) =>
+      request(`/api/bills/${billId}/installments/${installmentId}/pay?familyId=${familyId}`, { method: 'POST' }),
+    payBill: (familyId: string, billId: string) =>
+      request(`/api/bills/${billId}/pay?familyId=${familyId}`, { method: 'POST' }),
+    getUpcoming: (familyId: string, limit?: number) =>
+      request(`/api/bills/upcoming?familyId=${familyId}&limit=${limit ?? 10}`),
+    getMonthSummary: (familyId: string, month?: number, year?: number) => {
+      const now = new Date();
+      const m = month ?? now.getMonth() + 1;
+      const y = year ?? now.getFullYear();
+      return request(`/api/bills/month-summary?familyId=${familyId}&month=${m}&year=${y}`);
+    },
+  },
   upload: {
     image: async (uri: string) => {
       const formData = new FormData();

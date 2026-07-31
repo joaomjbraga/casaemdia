@@ -14,6 +14,7 @@ const ICON_MAP: Record<string, string> = {
   tasks: 'checkbox-marked',
   index: 'home-variant',
   chat: 'chat-outline',
+  bills: 'receipt-text-check',
 };
 
 const LABEL_MAP: Record<string, string> = {
@@ -21,6 +22,7 @@ const LABEL_MAP: Record<string, string> = {
   tasks: 'Tarefas',
   index: 'Início',
   chat: 'Chat',
+  bills: 'Contas',
 };
 
 function DockItem({

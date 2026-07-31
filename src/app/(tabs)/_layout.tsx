@@ -58,6 +58,14 @@ export default function TabLayout() {
           tabBarLabel: 'Chat',
         }}
       />
+
+      <Tabs.Screen
+        name="bills"
+        options={{
+          title: 'Contas',
+          tabBarLabel: 'Contas',
+        }}
+      />
     </Tabs>
   );
 }

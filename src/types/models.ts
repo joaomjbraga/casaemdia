@@ -60,3 +60,73 @@ export interface Invitation {
   status: 'pending' | 'accepted' | 'declined' | 'expired';
   expiresAt: Date;
 }
+
+export type BillType = 'recurring' | 'unique';
+
+export type BillCategory =
+  | 'water'
+  | 'electricity'
+  | 'internet'
+  | 'rent'
+  | 'condominium'
+  | 'ipva'
+  | 'iptu'
+  | 'insurance'
+  | 'school_fee'
+  | 'other';
+
+export const BILL_CATEGORY_LABELS: Record<BillCategory, string> = {
+  water: 'Água',
+  electricity: 'Energia',
+  internet: 'Internet',
+  rent: 'Aluguel',
+  condominium: 'Condomínio',
+  ipva: 'IPVA',
+  iptu: 'IPTU',
+  insurance: 'Seguro',
+  school_fee: 'Matrícula Escolar',
+  other: 'Outro',
+};
+
+export const BILL_TYPE_LABELS: Record<BillType, string> = {
+  recurring: 'Recorrente',
+  unique: 'Única',
+};
+
+export interface Bill {
+  id: string;
+  familyId: string;
+  title: string;
+  description: string | null;
+  amount: number;
+  dueDate: Date | string;
+  type: BillType;
+  category: BillCategory;
+  totalInstallments: number;
+  paidInstallments: number;
+  isPaid: boolean;
+  reminderDays: number[];
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+export interface BillInstallment {
+  id: string;
+  billId: string;
+  familyId: string;
+  amount: number;
+  dueDate: Date | string;
+  paid: boolean;
+  paidAt: Date | string | null;
+  installmentNumber: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+export interface MonthSummary {
+  totalBills: number;
+  totalInstallments: number;
+  totalPaid: number;
+  totalPending: number;
+  byCategory: Record<string, { total: number; paid: number; pending: number }>;
+}
