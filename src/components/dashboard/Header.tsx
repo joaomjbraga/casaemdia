@@ -4,10 +4,10 @@ import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import Colors from '@/constants/Colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Header() {
@@ -67,7 +67,11 @@ export default function Header() {
       <View style={styles.bar}>
         <View style={styles.brandSection}>
           {user?.photoURL ? (
-            <Image source={{ uri: user.photoURL }} style={styles.userAvatarImage} contentFit="cover" />
+            <Image
+              source={{ uri: user.photoURL }}
+              style={styles.userAvatarImage}
+              contentFit="cover"
+            />
           ) : (
             <View style={styles.userAvatar}>
               <Text style={styles.userInitial}>{userInitial}</Text>
