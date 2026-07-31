@@ -4,7 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import logger from '@/lib/logger';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { api, setAuthToken } from '@/services/api';
-import { signInWithGoogle as googleSignIn } from '@/lib/google-auth';
+import { signInWithGoogle as googleSignIn, configureGoogleSignIn } from '@/lib/google-auth';
 import { disconnectSocket } from '@/services/socket';
 
 function decodeJwtSub(token: string): string | null {
@@ -73,6 +73,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+
+    configureGoogleSignIn();
 
     const restoreSession = async () => {
       try {
