@@ -115,9 +115,12 @@ export interface BillInstallment {
   billId: string;
   familyId: string;
   amount: number;
+  paidAmount: number | null;
   dueDate: Date | string;
   paid: boolean;
   paidAt: Date | string | null;
+  receiptUrl: string | null;
+  receiptPublicId: string | null;
   installmentNumber: number;
   createdAt?: Date | string;
   updatedAt?: Date | string;

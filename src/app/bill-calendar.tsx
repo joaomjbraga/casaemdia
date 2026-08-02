@@ -6,10 +6,12 @@ import ZappIcon from '@/components/common/ZappIcon';
 import BackHeader from '@/components/common/BackHeader';
 import { router } from 'expo-router';
 import { useState, useMemo } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { usePressScale } from '@/hooks/usePressAnimation';
 import { Animated, Easing } from 'react-native';
+import { toCalendarDate } from '@/lib/date-utils';
 
 const MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -128,8 +130,7 @@ export default function BillCalendarScreen() {
       const isToday = date.getTime() === today.getTime();
 
       const dayBills = installments.filter((inst) => {
-        const instDate = new Date(inst.dueDate);
-        instDate.setHours(0, 0, 0, 0);
+        const instDate = toCalendarDate(inst.dueDate);
         return instDate.getTime() === date.getTime() && !inst.paid;
       });
 

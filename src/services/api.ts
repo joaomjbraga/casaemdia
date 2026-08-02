@@ -177,7 +177,8 @@ export const api = {
         body: JSON.stringify({ familyName: name }),
       }),
     get: () => request('/api/families'),
-    getAll: () => request('/api/families/all'),
+    getAll: (q?: string) =>
+      request(`/api/families/all${q ? `?q=${encodeURIComponent(q)}` : ''}`),
     addMember: (familyId: string, data: { userId?: string; email: string; name: string }) =>
       request(`/api/families/${familyId}/members`, {
         method: 'POST',
@@ -310,8 +311,16 @@ export const api = {
       request(`/api/bills/${billId}?familyId=${familyId}`, { method: 'DELETE' }),
     listInstallments: (familyId: string) =>
       request(`/api/bills/installments?familyId=${familyId}`),
-    payInstallment: (familyId: string, billId: string, installmentId: string) =>
-      request(`/api/bills/${billId}/installments/${installmentId}/pay?familyId=${familyId}`, { method: 'POST' }),
+    payInstallment: (
+      familyId: string,
+      billId: string,
+      installmentId: string,
+      payment?: { amount?: number; receiptUrl?: string | null; receiptPublicId?: string | null },
+    ) =>
+      request(`/api/bills/${billId}/installments/${installmentId}/pay?familyId=${familyId}`, {
+        method: 'POST',
+        body: JSON.stringify(payment ?? {}),
+      }),
     payBill: (familyId: string, billId: string) =>
       request(`/api/bills/${billId}/pay?familyId=${familyId}`, { method: 'POST' }),
     getUpcoming: (familyId: string, limit?: number) =>
@@ -322,6 +331,8 @@ export const api = {
       const y = year ?? now.getFullYear();
       return request(`/api/bills/month-summary?familyId=${familyId}&month=${m}&year=${y}`);
     },
+    history: (familyId: string) =>
+      request(`/api/bills/history?familyId=${familyId}`),
   },
   upload: {
     image: async (uri: string) => {

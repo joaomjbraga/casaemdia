@@ -6,6 +6,12 @@ export function startOfDay(date: Date): Date {
   return d;
 }
 
+export function toCalendarDate(date: Date | string): Date {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return d;
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
+
 export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
@@ -43,17 +49,13 @@ export function formatCurrency(amount: number): string {
 }
 
 export function getDaysOverdue(dueDate: Date | string): number {
-  const d = new Date(dueDate);
-  const now = new Date();
-  const diff = now.getTime() - d.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const d = toCalendarDate(dueDate);
+  const now = toCalendarDate(new Date());
+  return Math.round((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export function getDaysUntil(dueDate: Date | string): number {
-  const d = new Date(dueDate);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-  const diff = d.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const d = toCalendarDate(dueDate);
+  const now = toCalendarDate(new Date());
+  return Math.round((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }

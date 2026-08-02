@@ -152,6 +152,8 @@ function RootLayoutNav() {
         router.push('/(tabs)/tasks');
       } else if (type === 'shopping_added' || type === 'shopping_completed') {
         router.push('/(tabs)/shoppinglist');
+      } else if (type === 'bill_reminder' || type === 'bill_due' || type === 'bill_created') {
+        router.push('/(tabs)/bills');
       }
     });
     return () => removeNotificationClickListener();
@@ -259,14 +261,6 @@ function RootLayoutNav() {
             headerShown: false,
             gestureEnabled: true,
             animation: 'slide_from_right',
-          }}
-        />
-
-        <Stack.Screen
-          name="(tabs)/bills"
-          options={{
-            headerShown: false,
-            gestureEnabled: false,
           }}
         />
       </Stack>

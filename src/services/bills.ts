@@ -32,10 +32,9 @@ export async function scheduleBillNotifications(
   bill: Bill,
   installments: BillInstallment[],
 ): Promise<void> {
-  if (bill.isPaid) {
-    await cancelBillNotifications(bill.id);
-    return;
-  }
+  await cancelBillNotifications(bill.id);
+
+  if (bill.isPaid) return;
 
   if (installments.length > 1) {
     for (const inst of installments) {
@@ -61,12 +60,4 @@ export async function scheduleBillNotifications(
 
 export async function cancelBillNotificationsForBill(billId: string): Promise<void> {
   await cancelBillNotifications(billId);
-}
-
-export async function refreshAllBillNotifications(bills: Bill[]): Promise<void> {
-  for (const bill of bills) {
-    if (bill.isPaid) {
-      await cancelBillNotifications(bill.id);
-    }
-  }
 }

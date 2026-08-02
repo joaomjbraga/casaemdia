@@ -1,9 +1,10 @@
 import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
+import { useConfirmDialog } from '@/components/shared/ui/dialog/ConfirmDialog';
 import Colors from '@/constants/Colors';
 import { DOCK_CLEARANCE } from '@/constants/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { ShoppingItem, Task } from '@/types/models';
+import type { Invitation, ShoppingItem, Task } from '@/types/models';
 
 import EmptyState from '@/components/common/EmptyState';
 import IconCircleButton from '@/components/common/IconCircleButton';
@@ -25,6 +26,7 @@ export default function Dashboard() {
   const { familyId, members, fetchMembers, loading: membersLoading } = useFamily();
   const { pendingInvitations, acceptInvitation, declineInvitation } = useInvitations();
   const { showAlert } = useAlertDialog();
+  const { showDialog } = useConfirmDialog();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
@@ -119,6 +121,38 @@ export default function Dashboard() {
     [tasks],
   );
 
+  const handleAcceptInvitation = useCallback(
+    (inv: Invitation) => {
+      const accept = async () => {
+        try {
+          await acceptInvitation(inv.id);
+        } catch (err: any) {
+          showAlert({
+            title: 'Erro',
+            message: err?.message || 'Não foi possível aceitar o convite.',
+            type: 'error',
+          });
+        }
+      };
+
+      if (familyId) {
+        showDialog({
+          title: 'Aceitar convite',
+          message:
+            `Você já pertence a uma família. Ao aceitar o convite para "${inv.familyName}", ` +
+            'você sairá da sua família atual.',
+          type: 'danger',
+          confirmText: 'Sair e aceitar',
+          cancelText: 'Cancelar',
+          onConfirm: accept,
+        });
+      } else {
+        accept();
+      }
+    },
+    [acceptInvitation, familyId, showAlert, showDialog],
+  );
+
   const handleShoppingPress = useCallback(
     (item: ShoppingItem) => {
       router.push({
@@ -185,7 +219,7 @@ export default function Dashboard() {
             <View style={styles.inviteActions}>
               <IconCircleButton
                 iconName="check"
-                onPress={() => acceptInvitation(inv.id)}
+                onPress={() => handleAcceptInvitation(inv)}
                 size={36}
                 backgroundColor="rgba(52, 199, 89, 0.15)"
                 borderColor="rgba(52, 199, 89, 0.3)"

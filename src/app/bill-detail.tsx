@@ -7,11 +7,15 @@ import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
 import ZappIcon from '@/components/common/ZappIcon';
 import BackHeader from '@/components/common/BackHeader';
 import PrimaryActionButton from '@/components/common/PrimaryActionButton';
-import { BILL_CATEGORY_LABELS } from '@/types/models';
-import { formatCurrency, formatDate, getDaysUntil } from '@/lib/date-utils';
+import PaymentModal from '@/components/bills/PaymentModal';
+import ImageViewer from '@/components/chat/ImageViewer';
+import { BILL_CATEGORY_LABELS, BillInstallment, BillCategory } from '@/types/models';
+import { formatCurrency, formatDate, getDaysUntil, toCalendarDate } from '@/lib/date-utils';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { usePressScale } from '@/hooks/usePressAnimation';
 import { Animated, Easing } from 'react-native';
@@ -21,9 +25,11 @@ interface InstallmentItem {
   id: string;
   billId: string;
   amount: number;
-  dueDate: string;
+  paidAmount: number | null;
+  dueDate: Date | string;
   paid: boolean;
-  paidAt: string | null;
+  paidAt: Date | string | null;
+  receiptUrl: string | null;
   installmentNumber: number;
 }
 
@@ -39,6 +45,9 @@ export default function BillDetailScreen() {
   const [installments, setInstallments] = useState<InstallmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState<InstallmentItem | null>(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [receiptViewUri, setReceiptViewUri] = useState<string | null>(null);
 
   const loadBill = useCallback(async () => {
     if (!billId) return;
@@ -69,23 +78,26 @@ export default function BillDetailScreen() {
     setRefreshing(false);
   };
 
-  const handlePayInstallment = async (installment: InstallmentItem) => {
-    if (!billId) return;
-    showDialog({
-      title: 'Marcar como pago',
-      message: `Marcar a parcela ${installment.installmentNumber} (${formatCurrency(installment.amount)}) como paga?`,
-      type: 'success',
-      confirmText: 'Pagar',
-      cancelText: 'Cancelar',
-      onConfirm: async () => {
-        try {
-          await payInstallment(billId, installment.id);
-          await loadBill();
-        } catch {
-          showAlert({ title: 'Erro', message: 'Não foi possível registrar o pagamento.', type: 'error' });
-        }
-      },
-    });
+  const handlePayInstallment = (installment: InstallmentItem) => {
+    setPaymentTarget(installment);
+  };
+
+  const handlePaymentConfirm = async (payment: {
+    amount?: number;
+    receiptUrl?: string;
+    receiptPublicId?: string;
+  }) => {
+    if (!billId || !paymentTarget) return;
+    setSubmittingPayment(true);
+    try {
+      await payInstallment(billId, paymentTarget.id, payment);
+      setPaymentTarget(null);
+      await loadBill();
+    } catch {
+      showAlert({ title: 'Erro', message: 'Não foi possível registrar o pagamento.', type: 'error' });
+    } finally {
+      setSubmittingPayment(false);
+    }
   };
 
   const handlePayAll = async () => {
@@ -158,11 +170,11 @@ export default function BillDetailScreen() {
   const pendingInstallments = installments.filter((i) => !i.paid);
   const completedInstallments = installments.filter((i) => i.paid);
   const totalAmount = installments.reduce((sum, i) => sum + Number(i.amount), 0);
-  const paidAmount = installments.filter((i) => i.paid).reduce((sum, i) => sum + Number(i.amount), 0);
+  const paidAmount = installments.filter((i) => i.paid).reduce((sum, i) => sum + Number(i.paidAmount ?? i.amount), 0);
   const remainingAmount = totalAmount - paidAmount;
   const nextInstallment = pendingInstallments[0];
 
-  const categoryLabel = BILL_CATEGORY_LABELS[bill.category] || 'Outro';
+  const categoryLabel = BILL_CATEGORY_LABELS[bill.category as BillCategory] || 'Outro';
   const typeLabel = bill.type === 'recurring' ? 'Recorrente' : 'Única';
 
   return (
@@ -207,7 +219,7 @@ export default function BillDetailScreen() {
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Vencimento</Text>
-            <Text style={styles.infoValue}>{formatDate(new Date(bill.dueDate))}</Text>
+            <Text style={styles.infoValue}>{formatDate(toCalendarDate(bill.dueDate))}</Text>
           </View>
           {bill.description && (
             <View style={styles.infoRow}>
@@ -253,7 +265,7 @@ export default function BillDetailScreen() {
           <View style={styles.nextDueCard}>
             <ZappIcon name="clock-outline" size={18} color={Colors.light.warning} />
             <Text style={styles.nextDueText}>
-              Próxima Parcela: {formatDate(new Date(nextInstallment.dueDate))} ({formatCurrency(Number(nextInstallment.amount))})
+              Próxima Parcela: {formatDate(toCalendarDate(nextInstallment.dueDate))} ({formatCurrency(Number(nextInstallment.amount))})
             </Text>
           </View>
         )}
@@ -274,6 +286,8 @@ export default function BillDetailScreen() {
                   onPress={() => {
                     if (!inst.paid) {
                       handlePayInstallment(inst);
+                    } else if (inst.receiptUrl) {
+                      setReceiptViewUri(inst.receiptUrl);
                     }
                   }}
                 />
@@ -301,6 +315,21 @@ export default function BillDetailScreen() {
           <Text style={styles.deleteBtnText}>Excluir conta</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <PaymentModal
+        visible={paymentTarget !== null}
+        installmentNumber={paymentTarget?.installmentNumber ?? 0}
+        installmentAmount={paymentTarget?.amount ?? 0}
+        onClose={() => setPaymentTarget(null)}
+        onConfirm={handlePaymentConfirm}
+        submitting={submittingPayment}
+      />
+
+      <ImageViewer
+        visible={receiptViewUri !== null}
+        uri={receiptViewUri ?? ''}
+        onClose={() => setReceiptViewUri(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -314,8 +343,16 @@ function InstallmentRow({
   index: number;
   onPress: () => void;
 }) {
+  const daysLeft = getDaysUntil(installment.dueDate);
+  const isOverdue = !installment.paid && daysLeft < 0;
+  const isDueToday = !installment.paid && daysLeft === 0;
+
   return (
-    <TouchableOpacity activeOpacity={0.7} onPress={onPress} disabled={installment.paid}>
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={onPress}
+      disabled={installment.paid && !installment.receiptUrl}
+    >
       <View
         style={[
           styles.installmentRow,
@@ -332,22 +369,55 @@ function InstallmentRow({
           <View>
             <Text style={[styles.installmentAmount, installment.paid && styles.installmentAmountPaid]}>
               {formatCurrency(Number(installment.amount))}
+              {installment.paid && installment.paidAmount != null && Number(installment.paidAmount) !== Number(installment.amount)
+                ? ` · ${formatCurrency(Number(installment.paidAmount))}`
+                : ''}
             </Text>
             <Text style={styles.installmentDate}>
-              Vence: {formatDate(new Date(installment.dueDate))}
+              {installment.paid
+                ? installment.paidAt
+                  ? `Pago em: ${formatDate(new Date(installment.paidAt))}`
+                  : 'Pago'
+                : `Vence: ${formatDate(toCalendarDate(installment.dueDate))}`}
             </Text>
           </View>
         </View>
 
         {installment.paid ? (
-          <View style={styles.paidBadge}>
-            <ZappIcon name="check-circle" size={16} color={Colors.light.success} />
-            <Text style={styles.paidBadgeText}>Pago</Text>
+          <View style={styles.paidRight}>
+            {installment.receiptUrl && (
+              <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+                <Image
+                  source={{ uri: installment.receiptUrl }}
+                  style={styles.receiptThumb}
+                  contentFit="cover"
+                />
+              </TouchableOpacity>
+            )}
+            <View style={styles.paidBadge}>
+              <ZappIcon name="check-circle" size={16} color={Colors.light.success} />
+              <Text style={styles.paidBadgeText}>Pago</Text>
+            </View>
           </View>
         ) : (
-          <View style={styles.pendingBadge}>
-            <Text style={styles.pendingBadgeText}>
-              {getDaysUntil(installment.dueDate)} dias
+          <View
+            style={[
+              styles.pendingBadge,
+              isOverdue && { backgroundColor: `${Colors.light.danger}10` },
+            ]}
+          >
+            <Text
+              style={[
+                styles.pendingBadgeText,
+                isOverdue && { color: Colors.light.danger },
+                !isOverdue && !isDueToday && { color: Colors.light.mutedText },
+              ]}
+            >
+              {isOverdue
+                ? `Venceu há ${Math.abs(daysLeft)} dia${Math.abs(daysLeft) > 1 ? 's' : ''}`
+                : isDueToday
+                  ? 'Vence hoje'
+                  : `Vence em ${daysLeft} dia${daysLeft !== 1 ? 's' : ''}`}
             </Text>
           </View>
         )}
@@ -444,7 +514,6 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: '100%',
     borderRadius: 5,
-    transition: 'width 0.3s ease',
   },
   progressMeta: {
     flexDirection: 'row',
@@ -571,6 +640,19 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 8,
+  },
+  paidRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  receiptThumb: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: Colors.light.cardDark,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   paidBadgeText: {
     fontSize: 11,

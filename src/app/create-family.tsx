@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -52,6 +52,8 @@ export default function CreateFamilyScreen() {
   const [families, setFamilies] = useState<Family[]>([]);
   const [myRequests, setMyRequests] = useState<JoinRequest[]>([]);
   const [searchFamily, setSearchFamily] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchSeq = useRef(0);
   const [dataLoading, setDataLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -71,13 +73,11 @@ export default function CreateFamilyScreen() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [invRes, famRes, reqRes] = await Promise.all([
+        const [invRes, reqRes] = await Promise.all([
           fetchPendingInvitationsApi(),
-          api.family.getAll(),
           api.joinRequests.listPendingByUser(),
         ]);
         setInvitations(invRes as Invitation[]);
-        setFamilies((famRes as any).families ?? []);
         setMyRequests((reqRes as any).requests ?? []);
       } catch {
         // ignore
@@ -87,6 +87,30 @@ export default function CreateFamilyScreen() {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    const term = searchFamily.trim();
+    const seq = ++searchSeq.current;
+    if (!term) {
+      setFamilies([]);
+      setSearchLoading(false);
+      return;
+    }
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const famRes = await api.family.getAll(term);
+        if (searchSeq.current !== seq) return;
+        setFamilies((famRes as any).families ?? []);
+      } catch {
+        if (searchSeq.current !== seq) return;
+        setFamilies([]);
+      } finally {
+        if (searchSeq.current === seq) setSearchLoading(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchFamily]);
 
   const handleCreate = async () => {
     if (!familyName.trim()) return;
@@ -151,9 +175,7 @@ export default function CreateFamilyScreen() {
 
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Usuário';
   const requestedFamilyIds = new Set(myRequests.map((r) => r.familyId));
-  const filteredFamilies = families.filter((f) =>
-    f.name.toLowerCase().includes(searchFamily.toLowerCase())
-  );
+  const filteredFamilies = families;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -266,9 +288,17 @@ export default function CreateFamilyScreen() {
                 placeholderTextColor={Colors.light.mutedText}
                 style={[styles.input, { marginBottom: 12 }]}
               />
-              {filteredFamilies.length === 0 ? (
+              {searchLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={Colors.light.primary}
+                  style={styles.emptyState}
+                />
+              ) : filteredFamilies.length === 0 ? (
                 <Text style={styles.emptyText}>
-                  {families.length === 0 ? 'Nenhuma família disponível' : 'Nenhuma família encontrada'}
+                  {searchFamily.trim()
+                    ? 'Nenhuma família encontrada'
+                    : 'Digite o nome da família para buscar'}
                 </Text>
               ) : (
                 filteredFamilies.map((fam) => {
@@ -455,5 +485,8 @@ const styles = StyleSheet.create({
     color: Colors.light.mutedText,
     textAlign: 'center',
     paddingVertical: 16,
+  },
+  emptyState: {
+    marginVertical: 16,
   },
 });

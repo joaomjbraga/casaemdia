@@ -1,7 +1,16 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { addDays, startOfDay } from '@/lib/date-utils';
+import { addDays, startOfDay, toCalendarDate } from '@/lib/date-utils';
 import logger from '@/lib/logger';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export interface BillNotificationData {
   billId: string;
@@ -48,7 +57,7 @@ export async function scheduleBillReminder(
 
   await setupNotificationChannel();
 
-  const dueDate = new Date(dueDateString);
+  const dueDate = toCalendarDate(dueDateString);
   if (isNaN(dueDate.getTime())) {
     logger.warn('[notifications] Invalid due date', dueDateString);
     return [];
@@ -67,6 +76,7 @@ export async function scheduleBillReminder(
 
     await Notifications.scheduleNotificationAsync(
       {
+        identifier,
         content: {
           title: 'Lembrete de conta',
           body: `"${title}" vence ${days === 0 ? 'hoje' : `em ${days} dia${days > 1 ? 's' : ''}`}`,
@@ -79,11 +89,10 @@ export async function scheduleBillReminder(
         },
         trigger: {
           channelId: Platform.OS === 'android' ? 'bill-reminders' : undefined,
-          type: 'date',
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: reminderDate,
         },
       },
-      identifier,
     );
 
     identifiers.push(identifier);
@@ -122,34 +131,4 @@ export async function cancelAllBillNotifications(): Promise<void> {
   );
 
   logger.info('[notifications] Cancelled all bill reminders', { count: billNotifications.length });
-}
-
-export async function scheduleInstallationNotification(title: string, dueDate: Date): Promise<string | null> {
-  const granted = await requestNotificationPermission();
-  if (!granted) return null;
-
-  await setupNotificationChannel();
-
-  const today = startOfDay(new Date());
-  const reminderDate = new Date(dueDate);
-  reminderDate.setHours(9, 0, 0, 0);
-  reminderDate.setDate(reminderDate.getDate() - 1);
-
-  if (reminderDate < today) return null;
-
-  const response = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Vencimento de conta',
-      body: `"${title}" vence amanhã`,
-      data: { type: 'bill_due' },
-      sound: 'notification',
-    },
-    trigger: {
-      channelId: Platform.OS === 'android' ? 'bill-reminders' : undefined,
-      type: 'date',
-      date: reminderDate,
-    },
-  });
-
-  return response;
 }

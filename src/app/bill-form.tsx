@@ -3,7 +3,7 @@ import { useBills } from '@/contexts/BillsContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { BILL_CATEGORY_LABELS, BILL_TYPE_LABELS, type BillType, type BillCategory } from '@/types/models';
 import { toast } from '@/lib/toast';
-import { formatCurrency } from '@/lib/date-utils';
+import { formatCurrency, toCalendarDate } from '@/lib/date-utils';
 import PrimaryActionButton from '@/components/common/PrimaryActionButton';
 import ZappIcon from '@/components/common/ZappIcon';
 import BackHeader from '@/components/common/BackHeader';
@@ -12,7 +12,6 @@ import { useAlertDialog } from '@/components/shared/ui/dialog/AlertDialog';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useMemo, useEffect } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,7 +20,7 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ReminderOption = { label: string; value: number };
 
@@ -65,7 +64,7 @@ export default function BillFormScreen() {
   const isEdit = Boolean(params.billId);
 
   const { familyId } = useFamily();
-  const { createBill, updateBill, getBillDetail } = useBills();
+  const { createBill, updateBill, deleteBill, getBillDetail } = useBills();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
   const insets = useSafeAreaInsets();
@@ -109,7 +108,7 @@ export default function BillFormScreen() {
           setTitle(bill.title);
           setDescription(bill.description ?? '');
           setAmount(String(bill.amount));
-          setDueDate(formatDateForInput(new Date(bill.dueDate)));
+          setDueDate(formatDateForInput(toCalendarDate(bill.dueDate)));
           setType(bill.type);
           setCategory(bill.category as BillCategory);
           const installments = bill.totalInstallments > 1;
@@ -185,7 +184,7 @@ export default function BillFormScreen() {
         });
         toast.success('Conta atualizada!');
       } else {
-        await createBill(currentFamilyId, {
+        await createBill({
           title: title.trim(),
           description: description.trim() || null,
           amount: parsedAmount,
@@ -215,7 +214,6 @@ export default function BillFormScreen() {
       cancelText: 'Cancelar',
       onConfirm: async () => {
         try {
-          const { deleteBill } = await import('@/services/bills');
           await deleteBill(params.billId!);
           toast.success('Conta excluída!');
           router.back();
@@ -682,7 +680,11 @@ const styles = StyleSheet.create({
     color: Colors.light.danger,
   },
   pickerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },

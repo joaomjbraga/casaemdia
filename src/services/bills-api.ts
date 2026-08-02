@@ -138,8 +138,9 @@ export const payInstallmentApi = async (
   familyId: string,
   billId: string,
   installmentId: string,
+  payment?: { amount?: number; receiptUrl?: string | null; receiptPublicId?: string | null },
 ): Promise<BillInstallment> => {
-  const data = await api.bills.payInstallment(familyId, billId, installmentId);
+  const data = await api.bills.payInstallment(familyId, billId, installmentId, payment);
   return data.installment;
 };
 
@@ -163,8 +164,18 @@ export const getMonthSummaryApi = async (familyId: string, month?: number, year?
   return data;
 };
 
+export const fetchMonthSummaryApi = async (familyId: string, month?: number, year?: number): Promise<MonthSummary> => {
+  const data = await api.bills.getMonthSummary(familyId, month, year);
+  return data;
+};
+
 export const fetchBillsApi = async (familyId: string): Promise<Bill[]> => {
   const data = await api.bills.list(familyId);
+  return data?.bills ?? [];
+};
+
+export const fetchPaidBillsApi = async (familyId: string): Promise<Bill[]> => {
+  const data = await api.bills.history(familyId);
   return data?.bills ?? [];
 };
 

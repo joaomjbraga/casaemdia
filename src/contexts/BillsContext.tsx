@@ -40,7 +40,11 @@ interface BillsContextType {
     reminderDays: number[];
   }>) => Promise<void>;
   deleteBill: (billId: string) => Promise<void>;
-  payInstallment: (billId: string, installmentId: string) => Promise<void>;
+  payInstallment: (
+    billId: string,
+    installmentId: string,
+    payment?: { amount?: number; receiptUrl?: string | null; receiptPublicId?: string | null },
+  ) => Promise<void>;
   payBill: (billId: string) => Promise<void>;
   getBillDetail: (billId: string) => Promise<{ bill: Bill; installments: BillInstallment[] } | null>;
   refreshBills: () => Promise<void>;
@@ -171,11 +175,15 @@ export const BillsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 
   const payInstallmentAction = useCallback(
-    async (billId: string, installmentId: string): Promise<void> => {
+    async (
+      billId: string,
+      installmentId: string,
+      payment?: { amount?: number; receiptUrl?: string | null; receiptPublicId?: string | null },
+    ): Promise<void> => {
       const currentFamilyId = familyIdRef.current;
       if (!currentFamilyId) throw new Error('Família não carregada');
 
-      const installment = await payInstallment(currentFamilyId, billId, installmentId);
+      const installment = await payInstallment(currentFamilyId, billId, installmentId, payment);
       await cancelBillNotificationsForBill(billId);
     },
     [],

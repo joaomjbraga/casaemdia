@@ -6,15 +6,16 @@ import { DOCK_CLEARANCE } from '@/constants/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBills } from '@/contexts/BillsContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { BILL_CATEGORY_LABELS, BILL_TYPE_LABELS } from '@/types/models';
+import { BILL_CATEGORY_LABELS, BILL_TYPE_LABELS, BillCategory, BillType, BillInstallment } from '@/types/models';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePressScale } from '@/hooks/usePressAnimation';
 import { Animated, Easing } from 'react-native';
-import { formatCurrency, getDaysUntil, startOfDay } from '@/lib/date-utils';
+import { formatCurrency, getDaysUntil, toCalendarDate } from '@/lib/date-utils';
 
 type BillStatus = 'pending' | 'overdue' | 'paid';
 
@@ -25,13 +26,27 @@ function getInitials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function getEffectiveDueDate(bill: any, installments: BillInstallment[]): Date {
+  if (bill.totalInstallments > 1 && !bill.isPaid) {
+    const pending = installments
+      .filter((i) => i.billId === bill.id && !i.paid)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    if (pending.length > 0) {
+      return toCalendarDate(pending[0].dueDate);
+    }
+  }
+  return toCalendarDate(bill.dueDate);
+}
+
 function BillRow({
   bill,
   index,
+  installments,
   onPress,
 }: {
   bill: any;
   index: number;
+  installments: BillInstallment[];
   onPress: (bill: any) => void;
 }) {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -59,9 +74,7 @@ function BillRow({
     return () => animation.stop();
   }, [index, opacity, translateX]);
 
-  const dueDate = new Date(bill.dueDate);
-  const now = startOfDay(new Date());
-  const daysLeft = Math.ceil((dueDate.setHours(0, 0, 0, 0) - now.getTime()) / (1000 * 60 * 60 * 24));
+  const daysLeft = getDaysUntil(getEffectiveDueDate(bill, installments));
 
   const isOverdue = !bill.isPaid && daysLeft < 0;
   const isDueToday = !bill.isPaid && daysLeft === 0;
@@ -83,8 +96,8 @@ function BillRow({
     statusText = `${daysLeft} dia${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}`;
   }
 
-  const categoryLabel = BILL_CATEGORY_LABELS[bill.category] || 'Outro';
-  const typeLabel = BILL_TYPE_LABELS[bill.type] || 'Única';
+  const categoryLabel = BILL_CATEGORY_LABELS[bill.category as BillCategory] || 'Outro';
+  const typeLabel = BILL_TYPE_LABELS[bill.type as BillType] || 'Única';
 
   const isInstallment = bill.totalInstallments > 1;
 
@@ -138,7 +151,7 @@ function BillRow({
 export default function BillsScreen() {
   const { user, backendUserId } = useAuth();
   const { familyId, members } = useFamily();
-  const { bills, monthSummary, loading, deleteBill, payBill } = useBills();
+  const { bills, monthSummary, loading, deleteBill, payBill, refreshBills, installments } = useBills();
   const { showDialog } = useConfirmDialog();
   const { showAlert } = useAlertDialog();
   const [refreshing, setRefreshing] = useState(false);
@@ -146,17 +159,15 @@ export default function BillsScreen() {
   const pendingBills = bills.filter((b) => !b.isPaid);
   const paidBills = bills.filter((b) => b.isPaid);
 
-  const overdueBills = pendingBills.filter((b) => {
-    const due = new Date(b.dueDate);
-    return due < new Date();
-  });
+  const overdueBills = pendingBills.filter((b) => getDaysUntil(getEffectiveDueDate(b, installments)) < 0);
 
   const upcomingBills = pendingBills
-    .filter((b) => {
-      const due = new Date(b.dueDate);
-      return due >= new Date();
-    })
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    .filter((b) => getDaysUntil(getEffectiveDueDate(b, installments)) >= 0)
+    .sort(
+      (a, b) =>
+        getEffectiveDueDate(a, installments).getTime() -
+        getEffectiveDueDate(b, installments).getTime(),
+    );
 
   const handlePayBill = async (bill: any) => {
     if (!familyId) return;
@@ -216,7 +227,6 @@ export default function BillsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const { refreshBills } = await import('@/services/bills');
       await refreshBills();
     } catch (error) {
       console.error('refresh error:', error);
@@ -303,6 +313,7 @@ export default function BillsScreen() {
                 key={bill.id}
                 bill={bill}
                 index={index}
+                installments={installments}
                 onPress={(b) => router.push({ pathname: '/bill-detail', params: { billId: b.id, familyId } })}
               />
             ))}
@@ -317,6 +328,7 @@ export default function BillsScreen() {
                 key={bill.id}
                 bill={bill}
                 index={index}
+                installments={installments}
                 onPress={(b) => router.push({ pathname: '/bill-detail', params: { billId: b.id, familyId } })}
               />
             ))}
@@ -339,6 +351,7 @@ export default function BillsScreen() {
                 key={bill.id}
                 bill={bill}
                 index={index}
+                installments={installments}
                 onPress={(b) => router.push({ pathname: '/bill-detail', params: { billId: b.id, familyId } })}
               />
             ))}
